@@ -97,25 +97,26 @@ export default function Window({ window: windowData }: WindowProps) {
         };
     }, [isDragging, resizeDir, windowData.id, updateWindowDimensions]);
 
-    if (windowData.isMinimized) return null;
+    // if (windowData.isMinimized) return null; // 삭제: 애니메이션을 위해 렌더링 유지
 
     return (
         <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            initial={{ opacity: 0, scale: 0.9, y: 100 }}
             animate={{
-                opacity: 1,
-                scale: isDragging ? 1.02 : 1,
-                y: 0,
+                opacity: windowData.isMinimized ? 0 : 1,
+                scale: windowData.isMinimized ? 0.8 : (isDragging ? 1.02 : 1),
+                y: windowData.isMinimized ? window.innerHeight : 0, // 화면 밖으로 슝
                 boxShadow: isDragging || resizeDir
                     ? "0 30px 60px -12px rgba(0, 0, 0, 0.4)"
                     : isFocused ? "0 20px 40px -12px rgba(0, 0, 0, 0.25)" : "0 10px 15px -3px rgba(0, 0, 0, 0.1)"
             }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            exit={{ opacity: 0, scale: 0.9, y: 100 }}
             transition={{
                 type: "spring",
                 stiffness: 400,
                 damping: 35,
-                // 크기/위치 변경은 즉각적으로 (인라인 스타일), 나머지는 애니메이션
+                mass: 0.8,
+                opacity: { duration: 0.2 }
             }}
             style={{
                 zIndex: windowData.zIndex,
@@ -124,13 +125,19 @@ export default function Window({ window: windowData }: WindowProps) {
                 top: windowData.y,
                 width: windowData.width,
                 height: windowData.height,
-                borderRadius: windowData.isMaximized ? 0 : '0.75rem', // 최대화 시 라운드 해제
+                borderRadius: windowData.isMaximized ? 0 : '0.75rem',
+                pointerEvents: windowData.isMinimized ? 'none' : 'auto',
+                // 드래그 중이거나 최소화/복원 중일 때는 CSS transition 비활성화
+                transition: (isDragging || resizeDir || windowData.isMinimized)
+                    ? 'none'
+                    : 'left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), border-radius 0.4s'
             }}
             onMouseDown={() => focusApp(windowData.id)}
-            className={`flex flex-col overflow-hidden bg-white/45 glass transition-[border-radius]
-        ${isFocused ? 'ring-1 ring-blue-500/30' : 'ring-1 ring-black/5'}
+            className={`flex flex-col overflow-hidden relative
+        ${isFocused ? 'ring-1 ring-blue-500/30 shadow-2xl' : 'ring-1 ring-black/5 shadow-lg'}
       `}
         >
+            <div className={`absolute inset-0 -z-10 glass ${isFocused ? 'bg-white' : 'bg-white/75'}`} />
             {/* Resizing Handles (Hidden if maximized) */}
             {!windowData.isMaximized && (
                 <>
