@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Settings, Folder, Image as ImageIcon, MessageSquare, Globe, Mail } from 'lucide-react';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 export interface AppData {
   id: string;
@@ -18,8 +18,20 @@ export interface WindowState {
   y: number;
   width: number;
   height: number;
-  prevDim?: { x: number; y: number; width: number; height: number }; // 최대화 전 상태 저장
+  prevDim?: { x: number; y: number; width: number; height: number };
 }
+
+export interface GridSettings {
+  iconSize: number;
+  gapX: number;
+  gapY: number;
+}
+
+const DEFAULT_GRID_SETTINGS: GridSettings = {
+  iconSize: 120,
+  gapX: 64,
+  gapY: 64,
+};
 
 interface OSState {
   currentTime: Date;
@@ -27,6 +39,7 @@ interface OSState {
   windows: Record<string, WindowState>;
   focusedWindowId: string | null;
   maxZIndex: number;
+  gridSettings: GridSettings;
 
   setCurrentTime: (time: Date) => void;
   setApps: (apps: AppData[]) => void;
@@ -38,6 +51,8 @@ interface OSState {
   minimizeApp: (appId: string) => void;
   maximizeApp: (appId: string) => void;
   updateWindowDimensions: (appId: string, updates: Partial<Pick<WindowState, 'x' | 'y' | 'width' | 'height'>>) => void;
+  updateGridSettings: (settings: Partial<GridSettings>) => void;
+  resetGridSettings: () => void;
 }
 
 const INITIAL_APPS: AppData[] = [
@@ -49,132 +64,150 @@ const INITIAL_APPS: AppData[] = [
   { id: 'settings', name: 'Settings', iconName: 'Settings' },
 ];
 
-export const useOSStore = create<OSState>((set) => ({
-  currentTime: new Date(),
-  apps: INITIAL_APPS,
-  windows: {},
-  focusedWindowId: null,
-  maxZIndex: 10,
+const STATUS_BAR_HEIGHT = 32;
 
-  setCurrentTime: (time) => set({ currentTime: time }),
-  setApps: (apps) => set({ apps }),
-  reorderApps: (fromIndex, toIndex) => set((state) => {
-    const newApps = [...state.apps];
-    const [movedApp] = newApps.splice(fromIndex, 1);
-    newApps.splice(toIndex, 0, movedApp);
-    return { apps: newApps };
-  }),
+export const useOSStore = create<OSState>()(
+  persist(
+    (set) => ({
+      currentTime: new Date(),
+      apps: INITIAL_APPS,
+      windows: {},
+      focusedWindowId: null,
+      maxZIndex: 10,
+      gridSettings: DEFAULT_GRID_SETTINGS,
 
-  openApp: (appId) => set((state) => {
-    const app = state.apps.find(a => a.id === appId);
-    if (!app) return state;
+      setCurrentTime: (time) => set({ currentTime: time }),
+      setApps: (apps) => set({ apps }),
+      reorderApps: (fromIndex, toIndex) => set((state) => {
+        const newApps = [...state.apps];
+        const [movedApp] = newApps.splice(fromIndex, 1);
+        newApps.splice(toIndex, 0, movedApp);
+        return { apps: newApps };
+      }),
 
-    if (state.windows[appId]) {
-      const newZIndex = state.maxZIndex + 1;
-      return {
+      openApp: (appId) => set((state) => {
+        const app = state.apps.find(a => a.id === appId);
+        if (!app) return state;
+
+        if (state.windows[appId]) {
+          const newZIndex = state.maxZIndex + 1;
+          return {
+            windows: {
+              ...state.windows,
+              [appId]: { ...state.windows[appId], isMinimized: false, zIndex: newZIndex }
+            },
+            focusedWindowId: appId,
+            maxZIndex: newZIndex
+          };
+        }
+
+        const newZIndex = state.maxZIndex + 1;
+        const offset = Object.keys(state.windows).length * 30;
+
+        return {
+          windows: {
+            ...state.windows,
+            [appId]: {
+              id: appId,
+              title: app.name,
+              isOpen: true,
+              isMinimized: false,
+              isMaximized: false,
+              zIndex: newZIndex,
+              x: 100 + offset,
+              y: 100 + offset + STATUS_BAR_HEIGHT,
+              width: 800, // 기본 설정을 위해 조금 더 크게 시작
+              height: 500
+            }
+          },
+          focusedWindowId: appId,
+          maxZIndex: newZIndex
+        };
+      }),
+
+      closeApp: (appId) => set((state) => {
+        const newWindows = { ...state.windows };
+        delete newWindows[appId];
+        return {
+          windows: newWindows,
+          focusedWindowId: state.focusedWindowId === appId ? null : state.focusedWindowId
+        };
+      }),
+
+      focusApp: (appId) => set((state) => {
+        if (state.focusedWindowId === appId && !state.windows[appId]?.isMinimized) return state;
+        const newZIndex = state.maxZIndex + 1;
+        return {
+          windows: {
+            ...state.windows,
+            [appId]: { ...state.windows[appId], zIndex: newZIndex, isMinimized: false }
+          },
+          focusedWindowId: appId,
+          maxZIndex: newZIndex
+        };
+      }),
+
+      minimizeApp: (appId) => set((state) => ({
         windows: {
           ...state.windows,
-          [appId]: { ...state.windows[appId], isMinimized: false, zIndex: newZIndex }
+          [appId]: { ...state.windows[appId], isMinimized: true }
         },
-        focusedWindowId: appId,
-        maxZIndex: newZIndex
-      };
-    }
+        focusedWindowId: state.focusedWindowId === appId ? null : state.focusedWindowId
+      })),
 
-    const newZIndex = state.maxZIndex + 1;
-    const offset = Object.keys(state.windows).length * 30;
+      maximizeApp: (appId) => set((state) => {
+        const win = state.windows[appId];
+        if (!win) return state;
 
-    return {
-      windows: {
-        ...state.windows,
-        [appId]: {
-          id: appId,
-          title: app.name,
-          isOpen: true,
-          isMinimized: false,
-          isMaximized: false,
-          zIndex: newZIndex,
-          x: 100 + offset,
-          y: 100 + offset,
-          width: 600,
-          height: 400
+        if (win.isMaximized) {
+          return {
+            windows: {
+              ...state.windows,
+              [appId]: {
+                ...win,
+                isMaximized: false,
+                ...(win.prevDim || {})
+              }
+            }
+          };
+        } else {
+          return {
+            windows: {
+              ...state.windows,
+              [appId]: {
+                ...win,
+                isMaximized: true,
+                prevDim: { x: win.x, y: win.y, width: win.width, height: win.height },
+                x: 0,
+                y: STATUS_BAR_HEIGHT,
+                width: typeof window !== 'undefined' ? window.innerWidth : 1024,
+                height: typeof window !== 'undefined' ? window.innerHeight - STATUS_BAR_HEIGHT : 736
+              }
+            }
+          };
         }
-      },
-      focusedWindowId: appId,
-      maxZIndex: newZIndex
-    };
-  }),
+      }),
 
-  closeApp: (appId) => set((state) => {
-    const newWindows = { ...state.windows };
-    delete newWindows[appId];
-    return {
-      windows: newWindows,
-      focusedWindowId: state.focusedWindowId === appId ? null : state.focusedWindowId
-    };
-  }),
-
-  focusApp: (appId) => set((state) => {
-    if (state.focusedWindowId === appId && !state.windows[appId]?.isMinimized) return state;
-    const newZIndex = state.maxZIndex + 1;
-    return {
-      windows: {
-        ...state.windows,
-        [appId]: { ...state.windows[appId], zIndex: newZIndex, isMinimized: false }
-      },
-      focusedWindowId: appId,
-      maxZIndex: newZIndex
-    };
-  }),
-
-  minimizeApp: (appId) => set((state) => ({
-    windows: {
-      ...state.windows,
-      [appId]: { ...state.windows[appId], isMinimized: true }
-    },
-    focusedWindowId: state.focusedWindowId === appId ? null : state.focusedWindowId
-  })),
-
-  maximizeApp: (appId) => set((state) => {
-    const win = state.windows[appId];
-    if (!win) return state;
-
-    if (win.isMaximized) {
-      // 복원
-      return {
+      updateWindowDimensions: (appId, updates) => set((state) => ({
         windows: {
           ...state.windows,
-          [appId]: {
-            ...win,
-            isMaximized: false,
-            ...(win.prevDim || {})
-          }
+          [appId]: { ...state.windows[appId], ...updates }
         }
-      };
-    } else {
-      // 최대화 (상태바 제외 화면 꽉 채우기)
-      // 상태바 높이가 약 40px (h-10) 이므로 y=40, height=window.innerHeight - 40
-      return {
-        windows: {
-          ...state.windows,
-          [appId]: {
-            ...win,
-            isMaximized: true,
-            prevDim: { x: win.x, y: win.y, width: win.width, height: win.height },
-            x: 0,
-            y: 40, // StatusBar 높이만큼 띄움
-            width: typeof window !== 'undefined' ? window.innerWidth : 1024,
-            height: typeof window !== 'undefined' ? window.innerHeight - 40 : 768
-          }
-        }
-      };
-    }
-  }),
+      })),
 
-  updateWindowDimensions: (appId, updates) => set((state) => ({
-    windows: {
-      ...state.windows,
-      [appId]: { ...state.windows[appId], ...updates }
+      updateGridSettings: (settings) => set((state) => ({
+        gridSettings: { ...state.gridSettings, ...settings }
+      })),
+
+      resetGridSettings: () => set({ gridSettings: DEFAULT_GRID_SETTINGS }),
+    }),
+    {
+      name: 'kos-v7-storage',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        apps: state.apps,
+        gridSettings: state.gridSettings,
+      }),
     }
-  })),
-}));
+  )
+);

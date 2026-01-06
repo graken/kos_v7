@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AppIcon from './AppIcon';
 import { useOSStore } from '@/store/useOSStore';
 import { Settings, Folder, Image as ImageIcon, MessageSquare, Globe, Mail } from 'lucide-react';
@@ -15,8 +15,15 @@ const ICON_MAP: Record<string, any> = {
 };
 
 export default function HomeGrid() {
-    const { apps, reorderApps, openApp, windows } = useOSStore();
+    const { apps, reorderApps, openApp, windows, gridSettings } = useOSStore();
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    if (!mounted) return null; // 서버-클라이언트 불일치 방지
 
     const handleDragStart = (e: React.DragEvent, index: number) => {
         setDraggedIndex(index);
@@ -45,14 +52,35 @@ export default function HomeGrid() {
         >
             {/* 실제 그리드 배경 가이드 */}
             <div className="absolute inset-0 pt-16 px-6 md:px-12 pointer-events-none -z-10">
-                <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-x-4 gap-y-8 max-w-7xl mx-auto h-full">
+                <div
+                    className="grid mx-auto h-full items-start justify-center content-start"
+                    style={{
+                        columnGap: `${gridSettings.gapX}px`,
+                        rowGap: `${gridSettings.gapY}px`,
+                        gridTemplateColumns: `repeat(auto-fill, ${gridSettings.iconSize + 8}px)`
+                    }}
+                >
                     {Array.from({ length: 40 }).map((_, i) => (
-                        <div key={i} className="aspect-square border border-black/10 rounded-2xl bg-black/[0.03]" />
+                        <div
+                            key={i}
+                            className="border border-black/10 rounded-2xl bg-black/[0.03]"
+                            style={{
+                                width: `${gridSettings.iconSize + 8}px`,
+                                height: `${gridSettings.iconSize + 8}px`
+                            }}
+                        />
                     ))}
                 </div>
             </div>
 
-            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-x-4 gap-y-8 max-w-7xl mx-auto border border-blue-500/30 relative place-items-center">
+            <div
+                className="grid mx-auto relative items-start justify-center content-start"
+                style={{
+                    columnGap: `${gridSettings.gapX}px`,
+                    rowGap: `${gridSettings.gapY}px`,
+                    gridTemplateColumns: `repeat(auto-fill, ${gridSettings.iconSize + 8}px)`
+                }}
+            >
                 {apps.map((app, index) => (
                     <AppIcon
                         key={app.id}

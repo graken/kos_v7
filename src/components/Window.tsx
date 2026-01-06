@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { X, Minus, Square, Copy } from 'lucide-react';
 import { useOSStore, WindowState } from '@/store/useOSStore';
 import { useEffect, useRef, useState } from 'react';
+import Settings from '@/apps/Settings';
 
 interface WindowProps {
     window: WindowState;
@@ -43,6 +44,8 @@ export default function Window({ window: windowData }: WindowProps) {
         e.preventDefault();
     };
 
+    const STATUS_BAR_HEIGHT = 32;
+
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
             if (!isDragging && !resizeDir) return;
@@ -53,7 +56,7 @@ export default function Window({ window: windowData }: WindowProps) {
             if (isDragging) {
                 updateWindowDimensions(windowData.id, {
                     x: startWindowDim.current.x + deltaX,
-                    y: startWindowDim.current.y + deltaY
+                    y: Math.max(STATUS_BAR_HEIGHT, startWindowDim.current.y + deltaY) // 상단바 침범 방지
                 });
             } else if (resizeDir) {
                 let { x, y, width, height } = startWindowDim.current;
@@ -62,18 +65,28 @@ export default function Window({ window: windowData }: WindowProps) {
                 if (resizeDir.includes('s')) height = Math.max(MIN_HEIGHT, startWindowDim.current.height + deltaY);
 
                 if (resizeDir.includes('w')) {
-                    const newWidth = Math.max(MIN_WIDTH, startWindowDim.current.width - deltaX);
-                    if (newWidth !== MIN_WIDTH) {
+                    const newWidth = startWindowDim.current.width - deltaX;
+                    if (newWidth >= MIN_WIDTH) {
                         width = newWidth;
                         x = startWindowDim.current.x + deltaX;
+                    } else {
+                        width = MIN_WIDTH;
+                        x = startWindowDim.current.x + (startWindowDim.current.width - MIN_WIDTH);
                     }
                 }
 
                 if (resizeDir.includes('n')) {
-                    const newHeight = Math.max(MIN_HEIGHT, startWindowDim.current.height - deltaY);
-                    if (newHeight !== MIN_HEIGHT) {
+                    const requestedY = startWindowDim.current.y + deltaY;
+                    const clampedY = Math.max(STATUS_BAR_HEIGHT, requestedY); // 상단바 침범 방지
+                    const actualDeltaY = clampedY - startWindowDim.current.y;
+                    const newHeight = startWindowDim.current.height - actualDeltaY;
+
+                    if (newHeight >= MIN_HEIGHT) {
                         height = newHeight;
-                        y = startWindowDim.current.y + deltaY;
+                        y = clampedY;
+                    } else {
+                        height = MIN_HEIGHT;
+                        y = startWindowDim.current.y + (startWindowDim.current.height - MIN_HEIGHT);
                     }
                 }
 
@@ -105,32 +118,37 @@ export default function Window({ window: windowData }: WindowProps) {
             animate={{
                 opacity: windowData.isMinimized ? 0 : 1,
                 scale: windowData.isMinimized ? 0.8 : (isDragging ? 1.02 : 1),
-                y: windowData.isMinimized ? window.innerHeight : 0, // 화면 밖으로 슝
+                y: 0, // initial의 y: 100을 상쇄하여 정확한 좌표(top)에 배치
                 boxShadow: isDragging || resizeDir
                     ? "0 30px 60px -12px rgba(0, 0, 0, 0.4)"
-                    : isFocused ? "0 20px 40px -12px rgba(0, 0, 0, 0.25)" : "0 10px 15px -3px rgba(0, 0, 0, 0.1)"
+                    : isFocused ? "0 20px 40px -12px rgba(0, 0, 0, 0.25)" : "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+                // Position and Size properties for animations
+                left: windowData.x,
+                top: windowData.isMinimized ? window.innerHeight : windowData.y,
+                width: windowData.width,
+                height: windowData.height,
             }}
             exit={{ opacity: 0, scale: 0.9, y: 100 }}
             transition={{
-                type: "spring",
-                stiffness: 400,
-                damping: 35,
+                // 드래그나 리사이징 중일 때는 애니메이션 없이 즉각 반응 (사용자 조작감 보존)
+                // 최대화/복원 시에만 젤리 같은 스프링 효과 적용
+                type: (isDragging || resizeDir) ? "tween" : "spring",
+                duration: (isDragging || resizeDir) ? 0 : undefined,
+                stiffness: 300,
+                damping: 20,
                 mass: 0.8,
-                opacity: { duration: 0.2 }
+                bounce: (isDragging || resizeDir) ? 0 : 0.4,
+                opacity: { duration: 0.2 },
+                left: (isDragging || resizeDir) ? { duration: 0 } : undefined,
+                top: (isDragging || resizeDir) ? { duration: 0 } : undefined,
+                width: (isDragging || resizeDir) ? { duration: 0 } : undefined,
+                height: (isDragging || resizeDir) ? { duration: 0 } : undefined,
             }}
             style={{
                 zIndex: windowData.zIndex,
                 position: 'fixed',
-                left: windowData.x,
-                top: windowData.y,
-                width: windowData.width,
-                height: windowData.height,
                 borderRadius: windowData.isMaximized ? 0 : '0.75rem',
                 pointerEvents: windowData.isMinimized ? 'none' : 'auto',
-                // 드래그 중이거나 최소화/복원 중일 때는 CSS transition 비활성화
-                transition: (isDragging || resizeDir || windowData.isMinimized)
-                    ? 'none'
-                    : 'left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), border-radius 0.4s'
             }}
             onMouseDown={() => focusApp(windowData.id)}
             className={`flex flex-col overflow-hidden relative
@@ -197,11 +215,15 @@ export default function Window({ window: windowData }: WindowProps) {
             </div>
 
             {/* Content Area */}
-            <div className="flex-1 p-6 overflow-auto pointer-events-none">
-                <div className="h-full flex flex-col items-center justify-center text-black/20">
-                    <p className="text-lg font-medium">KOS v7 Application</p>
-                    <p className="text-sm italic">{windowData.title}</p>
-                </div>
+            <div className="flex-1 overflow-auto pointer-events-auto">
+                {windowData.id === 'settings' ? (
+                    <Settings />
+                ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-black/20">
+                        <p className="text-lg font-medium">KOS v7 Application</p>
+                        <p className="text-sm italic">{windowData.title}</p>
+                    </div>
+                )}
             </div>
         </motion.div>
     );

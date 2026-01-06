@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { ReactNode } from 'react';
+import { useOSStore } from '@/store/useOSStore';
 
 interface AppIconProps {
     id: string;
@@ -28,6 +29,8 @@ export default function AppIcon({
     onDragEnd,
     onClick
 }: AppIconProps) {
+    const { gridSettings } = useOSStore();
+
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
@@ -55,15 +58,26 @@ export default function AppIcon({
             onDragOver={handleDragOver as any}
             onDragEnd={onDragEnd as any}
             onClick={onClick}
-            className={`flex flex-col items-center justify-center gap-2 cursor-grab active:cursor-grabbing group border border-red-500/30 border-dashed p-1 rounded-xl w-full aspect-square transition-colors ${isDragging ? 'bg-black/5' : ''}`}
+            className={`flex flex-col items-center cursor-grab active:cursor-grabbing group border border-red-500/30 border-dashed rounded-xl transition-colors relative ${isDragging ? 'bg-black/5' : ''}`}
+            style={{
+                width: `${gridSettings.iconSize + 8}px`,
+                height: `${gridSettings.iconSize + 8}px` // 아이콘 상자 크기에 맞춰 고정
+            }}
         >
-            <div className="relative w-16 h-16 md:w-20 md:h-20 glass rounded-2xl flex items-center justify-center text-black/70 shadow-lg pointer-events-none transition-shadow group-hover:shadow-black/10">
-                {icon}
+            <div
+                className="relative glass rounded-2xl flex items-center justify-center text-black/70 shadow-lg pointer-events-none transition-shadow group-hover:shadow-black/10 mt-1"
+                style={{ width: `${gridSettings.iconSize}px`, height: `${gridSettings.iconSize}px` }}
+            >
+                <div style={{ transform: `scale(${gridSettings.iconSize / 80})` }} className="flex items-center justify-center">
+                    {icon}
+                </div>
                 {isActive && (
                     <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-sm animate-pulse" />
                 )}
             </div>
-            <span className="text-black/80 text-xs md:text-sm font-bold drop-shadow-sm text-center pointer-events-none">
+
+            {/* 라벨을 절대 위치로 배치하여 그리드 정렬에 영향을 주지 않게 함 */}
+            <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 text-black/80 text-xs md:text-sm font-bold drop-shadow-sm text-center pointer-events-none whitespace-nowrap">
                 {name}
             </span>
         </motion.div>
