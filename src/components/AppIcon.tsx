@@ -48,10 +48,10 @@ export default function AppIcon({
                 layout: { duration: 0.35, ease: "easeInOut" }
             }}
             draggable
-            onDragStart={(e) => onDragStart(e, index)}
-            onDragEnter={(e) => onDragEnter(e, index)}
-            onDragOver={handleDragOver}
-            onDragEnd={onDragEnd}
+            onDragStart={(e) => onDragStart(e as any, index)}
+            onDragEnter={(e) => onDragEnter(e as any, index)}
+            onDragOver={handleDragOver as any}
+            onDragEnd={onDragEnd as any}
             onClick={onClick}
             className={`flex flex-col items-center justify-center gap-2 cursor-grab active:cursor-grabbing group border border-red-500/30 border-dashed p-1 rounded-xl w-full aspect-square transition-colors ${isDragging ? 'bg-black/5' : ''}`}
         >

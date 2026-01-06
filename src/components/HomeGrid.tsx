@@ -15,7 +15,7 @@ const ICON_MAP: Record<string, any> = {
 };
 
 export default function HomeGrid() {
-    const { apps, reorderApps } = useOSStore();
+    const { apps, reorderApps, openApp } = useOSStore();
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
     const handleDragStart = (e: React.DragEvent, index: number) => {
@@ -64,6 +64,7 @@ export default function HomeGrid() {
                         onDragStart={handleDragStart}
                         onDragEnter={handleDragEnter}
                         onDragEnd={handleDragEnd}
+                        onClick={() => openApp(app.id)}
                     />
                 ))}
             </div>
