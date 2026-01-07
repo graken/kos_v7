@@ -36,11 +36,13 @@ export default function MobileShell() {
                 </div>
             </div>
 
-            <div className="flex-1 relative overflow-y-auto scrollbar-hide">
-                {/* Full screen Background Grid */}
-                <HomeGrid />
+            <div className="flex-1 relative overflow-hidden">
+                {/* Layer 1: Scrollable Background Grid */}
+                <div className={`absolute inset-0 overflow-y-auto scrollbar-hide ${activeWindow ? 'overflow-hidden' : ''}`}>
+                    <HomeGrid />
+                </div>
 
-                {/* Full screen Apps Layer */}
+                {/* Layer 2: Fixed screen Apps Layer */}
                 <AnimatePresence>
                     {activeWindow && (
                         <MobileWindow key={activeWindow.id} window={activeWindow} />
