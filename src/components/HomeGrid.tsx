@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import AppIcon from './AppIcon';
 import { useOSStore } from '@/store/useOSStore';
+import { useDevice } from '@/hooks/useDevice';
 import { Settings, Folder, Image as ImageIcon, MessageSquare, Globe, Mail } from 'lucide-react';
 
 const ICON_MAP: Record<string, any> = {
@@ -15,7 +16,9 @@ const ICON_MAP: Record<string, any> = {
 };
 
 export default function HomeGrid() {
-    const { apps, reorderApps, openApp, windows, gridSettings } = useOSStore();
+    const { apps, reorderApps, openApp, windows, desktopGridSettings, mobileGridSettings } = useOSStore();
+    const { isMobile } = useDevice();
+    const gridSettings = isMobile ? mobileGridSettings : desktopGridSettings;
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const [mounted, setMounted] = useState(false);
 
@@ -44,14 +47,14 @@ export default function HomeGrid() {
 
     return (
         <div
-            className="w-full h-full pt-16 px-6 md:px-12 relative"
+            className="w-full min-h-full pt-16 px-6 md:px-12 pb-24 relative"
             onDragOver={(e) => {
                 e.preventDefault();
                 e.dataTransfer.dropEffect = 'move';
             }}
         >
             {/* 실제 그리드 배경 가이드 */}
-            <div className="absolute inset-0 pt-16 px-6 md:px-12 pointer-events-none -z-10">
+            <div className="absolute top-0 left-0 right-0 min-h-full pt-16 px-6 md:px-12 pointer-events-none -z-10">
                 <div
                     className="grid mx-auto h-full items-start justify-center content-start"
                     style={{

@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { ReactNode } from 'react';
 import { useOSStore } from '@/store/useOSStore';
+import { useDevice } from '@/hooks/useDevice';
 
 interface AppIconProps {
     id: string;
@@ -29,7 +30,9 @@ export default function AppIcon({
     onDragEnd,
     onClick
 }: AppIconProps) {
-    const { gridSettings } = useOSStore();
+    const { desktopGridSettings, mobileGridSettings } = useOSStore();
+    const { isMobile } = useDevice();
+    const gridSettings = isMobile ? mobileGridSettings : desktopGridSettings;
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();

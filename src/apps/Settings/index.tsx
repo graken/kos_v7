@@ -3,10 +3,15 @@
 import { useOSStore } from '@/store/useOSStore';
 import { Smartphone, LayoutGrid, Palette, Info } from 'lucide-react';
 import { useState } from 'react';
+import { useDevice } from '@/hooks/useDevice';
 
 export default function Settings() {
-    const { gridSettings, updateGridSettings } = useOSStore();
+    const { desktopGridSettings, mobileGridSettings, updateGridSettings, resetGridSettings } = useOSStore();
+    const { isMobile } = useDevice();
     const [activeTab, setActiveTab] = useState('icons');
+
+    const gridSettings = isMobile ? mobileGridSettings : desktopGridSettings;
+    const deviceType = isMobile ? 'mobile' : 'desktop';
 
     const menuItems = [
         { id: 'icons', label: '아이콘', icon: <LayoutGrid size={18} /> },
@@ -18,21 +23,21 @@ export default function Settings() {
     return (
         <div className="flex h-full w-full overflow-hidden text-black/80">
             {/* Sidebar */}
-            <div className="w-48 bg-black/5 border-r border-black/5 flex flex-col p-2 gap-1">
-                <h2 className="px-3 py-4 text-lg font-bold">Settings</h2>
+            <div className={`${isMobile ? 'w-32' : 'w-48'} bg-black/5 border-r border-black/5 flex flex-col p-2 gap-1 shrink-0`}>
+                <h2 className={`px-3 py-4 ${isMobile ? 'text-sm' : 'text-lg'} font-bold truncate`}>Settings</h2>
                 {menuItems.map((item) => (
                     <button
                         key={item.id}
                         onClick={() => setActiveTab(item.id)}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm font-medium
+                        className={`flex items-center ${isMobile ? 'gap-2 px-2 py-2' : 'gap-3 px-3 py-2'} rounded-lg transition-colors text-xs font-medium
               ${activeTab === item.id
                                 ? 'bg-white/60 shadow-sm ring-1 ring-black/5'
                                 : 'hover:bg-black/5'
                             }
             `}
                     >
-                        {item.icon}
-                        {item.label}
+                        <div className={isMobile ? 'scale-90' : ''}>{item.icon}</div>
+                        <span className="truncate">{item.label}</span>
                     </button>
                 ))}
             </div>
@@ -57,7 +62,7 @@ export default function Settings() {
                                         max="300"
                                         step="2"
                                         value={gridSettings.iconSize}
-                                        onChange={(e) => updateGridSettings({ iconSize: parseInt(e.target.value) })}
+                                        onChange={(e) => updateGridSettings({ iconSize: parseInt(e.target.value) }, deviceType)}
                                         className="w-full h-1.5 bg-black/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
                                     />
                                     <div className="flex justify-between text-[10px] text-black/40 px-1">
@@ -79,7 +84,7 @@ export default function Settings() {
                                         max="200"
                                         step="2"
                                         value={gridSettings.gapX}
-                                        onChange={(e) => updateGridSettings({ gapX: parseInt(e.target.value) })}
+                                        onChange={(e) => updateGridSettings({ gapX: parseInt(e.target.value) }, deviceType)}
                                         className="w-full h-1.5 bg-black/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
                                     />
                                 </div>
@@ -96,7 +101,7 @@ export default function Settings() {
                                         max="200"
                                         step="2"
                                         value={gridSettings.gapY}
-                                        onChange={(e) => updateGridSettings({ gapY: parseInt(e.target.value) })}
+                                        onChange={(e) => updateGridSettings({ gapY: parseInt(e.target.value) }, deviceType)}
                                         className="w-full h-1.5 bg-black/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
                                     />
                                 </div>
@@ -104,7 +109,7 @@ export default function Settings() {
                         </section>
 
                         <button
-                            onClick={() => useOSStore.getState().resetGridSettings()}
+                            onClick={() => resetGridSettings(deviceType)}
                             className="flex items-center justify-center gap-2 w-full py-3 px-4 bg-red-50 text-red-600 border border-red-100 rounded-xl hover:bg-red-100 transition-colors text-sm font-bold mt-2"
                         >
                             기본값으로 초기화

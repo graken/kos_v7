@@ -1,28 +1,22 @@
 "use client";
 
-import StatusBar from "@/components/StatusBar";
 import Wallpaper from "@/components/Wallpaper";
-import HomeGrid from "@/components/HomeGrid";
-import Window from "@/components/Window";
-import { useOSStore } from "@/store/useOSStore";
-import { AnimatePresence } from "framer-motion";
+import DesktopShell from "@/components/shells/DesktopShell";
+import MobileShell from "@/components/shells/MobileShell";
+import { useDevice } from "@/hooks/useDevice";
 
 export default function Home() {
-  const { windows } = useOSStore();
-  const openWindows = Object.values(windows);
+  const { isMobile } = useDevice();
 
   return (
     <main className="relative w-screen h-screen overflow-hidden">
       <Wallpaper />
-      <StatusBar />
-      <HomeGrid />
 
-      {/* Windows Layer */}
-      <AnimatePresence>
-        {openWindows.map((window) => (
-          <Window key={window.id} window={window} />
-        ))}
-      </AnimatePresence>
+      {isMobile ? (
+        <MobileShell />
+      ) : (
+        <DesktopShell />
+      )}
     </main>
   );
 }

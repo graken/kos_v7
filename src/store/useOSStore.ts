@@ -27,10 +27,16 @@ export interface GridSettings {
   gapY: number;
 }
 
-const DEFAULT_GRID_SETTINGS: GridSettings = {
+const DEFAULT_DESKTOP_GRID_SETTINGS: GridSettings = {
   iconSize: 120,
   gapX: 64,
   gapY: 64,
+};
+
+const DEFAULT_MOBILE_GRID_SETTINGS: GridSettings = {
+  iconSize: 56,
+  gapX: 24,
+  gapY: 48,
 };
 
 interface OSState {
@@ -39,7 +45,8 @@ interface OSState {
   windows: Record<string, WindowState>;
   focusedWindowId: string | null;
   maxZIndex: number;
-  gridSettings: GridSettings;
+  desktopGridSettings: GridSettings;
+  mobileGridSettings: GridSettings;
 
   setCurrentTime: (time: Date) => void;
   setApps: (apps: AppData[]) => void;
@@ -51,8 +58,8 @@ interface OSState {
   minimizeApp: (appId: string) => void;
   maximizeApp: (appId: string) => void;
   updateWindowDimensions: (appId: string, updates: Partial<Pick<WindowState, 'x' | 'y' | 'width' | 'height'>>) => void;
-  updateGridSettings: (settings: Partial<GridSettings>) => void;
-  resetGridSettings: () => void;
+  updateGridSettings: (settings: Partial<GridSettings>, device: 'desktop' | 'mobile') => void;
+  resetGridSettings: (device: 'desktop' | 'mobile') => void;
 }
 
 const INITIAL_APPS: AppData[] = [
@@ -74,7 +81,8 @@ export const useOSStore = create<OSState>()(
       windows: {},
       focusedWindowId: null,
       maxZIndex: 10,
-      gridSettings: DEFAULT_GRID_SETTINGS,
+      desktopGridSettings: DEFAULT_DESKTOP_GRID_SETTINGS,
+      mobileGridSettings: DEFAULT_MOBILE_GRID_SETTINGS,
 
       setCurrentTime: (time) => set({ currentTime: time }),
       setApps: (apps) => set({ apps }),
@@ -195,18 +203,25 @@ export const useOSStore = create<OSState>()(
         }
       })),
 
-      updateGridSettings: (settings) => set((state) => ({
-        gridSettings: { ...state.gridSettings, ...settings }
-      })),
+      updateGridSettings: (settings, device) => set((state) => {
+        const key = device === 'desktop' ? 'desktopGridSettings' : 'mobileGridSettings';
+        return {
+          [key]: { ...state[key], ...settings }
+        };
+      }),
 
-      resetGridSettings: () => set({ gridSettings: DEFAULT_GRID_SETTINGS }),
+      resetGridSettings: (device) => set(() => ({
+        [device === 'desktop' ? 'desktopGridSettings' : 'mobileGridSettings']:
+          device === 'desktop' ? DEFAULT_DESKTOP_GRID_SETTINGS : DEFAULT_MOBILE_GRID_SETTINGS
+      })),
     }),
     {
       name: 'kos-v7-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         apps: state.apps,
-        gridSettings: state.gridSettings,
+        desktopGridSettings: state.desktopGridSettings,
+        mobileGridSettings: state.mobileGridSettings,
       }),
     }
   )
