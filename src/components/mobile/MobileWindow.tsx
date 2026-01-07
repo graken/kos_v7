@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { X, Minus } from "lucide-react";
 import { useOSStore, WindowState } from "@/store/useOSStore";
-import Settings from "@/apps/Settings";
+import Settings from "@/apps/Settings/Settings";
 
 interface MobileWindowProps {
     window: WindowState;

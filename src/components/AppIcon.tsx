@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { ReactNode } from 'react';
-import { useOSStore } from '@/store/useOSStore';
+import { useOSStore, INSTALLED_APP_IDS } from '@/store/useOSStore';
 import { useDevice } from '@/hooks/useDevice';
 
 interface AppIconProps {
@@ -30,9 +30,28 @@ export default function AppIcon({
     onDragEnd,
     onClick
 }: AppIconProps) {
-    const { desktopGridSettings, mobileGridSettings } = useOSStore();
+    const { desktopGridSettings, mobileGridSettings, showContextMenu, openApp, removeApp, updateApp, setEditingAppId, apps } = useOSStore();
     const { isMobile } = useDevice();
     const gridSettings = isMobile ? mobileGridSettings : desktopGridSettings;
+
+    const handleContextMenu = (e: React.MouseEvent) => {
+        if (isMobile) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const handleEdit = () => {
+            setEditingAppId(id);
+            openApp('app-editor');
+        };
+
+        showContextMenu(e.clientX, e.clientY, [
+            { label: '앱 열기', iconName: 'Play', onClick: () => openApp(id) },
+            { label: '앱 정보', iconName: 'Info', onClick: () => console.log(`${name} 정보`) },
+            { label: '편집', iconName: 'Edit', onClick: handleEdit },
+            { label: '메인 화면에서 제거', iconName: 'Trash2', isDanger: true, onClick: () => removeApp(id) },
+        ]);
+    };
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
@@ -61,7 +80,8 @@ export default function AppIcon({
             onDragOver={handleDragOver as any}
             onDragEnd={onDragEnd as any}
             onClick={onClick}
-            className={`flex flex-col items-center cursor-grab active:cursor-grabbing group border border-red-500/30 border-dashed rounded-xl transition-colors relative ${isDragging ? 'bg-black/5' : ''}`}
+            onContextMenu={handleContextMenu}
+            className={`flex flex-col items-center cursor-grab active:cursor-grabbing group border border-red-500/30 border-dashed rounded-xl transition-colors relative focus:outline-none ${isDragging ? 'bg-black/5' : ''}`}
             style={{
                 width: `${gridSettings.iconSize + 8}px`,
                 height: `${gridSettings.iconSize + 8}px` // 아이콘 상자 크기에 맞춰 고정

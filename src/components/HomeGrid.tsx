@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import AppIcon from './AppIcon';
 import { useOSStore } from '@/store/useOSStore';
 import { useDevice } from '@/hooks/useDevice';
-import { Settings, Folder, Image as ImageIcon, MessageSquare, Globe, Mail } from 'lucide-react';
+import { Settings, Folder, Image as ImageIcon, MessageSquare, Globe, Mail, Calculator, Type, Link, Play, Info, Edit, Trash2, ArrowLeft } from 'lucide-react';
 
 const ICON_MAP: Record<string, any> = {
     Globe: <Globe size={32} />,
@@ -13,6 +13,14 @@ const ICON_MAP: Record<string, any> = {
     MessageSquare: <MessageSquare size={32} />,
     Mail: <Mail size={32} />,
     Settings: <Settings size={32} />,
+    Calculator: <Calculator size={32} />,
+    Type: <Type size={32} />,
+    Link: <Link size={32} />,
+    Play: <Play size={32} />,
+    Info: <Info size={32} />,
+    Edit: <Edit size={32} />,
+    Trash2: <Trash2 size={32} />,
+    ArrowLeft: <ArrowLeft size={32} />,
 };
 
 export default function HomeGrid() {
@@ -47,7 +55,7 @@ export default function HomeGrid() {
 
     return (
         <div
-            className="w-full min-h-full pt-16 px-6 md:px-12 pb-24 relative"
+            className="absolute inset-0 pt-16 px-6 md:px-12 pb-24 overflow-y-auto scrollbar-hide"
             onDragOver={(e) => {
                 e.preventDefault();
                 e.dataTransfer.dropEffect = 'move';

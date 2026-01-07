@@ -18,6 +18,10 @@ body {
   user-select: none;
 }
 
+:focus {
+  outline: none;
+}
+
 @utility glass {
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);

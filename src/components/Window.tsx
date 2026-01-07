@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { X, Minus, Square, Copy } from 'lucide-react';
 import { useOSStore, WindowState } from '@/store/useOSStore';
 import { useEffect, useRef, useState } from 'react';
-import Settings from '@/apps/Settings';
+import { APP_REGISTRY } from '@/apps/registry';
 
 interface WindowProps {
     window: WindowState;
@@ -25,6 +25,9 @@ export default function Window({ window: windowData }: WindowProps) {
     const MIN_WIDTH = 300;
     const MIN_HEIGHT = 200;
 
+    const isFixedSize = !windowData.config.resizable;
+    const hideMaximize = !windowData.config.maximizable;
+
     const handleDragStart = (e: React.MouseEvent) => {
         if (windowData.isMaximized) return; // 최대화 상태에선 드래그 불가
         setIsDragging(true);
@@ -35,7 +38,7 @@ export default function Window({ window: windowData }: WindowProps) {
     };
 
     const handleResizeStart = (e: React.MouseEvent, direction: ResizeDirection) => {
-        if (windowData.isMaximized) return; // 최대화 상태에선 리사이징 불가
+        if (windowData.isMaximized || isFixedSize) return; // 최대화 또는 고정 크기 상태에선 리사이징 불가
         setResizeDir(direction);
         focusApp(windowData.id);
         startMousePos.current = { x: e.clientX, y: e.clientY };
@@ -58,7 +61,7 @@ export default function Window({ window: windowData }: WindowProps) {
                     x: startWindowDim.current.x + deltaX,
                     y: Math.max(STATUS_BAR_HEIGHT, startWindowDim.current.y + deltaY) // 상단바 침범 방지
                 });
-            } else if (resizeDir) {
+            } else if (resizeDir && !isFixedSize) {
                 let { x, y, width, height } = startWindowDim.current;
 
                 if (resizeDir.includes('e')) width = Math.max(MIN_WIDTH, startWindowDim.current.width + deltaX);
@@ -108,9 +111,11 @@ export default function Window({ window: windowData }: WindowProps) {
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
         };
-    }, [isDragging, resizeDir, windowData.id, updateWindowDimensions]);
+    }, [isDragging, resizeDir, windowData.id, updateWindowDimensions, isFixedSize]);
 
     // if (windowData.isMinimized) return null; // 삭제: 애니메이션을 위해 렌더링 유지
+
+    const AppComponent = APP_REGISTRY[windowData.id]?.component;
 
     return (
         <motion.div
@@ -151,13 +156,17 @@ export default function Window({ window: windowData }: WindowProps) {
                 pointerEvents: windowData.isMinimized ? 'none' : 'auto',
             }}
             onMouseDown={() => focusApp(windowData.id)}
+            onContextMenu={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            }}
             className={`flex flex-col overflow-hidden relative
         ${isFocused ? 'ring-1 ring-blue-500/30 shadow-2xl' : 'ring-1 ring-black/5 shadow-lg'}
       `}
         >
             <div className={`absolute inset-0 -z-10 glass ${isFocused ? 'bg-white' : 'bg-white/75'}`} />
-            {/* Resizing Handles (Hidden if maximized) */}
-            {!windowData.isMaximized && (
+            {/* Resizing Handles (Hidden if maximized or fixed size) */}
+            {!windowData.isMaximized && !isFixedSize && (
                 <>
                     <div onMouseDown={(e) => handleResizeStart(e, 'n')} className="absolute top-0 left-0 right-0 h-1 cursor-ns-resize z-50" />
                     <div onMouseDown={(e) => handleResizeStart(e, 's')} className="absolute bottom-0 left-0 right-0 h-1 cursor-ns-resize z-50" />
@@ -173,7 +182,7 @@ export default function Window({ window: windowData }: WindowProps) {
             {/* Title Bar - Drag Handle */}
             <div
                 onMouseDown={handleDragStart}
-                onDoubleClick={() => maximizeApp(windowData.id)} // 더블클릭 시 최대화 토글
+                onDoubleClick={() => !hideMaximize && maximizeApp(windowData.id)} // 최대화 토글 (고정 크기가 아닐 때만)
                 className="h-9 flex items-center justify-between bg-black/[0.02] border-b border-black/5 select-none cursor-default active:cursor-grabbing shrink-0"
             >
                 <div className="flex items-center gap-2 px-3 pointer-events-none">
@@ -193,15 +202,17 @@ export default function Window({ window: windowData }: WindowProps) {
                     >
                         <Minus size={14} className="text-black/70" />
                     </button>
-                    <button
-                        className="flex items-center justify-center w-11 h-full hover:bg-black/10 transition-colors group"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            maximizeApp(windowData.id);
-                        }}
-                    >
-                        {windowData.isMaximized ? <Copy size={11} className="text-black/70 -rotate-90" /> : <Square size={12} className="text-black/70" />}
-                    </button>
+                    {!hideMaximize && (
+                        <button
+                            className="flex items-center justify-center w-11 h-full hover:bg-black/10 transition-colors group"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                maximizeApp(windowData.id);
+                            }}
+                        >
+                            {windowData.isMaximized ? <Copy size={11} className="text-black/70 -rotate-90" /> : <Square size={12} className="text-black/70" />}
+                        </button>
+                    )}
                     <button
                         className="flex items-center justify-center w-11 h-full hover:bg-red-500 transition-colors group"
                         onClick={(e) => {
@@ -216,8 +227,8 @@ export default function Window({ window: windowData }: WindowProps) {
 
             {/* Content Area */}
             <div className="flex-1 overflow-auto pointer-events-auto">
-                {windowData.id === 'settings' ? (
-                    <Settings />
+                {AppComponent ? (
+                    <AppComponent />
                 ) : (
                     <div className="h-full flex flex-col items-center justify-center text-black/20">
                         <p className="text-lg font-medium">KOS v7 Application</p>

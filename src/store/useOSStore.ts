@@ -1,10 +1,19 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { APP_REGISTRY, DEFAULT_WINDOW_CONFIG } from '@/apps/registry';
+
+export interface WindowConfig {
+  defaultWidth: number;
+  defaultHeight: number;
+  resizable: boolean;
+  maximizable: boolean;
+}
 
 export interface AppData {
   id: string;
   name: string;
   iconName: string;
+  windowConfig?: WindowConfig; // 앱별 기본 창 설정 (선택사항)
 }
 
 export interface WindowState {
@@ -18,6 +27,7 @@ export interface WindowState {
   y: number;
   width: number;
   height: number;
+  config: WindowConfig; // 현재 창의 설정
   prevDim?: { x: number; y: number; width: number; height: number };
 }
 
@@ -39,6 +49,22 @@ const DEFAULT_MOBILE_GRID_SETTINGS: GridSettings = {
   gapY: 48,
 };
 
+export interface User {
+  id: string;
+  username: string;
+  displayName: string;
+  avatar?: string;
+  role: 'admin' | 'user';
+}
+
+export interface ContextMenuItem {
+  label: string;
+  iconName?: string;
+  onClick: () => void;
+  isDanger?: boolean;
+  closeOnClick?: boolean; // 기본값 true, false일 경우 클릭 시 메뉴가 자동으로 닫히지 않음
+}
+
 interface OSState {
   currentTime: Date;
   apps: AppData[];
@@ -47,9 +73,20 @@ interface OSState {
   maxZIndex: number;
   desktopGridSettings: GridSettings;
   mobileGridSettings: GridSettings;
+  contextMenu: {
+    isOpen: boolean;
+    x: number;
+    y: number;
+    items: ContextMenuItem[];
+  };
+  currentUser: User | null;
+  editingAppId: string | null;
 
   setCurrentTime: (time: Date) => void;
   setApps: (apps: AppData[]) => void;
+  addApp: (app: AppData) => void;
+  removeApp: (appId: string) => void;
+  updateApp: (appId: string, updates: Partial<AppData>) => void;
   reorderApps: (fromIndex: number, toIndex: number) => void;
 
   openApp: (appId: string) => void;
@@ -60,6 +97,10 @@ interface OSState {
   updateWindowDimensions: (appId: string, updates: Partial<Pick<WindowState, 'x' | 'y' | 'width' | 'height'>>) => void;
   updateGridSettings: (settings: Partial<GridSettings>, device: 'desktop' | 'mobile') => void;
   resetGridSettings: (device: 'desktop' | 'mobile') => void;
+  showContextMenu: (x: number, y: number, items: ContextMenuItem[]) => void;
+  hideContextMenu: () => void;
+  setCurrentUser: (user: User | null) => void;
+  setEditingAppId: (appId: string | null) => void;
 }
 
 const INITIAL_APPS: AppData[] = [
@@ -69,7 +110,27 @@ const INITIAL_APPS: AppData[] = [
   { id: 'messages', name: 'Messages', iconName: 'MessageSquare' },
   { id: 'mail', name: 'Mail', iconName: 'Mail' },
   { id: 'settings', name: 'Settings', iconName: 'Settings' },
+  {
+    id: 'calculator',
+    name: 'Calculator',
+    iconName: 'Calculator',
+    windowConfig: {
+      defaultWidth: 320,
+      defaultHeight: 480,
+      resizable: false,
+      maximizable: false
+    }
+  },
 ];
+
+export const INSTALLED_APP_IDS = ['browser', 'files', 'photos', 'messages', 'mail', 'settings', 'calculator'];
+
+const ADMIN_USER: User = {
+  id: 'admin-1',
+  username: 'admin',
+  displayName: 'Administrator',
+  role: 'admin',
+};
 
 const STATUS_BAR_HEIGHT = 32;
 
@@ -83,9 +144,24 @@ export const useOSStore = create<OSState>()(
       maxZIndex: 10,
       desktopGridSettings: DEFAULT_DESKTOP_GRID_SETTINGS,
       mobileGridSettings: DEFAULT_MOBILE_GRID_SETTINGS,
+      contextMenu: {
+        isOpen: false,
+        x: 0,
+        y: 0,
+        items: [],
+      },
+      currentUser: ADMIN_USER,
+      editingAppId: null,
 
       setCurrentTime: (time) => set({ currentTime: time }),
       setApps: (apps) => set({ apps }),
+      addApp: (app) => set((state) => ({ apps: [...state.apps, app] })),
+      removeApp: (appId) => set((state) => ({
+        apps: state.apps.filter(app => app.id !== appId)
+      })),
+      updateApp: (appId, updates) => set((state) => ({
+        apps: state.apps.map(app => app.id === appId ? { ...app, ...updates } : app)
+      })),
       reorderApps: (fromIndex, toIndex) => set((state) => {
         const newApps = [...state.apps];
         const [movedApp] = newApps.splice(fromIndex, 1);
@@ -95,7 +171,9 @@ export const useOSStore = create<OSState>()(
 
       openApp: (appId) => set((state) => {
         const app = state.apps.find(a => a.id === appId);
-        if (!app) return state;
+        const registryApp = APP_REGISTRY[appId];
+
+        if (!app && !registryApp) return state;
 
         if (state.windows[appId]) {
           const newZIndex = state.maxZIndex + 1;
@@ -105,31 +183,38 @@ export const useOSStore = create<OSState>()(
               [appId]: { ...state.windows[appId], isMinimized: false, zIndex: newZIndex }
             },
             focusedWindowId: appId,
-            maxZIndex: newZIndex
+            maxZIndex: newZIndex,
+            contextMenu: { ...state.contextMenu, isOpen: false }
           };
         }
 
         const newZIndex = state.maxZIndex + 1;
         const offset = Object.keys(state.windows).length * 30;
 
+        // 레지스트리에 정의된 설정을 우선적으로 사용 (localStorage의 오래된 데이터 방지)
+        const config: WindowConfig = registryApp?.config || app?.windowConfig || DEFAULT_WINDOW_CONFIG;
+        const title = app?.name || registryApp?.name || appId;
+
         return {
           windows: {
             ...state.windows,
             [appId]: {
               id: appId,
-              title: app.name,
+              title: title,
               isOpen: true,
               isMinimized: false,
               isMaximized: false,
               zIndex: newZIndex,
               x: 100 + offset,
               y: 100 + offset + STATUS_BAR_HEIGHT,
-              width: 800, // 기본 설정을 위해 조금 더 크게 시작
-              height: 500
+              width: config.defaultWidth,
+              height: config.defaultHeight,
+              config: config
             }
           },
           focusedWindowId: appId,
-          maxZIndex: newZIndex
+          maxZIndex: newZIndex,
+          contextMenu: { ...state.contextMenu, isOpen: false }
         };
       }),
 
@@ -138,7 +223,8 @@ export const useOSStore = create<OSState>()(
         delete newWindows[appId];
         return {
           windows: newWindows,
-          focusedWindowId: state.focusedWindowId === appId ? null : state.focusedWindowId
+          focusedWindowId: state.focusedWindowId === appId ? null : state.focusedWindowId,
+          contextMenu: { ...state.contextMenu, isOpen: false }
         };
       }),
 
@@ -151,7 +237,8 @@ export const useOSStore = create<OSState>()(
             [appId]: { ...state.windows[appId], zIndex: newZIndex, isMinimized: false }
           },
           focusedWindowId: appId,
-          maxZIndex: newZIndex
+          maxZIndex: newZIndex,
+          contextMenu: { ...state.contextMenu, isOpen: false }
         };
       }),
 
@@ -160,7 +247,8 @@ export const useOSStore = create<OSState>()(
           ...state.windows,
           [appId]: { ...state.windows[appId], isMinimized: true }
         },
-        focusedWindowId: state.focusedWindowId === appId ? null : state.focusedWindowId
+        focusedWindowId: state.focusedWindowId === appId ? null : state.focusedWindowId,
+        contextMenu: { ...state.contextMenu, isOpen: false }
       })),
 
       maximizeApp: (appId) => set((state) => {
@@ -176,7 +264,8 @@ export const useOSStore = create<OSState>()(
                 isMaximized: false,
                 ...(win.prevDim || {})
               }
-            }
+            },
+            contextMenu: { ...state.contextMenu, isOpen: false }
           };
         } else {
           return {
@@ -191,7 +280,8 @@ export const useOSStore = create<OSState>()(
                 width: typeof window !== 'undefined' ? window.innerWidth : 1024,
                 height: typeof window !== 'undefined' ? window.innerHeight - STATUS_BAR_HEIGHT : 736
               }
-            }
+            },
+            contextMenu: { ...state.contextMenu, isOpen: false }
           };
         }
       }),
@@ -200,20 +290,34 @@ export const useOSStore = create<OSState>()(
         windows: {
           ...state.windows,
           [appId]: { ...state.windows[appId], ...updates }
-        }
+        },
+        contextMenu: { ...state.contextMenu, isOpen: false }
       })),
 
       updateGridSettings: (settings, device) => set((state) => {
         const key = device === 'desktop' ? 'desktopGridSettings' : 'mobileGridSettings';
         return {
-          [key]: { ...state[key], ...settings }
+          [key]: { ...state[key], ...settings },
+          contextMenu: { ...state.contextMenu, isOpen: false }
         };
       }),
 
-      resetGridSettings: (device) => set(() => ({
+      resetGridSettings: (device) => set((state) => ({
         [device === 'desktop' ? 'desktopGridSettings' : 'mobileGridSettings']:
-          device === 'desktop' ? DEFAULT_DESKTOP_GRID_SETTINGS : DEFAULT_MOBILE_GRID_SETTINGS
+          device === 'desktop' ? DEFAULT_DESKTOP_GRID_SETTINGS : DEFAULT_MOBILE_GRID_SETTINGS,
+        contextMenu: { ...state.contextMenu, isOpen: false }
       })),
+
+      showContextMenu: (x, y, items) => set({
+        contextMenu: { isOpen: true, x, y, items }
+      }),
+
+      hideContextMenu: () => set((state) => ({
+        contextMenu: { ...state.contextMenu, isOpen: false }
+      })),
+
+      setCurrentUser: (user) => set({ currentUser: user }),
+      setEditingAppId: (appId) => set({ editingAppId: appId }),
     }),
     {
       name: 'kos-v7-storage',
@@ -222,6 +326,7 @@ export const useOSStore = create<OSState>()(
         apps: state.apps,
         desktopGridSettings: state.desktopGridSettings,
         mobileGridSettings: state.mobileGridSettings,
+        currentUser: state.currentUser,
       }),
     }
   )
