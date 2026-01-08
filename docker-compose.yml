@@ -1,0 +1,12 @@
+services:
+  kos_app:
+    build: .
+    container_name: kos_app
+    ports:
+      - "3000:3000"
+    volumes:
+      - prisma_data:/app/prisma
+    restart: always
+
+volumes:
+  prisma_data:
