@@ -7,6 +7,7 @@ import {
     Clipboard, Save, History, ChevronRight, X,
     FileText, Loader2, Link, Edit2, Check, AlertCircle, Trash2
 } from 'lucide-react';
+import { useOSStore } from '@/store/useOSStore';
 
 interface Product {
     id: string;
@@ -38,6 +39,11 @@ export default function CoatingControl() {
     const [editData, setEditData] = useState<any>({});
 
     const [records, setRecords] = useState<CoatingRecord[]>([]);
+    const {
+        apps, reorderApps, openApp, windows,
+        desktopGridSettings, mobileGridSettings, hasHydrated,
+        pushBackAction, popBackAction
+    } = useOSStore();
     const [isLoadingRecords, setIsLoadingRecords] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -74,6 +80,26 @@ export default function CoatingControl() {
     const [stage, setStage] = useState('시작');
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // 안드로이드 백버튼 지원 (팝업 닫기)
+    useEffect(() => {
+        if (selectedRecordId) {
+            pushBackAction('coating-record-detail', () => {
+                setSelectedRecordId(null);
+                setIsEditingRecord(false);
+            });
+        } else {
+            popBackAction('coating-record-detail');
+        }
+    }, [selectedRecordId, pushBackAction, popBackAction]);
+
+    useEffect(() => {
+        if (selectedImage) {
+            pushBackAction('coating-image-expand', () => setSelectedImage(null));
+        } else {
+            popBackAction('coating-image-expand');
+        }
+    }, [selectedImage, pushBackAction, popBackAction]);
 
     // Initial data fetch
     useEffect(() => {

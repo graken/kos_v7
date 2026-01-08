@@ -82,6 +82,7 @@ interface OSState {
   currentUser: User | null;
   editingAppId: string | null;
   hasHydrated: boolean;
+  backStack: { id: string; action: () => void }[];
 
   setCurrentTime: (time: Date) => void;
   setApps: (apps: AppData[]) => void;
@@ -103,6 +104,9 @@ interface OSState {
   setCurrentUser: (user: User | null) => void;
   setEditingAppId: (appId: string | null) => void;
   setHasHydrated: (val: boolean) => void;
+  pushBackAction: (id: string, action: () => void) => void;
+  popBackAction: (id: string) => void;
+  triggerBackAction: () => boolean; // Boolean indicates if an action was handled
 }
 
 const INITIAL_APPS: AppData[] = [
@@ -124,9 +128,11 @@ const INITIAL_APPS: AppData[] = [
     }
   },
   { id: 'coating-control', name: '박막도포관리', iconName: 'Activity' },
+  { id: 'gravure-coating', name: '그라비아 도포', iconName: 'Droplets' },
+  { id: 'roll-calculator', name: '롤직경계산기', iconName: 'Calculator' },
 ];
 
-export const INSTALLED_APP_IDS = ['browser', 'files', 'photos', 'messages', 'mail', 'settings', 'calculator', 'coating-control'];
+export const INSTALLED_APP_IDS = ['browser', 'files', 'photos', 'messages', 'mail', 'settings', 'calculator', 'coating-control', 'gravure-coating', 'roll-calculator'];
 
 const ADMIN_USER: User = {
   id: 'admin-1',
@@ -168,6 +174,7 @@ export const useOSStore = create<OSState>()(
       currentUser: ADMIN_USER,
       editingAppId: null,
       hasHydrated: false,
+      backStack: [],
 
       setCurrentTime: (time) => set({ currentTime: time }),
       setApps: (apps) => {
@@ -219,6 +226,11 @@ export const useOSStore = create<OSState>()(
 
         const newZIndex = state.maxZIndex + 1;
         const offset = Object.keys(state.windows).length * 30;
+
+        // 창이 처음 열릴 때 브라우저 히스토리에 상태 추가 (백버튼으로 닫기 위해)
+        if (typeof window !== 'undefined') {
+          window.history.pushState({ isWindowAction: true, appId }, '');
+        }
 
         // 레지스트리에 정의된 설정을 우선적으로 사용 (localStorage의 오래된 데이터 방지)
         const config: WindowConfig = registryApp?.config || app?.windowConfig || DEFAULT_WINDOW_CONFIG;
@@ -358,6 +370,46 @@ export const useOSStore = create<OSState>()(
       setCurrentUser: (user) => set({ currentUser: user }),
       setEditingAppId: (appId) => set({ editingAppId: appId }),
       setHasHydrated: (val) => set({ hasHydrated: val }),
+
+      pushBackAction: (id, action) => set((state) => {
+        // 이미 같은 ID가 스택에 있다면 추가하지 않음
+        if (state.backStack.find(i => i.id === id)) return state;
+
+        // 브라우저 히스토리에 가짜 상태를 추가해서 백버튼 클릭을 가로챌 수 있게 함
+        if (typeof window !== 'undefined') {
+          window.history.pushState({ isBackAction: true, actionId: id }, '');
+        }
+
+        return {
+          backStack: [...state.backStack, { id, action }]
+        };
+      }),
+
+      popBackAction: (id) => set((state) => ({
+        backStack: state.backStack.filter(i => i.id !== id)
+      })),
+
+      triggerBackAction: () => {
+        const state = get();
+
+        // 1. 등록된 백버튼 동작 스택이 있는지 확인 (팝업 등)
+        if (state.backStack.length > 0) {
+          const topAction = state.backStack[state.backStack.length - 1];
+          topAction.action();
+          // 스택에서 제거는 각 액션 내부에서 popBackAction을 호출하거나 여기서 처리
+          set({ backStack: state.backStack.slice(0, -1) });
+          return true;
+        }
+
+        // 2. 스택은 없지만 포커스된 앱 창이 있다면 닫음
+        if (state.focusedWindowId) {
+          state.closeApp(state.focusedWindowId);
+          return true;
+        }
+
+        // 3. 아무것도 처리할 게 없으면 false 반환 (브라우저 기본 뒤로가기 실행)
+        return false;
+      },
     }),
     {
       name: 'kos-v7-storage',

@@ -4,7 +4,15 @@ import { useState, useEffect } from 'react';
 import AppIcon from './AppIcon';
 import { useOSStore } from '@/store/useOSStore';
 import { useDevice } from '@/hooks/useDevice';
-import { Settings, Folder, Image as ImageIcon, MessageSquare, Globe, Mail, Calculator, Type, Link, Play, Info, Edit, Trash2, ArrowLeft, Activity } from 'lucide-react';
+import {
+    Settings, Folder, Image as ImageIcon, MessageSquare, Globe, Mail, Calculator,
+    Type, Link, Play, Info, Edit, Trash2, ArrowLeft, Activity, Droplets,
+    Music, Video, Camera, Headphones, Hammer, Wrench, Search, Zap, Clock, Calendar,
+    BarChart, PieChart, TrendingUp, Briefcase, FileText, Users, User, Phone, Share2,
+    Heart, Star, Cloud, Sun, Moon, Map, GraduationCap, Laptop, Smartphone,
+    Code, Brackets, Terminal, Cpu, Database, CloudRain, Wind, Flame, Anchor,
+    Target, CircleDot, Orbit, Disc
+} from 'lucide-react';
 
 const ICON_MAP: Record<string, any> = {
     Globe: <Globe size={32} />,
@@ -22,6 +30,48 @@ const ICON_MAP: Record<string, any> = {
     Trash2: <Trash2 size={32} />,
     ArrowLeft: <ArrowLeft size={32} />,
     Activity: <Activity size={32} />,
+    Droplets: <Droplets size={32} />,
+    Music: <Music size={32} />,
+    Video: <Video size={32} />,
+    Camera: <Camera size={32} />,
+    Headphones: <Headphones size={32} />,
+    Hammer: <Hammer size={32} />,
+    Wrench: <Wrench size={32} />,
+    Search: <Search size={32} />,
+    Zap: <Zap size={32} />,
+    Clock: <Clock size={32} />,
+    Calendar: <Calendar size={32} />,
+    BarChart: <BarChart size={32} />,
+    PieChart: <PieChart size={32} />,
+    TrendingUp: <TrendingUp size={32} />,
+    Briefcase: <Briefcase size={32} />,
+    FileText: <FileText size={32} />,
+    Users: <Users size={32} />,
+    User: <User size={32} />,
+    Phone: <Phone size={32} />,
+    Share2: <Share2 size={32} />,
+    Heart: <Heart size={32} />,
+    Star: <Star size={32} />,
+    Cloud: <Cloud size={32} />,
+    Sun: <Sun size={32} />,
+    Moon: <Moon size={32} />,
+    Map: <Map size={32} />,
+    GraduationCap: <GraduationCap size={32} />,
+    Laptop: <Laptop size={32} />,
+    Smartphone: <Smartphone size={32} />,
+    Code: <Code size={32} />,
+    Brackets: <Brackets size={32} />,
+    Terminal: <Terminal size={32} />,
+    Cpu: <Cpu size={32} />,
+    Database: <Database size={32} />,
+    CloudRain: <CloudRain size={32} />,
+    Wind: <Wind size={32} />,
+    Flame: <Flame size={32} />,
+    Anchor: <Anchor size={32} />,
+    Target: <Target size={32} />,
+    CircleDot: <CircleDot size={32} />,
+    Orbit: <Orbit size={32} />,
+    Disc: <Disc size={32} />,
 };
 
 export default function HomeGrid() {

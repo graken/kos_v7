@@ -35,7 +35,15 @@ function AppEditorContent({ app }: { app: any }) {
         closeApp('app-editor');
     };
 
-    const iconList = ['Globe', 'Folder', 'ImageIcon', 'MessageSquare', 'Mail', 'Settings', 'Calculator', 'Type', 'Link', 'Play', 'Info', 'Edit', 'Trash2', 'ArrowLeft'];
+    const iconList = [
+        'Globe', 'Folder', 'ImageIcon', 'MessageSquare', 'Mail', 'Settings', 'Calculator',
+        'Type', 'Link', 'Play', 'Info', 'Edit', 'Trash2', 'ArrowLeft', 'Activity', 'Droplets',
+        'Music', 'Video', 'Camera', 'Headphones', 'Hammer', 'Wrench', 'Search', 'Zap', 'Clock', 'Calendar',
+        'BarChart', 'PieChart', 'TrendingUp', 'Briefcase', 'FileText', 'Users', 'User', 'Phone', 'Share2',
+        'Heart', 'Star', 'Cloud', 'Sun', 'Moon', 'Map', 'GraduationCap', 'Laptop', 'Smartphone',
+        'Code', 'Brackets', 'Terminal', 'Cpu', 'Database', 'CloudRain', 'Wind', 'Flame', 'Anchor',
+        'Target', 'CircleDot', 'Orbit', 'Disc'
+    ];
 
     return (
         <div className="p-6 flex flex-col gap-6 bg-white h-full overflow-auto text-black/80">

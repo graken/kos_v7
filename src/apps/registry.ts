@@ -47,6 +47,26 @@ export const APP_REGISTRY: Record<string, AppDefinition> = {
             maximizable: true
         },
         name: '박막도포관리'
+    },
+    'gravure-coating': {
+        component: dynamic(() => import('@/apps/GravureCoating/GravureCoating')),
+        config: {
+            defaultWidth: 800,
+            defaultHeight: 850,
+            resizable: true,
+            maximizable: true
+        },
+        name: '그라비아 도포'
+    },
+    'roll-calculator': {
+        component: dynamic(() => import('@/apps/RollCalculator/RollCalculator')),
+        config: {
+            defaultWidth: 900,
+            defaultHeight: 850,
+            resizable: true,
+            maximizable: true
+        },
+        name: '롤직경계산기'
     }
 };
 
