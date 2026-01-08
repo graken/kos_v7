@@ -79,6 +79,13 @@ export default function CoatingControl() {
     const [degree, setDegree] = useState('');
     const [stage, setStage] = useState('시작');
 
+    const { currentUser } = useOSStore();
+    const canCreate = currentUser?.role === 'admin' || currentUser?.permissions?.['coating-control']?.create;
+    const canSave = currentUser?.role === 'admin' || currentUser?.permissions?.['coating-control']?.save;
+    const canEdit = currentUser?.role === 'admin' || currentUser?.permissions?.['coating-control']?.edit;
+    const canDelete = currentUser?.role === 'admin' || currentUser?.permissions?.['coating-control']?.delete;
+    const canPhoto = currentUser?.role === 'admin' || currentUser?.permissions?.['coating-control']?.photo;
+
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // 안드로이드 백버튼 지원 (팝업 닫기)
@@ -184,6 +191,10 @@ export default function CoatingControl() {
 
 
     const handleUpdateRecord = async () => {
+        if (!canEdit) {
+            alert('수정 권한이 없습니다.');
+            return;
+        }
         if (!selectedRecordId) return;
         setIsSaving(true);
         try {
@@ -195,7 +206,7 @@ export default function CoatingControl() {
                     productId: selectedProductId,
                     extractedData: editData,
                     imageUrl: image,
-                    degree: degree ? `${degree}차` : "",
+                    degree: degree ? `${degree.toString().replace(/[^0-9]/g, '') || '1'}차` : "",
                     stage
                 }),
             });
@@ -214,7 +225,11 @@ export default function CoatingControl() {
     };
 
     const handleDeleteRecord = async (id: string) => {
-        if (!confirm('자료를 정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
+        if (!canDelete) {
+            alert('삭제 권한이 없습니다.');
+            return;
+        }
+        if (!confirm('자료를 정말 삭제하시등겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
 
         try {
             const res = await fetch(`/api/coating/records?id=${id}`, {
@@ -233,6 +248,10 @@ export default function CoatingControl() {
     };
 
     const handleImageUpload = (file: File) => {
+        if (!canPhoto) {
+            alert('사진 입력 권한이 없습니다.');
+            return;
+        }
         if (!file.type.startsWith('image/')) return;
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -272,6 +291,10 @@ export default function CoatingControl() {
     };
 
     const handleSaveRecord = async () => {
+        if (!canSave) {
+            alert('저장 권한이 없습니다.');
+            return;
+        }
         if (!selectedProductId) {
             alert('품명을 선택해주세요.');
             return;
@@ -285,7 +308,7 @@ export default function CoatingControl() {
                     imageUrl: image,
                     extractedData: editData,
                     rawOcrText: ocrResult?.text,
-                    degree: degree ? `${degree}차` : "",
+                    degree: degree ? `${degree.toString().replace(/[^0-9]/g, '') || '1'}차` : "",
                     stage
                 }),
             });
@@ -415,14 +438,16 @@ export default function CoatingControl() {
                                                     <option key={p.id} value={p.id}>{p.name}</option>
                                                 ))}
                                             </select>
-                                            <button
-                                                onClick={() => setIsAddingProduct(true)}
-                                                className="px-4 py-2 bg-black/5 hover:bg-black/10 rounded-xl flex items-center gap-2 font-bold"
-                                            >
-                                                <Plus size={18} />
-                                                <span>신규</span>
-                                            </button>
-                                            {selectedProductId && (
+                                            {canCreate && (
+                                                <button
+                                                    onClick={() => setIsAddingProduct(true)}
+                                                    className="px-4 py-2 bg-black/5 hover:bg-black/10 rounded-xl flex items-center gap-2 font-bold"
+                                                >
+                                                    <Plus size={18} />
+                                                    <span>신규</span>
+                                                </button>
+                                            )}
+                                            {selectedProductId && canDelete && (
                                                 <button
                                                     onClick={handleDeleteProduct}
                                                     title="품명 삭제"
@@ -912,23 +937,25 @@ export default function CoatingControl() {
                                 <div className="flex items-center gap-2">
                                     {!isEditingRecord ? (
                                         <>
-                                            <button
-                                                onClick={() => {
-                                                    const record = records.find(r => r.id === selectedRecordId);
-                                                    if (record) {
-                                                        setSelectedProductId(record.productId);
-                                                        setEditData(JSON.parse(record.extractedData || '{}'));
-                                                        setImage(record.imageUrl || null);
-                                                        setDegree(record.degree || '1차');
-                                                        setStage(record.stage || '시작');
-                                                        setIsEditingRecord(true);
-                                                    }
-                                                }}
-                                                className="px-4 py-2 bg-black/5 hover:bg-black/10 rounded-xl flex items-center gap-2 font-bold transition-colors"
-                                            >
-                                                <Edit2 size={16} />
-                                                <span>수정</span>
-                                            </button>
+                                            {canEdit && (
+                                                <button
+                                                    onClick={() => {
+                                                        const record = records.find(r => r.id === selectedRecordId);
+                                                        if (record) {
+                                                            setSelectedProductId(record.productId);
+                                                            setEditData(JSON.parse(record.extractedData || '{}'));
+                                                            setImage(record.imageUrl || null);
+                                                            setDegree((record.degree || '1').replace(/[^0-9]/g, ''));
+                                                            setStage(record.stage || '시작');
+                                                            setIsEditingRecord(true);
+                                                        }
+                                                    }}
+                                                    className="px-4 py-2 bg-black/5 hover:bg-black/10 rounded-xl flex items-center gap-2 font-bold transition-colors"
+                                                >
+                                                    <Edit2 size={16} />
+                                                    <span>수정</span>
+                                                </button>
+                                            )}
                                             <button
                                                 onClick={() => selectedRecordId && handleDeleteRecord(selectedRecordId)}
                                                 className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors"
@@ -1021,7 +1048,7 @@ export default function CoatingControl() {
                                                                     inputMode="numeric"
                                                                     pattern="[0-9]*"
                                                                     value={degree.replace(/[^0-9]/g, '')}
-                                                                    onChange={(e) => setDegree(e.target.value)}
+                                                                    onChange={(e) => setDegree(e.target.value.replace(/[^0-9]/g, ''))}
                                                                     className="w-12 bg-white rounded px-1 py-0.5 text-center text-xs outline-none"
                                                                     placeholder="차수"
                                                                 />

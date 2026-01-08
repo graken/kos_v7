@@ -55,6 +55,8 @@ export interface User {
   displayName: string;
   avatar?: string;
   role: 'admin' | 'user';
+  apps: AppData[];
+  permissions: Record<string, any>; // 앱별 권한 (JSON)
 }
 
 export interface ContextMenuItem {
@@ -102,6 +104,7 @@ interface OSState {
   showContextMenu: (x: number, y: number, items: ContextMenuItem[]) => void;
   hideContextMenu: () => void;
   setCurrentUser: (user: User | null) => void;
+  switchUser: (user: User) => Promise<void>;
   setEditingAppId: (appId: string | null) => void;
   setHasHydrated: (val: boolean) => void;
   pushBackAction: (id: string, action: () => void) => void;
@@ -130,15 +133,20 @@ const INITIAL_APPS: AppData[] = [
   { id: 'coating-control', name: '박막도포관리', iconName: 'Activity' },
   { id: 'gravure-coating', name: '그라비아 도포', iconName: 'Droplets' },
   { id: 'roll-calculator', name: '롤직경계산기', iconName: 'Calculator' },
+  { id: 'equipment-maintenance', name: '설비점검', iconName: 'Activity' },
 ];
 
-export const INSTALLED_APP_IDS = ['browser', 'files', 'photos', 'messages', 'mail', 'settings', 'calculator', 'coating-control', 'gravure-coating', 'roll-calculator'];
+export const INSTALLED_APP_IDS = ['browser', 'files', 'photos', 'messages', 'mail', 'settings', 'calculator', 'coating-control', 'gravure-coating', 'roll-calculator', 'equipment-maintenance', 'user-manager'];
 
 const ADMIN_USER: User = {
   id: 'admin-1',
   username: 'admin',
   displayName: 'Administrator',
   role: 'admin',
+  apps: INITIAL_APPS,
+  permissions: {
+    'equipment-maintenance': { delete: true, complete: true }
+  }
 };
 
 const STATUS_BAR_HEIGHT = 32;
@@ -368,6 +376,18 @@ export const useOSStore = create<OSState>()(
       })),
 
       setCurrentUser: (user) => set({ currentUser: user }),
+      switchUser: async (user) => {
+        set({ currentUser: user, windows: {}, focusedWindowId: null });
+        try {
+          const response = await fetch(`/api/os/user-config?userId=${user.id}`);
+          const data = await response.json();
+          if (data.apps && Array.isArray(data.apps)) {
+            set({ apps: data.apps });
+          }
+        } catch (err) {
+          console.error('Failed to switch user config:', err);
+        }
+      },
       setEditingAppId: (appId) => set({ editingAppId: appId }),
       setHasHydrated: (val) => set({ hasHydrated: val }),
 

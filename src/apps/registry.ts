@@ -67,6 +67,26 @@ export const APP_REGISTRY: Record<string, AppDefinition> = {
             maximizable: true
         },
         name: '롤직경계산기'
+    },
+    'equipment-maintenance': {
+        component: dynamic(() => import('@/apps/EquipmentMaintenance/EquipmentMaintenance')),
+        config: {
+            defaultWidth: 1200,
+            defaultHeight: 800,
+            resizable: true,
+            maximizable: true
+        },
+        name: '설비점검'
+    },
+    'user-manager': {
+        component: dynamic(() => import('@/apps/UserManager/UserManager')),
+        config: {
+            defaultWidth: 1000,
+            defaultHeight: 700,
+            resizable: true,
+            maximizable: true
+        },
+        name: '사용자 관리'
     }
 };
 

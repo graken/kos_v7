@@ -6,8 +6,18 @@ import MobileShell from "@/components/shells/MobileShell";
 import { useDevice } from "@/hooks/useDevice";
 import BackButtonManager from "@/components/common/BackButtonManager";
 
+import LoginScreen from "@/components/LoginScreen";
+import { useOSStore } from "@/store/useOSStore";
+
 export default function Home() {
   const { isMobile } = useDevice();
+  const { currentUser, hasHydrated } = useOSStore();
+
+  if (!hasHydrated) return null;
+
+  if (!currentUser) {
+    return <LoginScreen />;
+  }
 
   return (
     <main className="relative w-screen h-screen overflow-hidden">

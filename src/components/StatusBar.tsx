@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useOSStore } from '@/store/useOSStore';
 
 export default function StatusBar() {
-    const { currentTime, setCurrentTime, showContextMenu, openApp } = useOSStore();
+    const { currentTime, setCurrentTime, showContextMenu, openApp, currentUser, setCurrentUser } = useOSStore();
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -32,8 +32,8 @@ export default function StatusBar() {
                 }
             },
             { label: '계정 설정', iconName: 'User', onClick: () => openApp('settings') },
-            { label: '사용자 전환', iconName: 'Users', onClick: () => console.log('사용자 전환') },
-            { label: '로그아웃', iconName: 'LogOut', isDanger: true, onClick: () => console.log('로그아웃') },
+            { label: '사용자 전환', iconName: 'Users', onClick: () => setCurrentUser(null) },
+            { label: '로그아웃', iconName: 'LogOut', isDanger: true, onClick: () => setCurrentUser(null) },
         ]);
     };
 
@@ -60,9 +60,13 @@ export default function StatusBar() {
                 onClick={handleClickUser}
             >
                 <div className="w-5 h-5 rounded-full bg-black/10 flex items-center justify-center">
-                    <div className="w-2.5 h-2.5 bg-black/40 rounded-full" />
+                    {currentUser?.avatar ? (
+                        <img src={currentUser.avatar} alt="" className="w-full h-full rounded-full object-cover" />
+                    ) : (
+                        <div className="w-2.5 h-2.5 bg-black/40 rounded-full" />
+                    )}
                 </div>
-                <span>Administrator</span>
+                <span>{currentUser?.displayName || 'Administrator'}</span>
             </div>
             <div className="flex gap-2 pointer-events-auto">
                 <span>{formatDate(currentTime)}</span>
