@@ -1068,3 +1068,24 @@ prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Prod
  GET /api/coating/products 200 in 11ms (compile: 3ms, render: 8ms)
 prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
  GET /api/coating/products 200 in 6ms (compile: 1823µs, render: 4ms)
+prisma:query SELECT 1
+prisma:query BEGIN IMMEDIATE
+prisma:query SELECT `main`.`User`.`id` FROM `main`.`User` WHERE (`main`.`User`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`username`, `main`.`User`.`displayName`, `main`.`User`.`role`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE (`main`.`User`.`id` = ? AND (`main`.`User`.`id` = ? AND 1=1)) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`username`, `main`.`User`.`displayName`, `main`.`User`.`role`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE `main`.`User`.`id` = ? LIMIT ? OFFSET ?
+prisma:query COMMIT
+prisma:query INSERT INTO `main`.`UserPreference` (`id`, `userId`, `apps`, `updatedAt`) VALUES (?,?,?,?) ON CONFLICT  (`userId`) DO UPDATE SET `apps` = ?, `updatedAt` = ? WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) RETURNING `id` AS `id`, `userId` AS `userId`, `apps` AS `apps`, `updatedAt` AS `updatedAt`
+ POST /api/os/user-config 200 in 28ms (compile: 8ms, render: 20ms)
+prisma:query BEGIN IMMEDIATE
+prisma:query SELECT `main`.`User`.`id` FROM `main`.`User` WHERE (`main`.`User`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`username`, `main`.`User`.`displayName`, `main`.`User`.`role`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE (`main`.`User`.`id` = ? AND (`main`.`User`.`id` = ? AND 1=1)) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`username`, `main`.`User`.`displayName`, `main`.`User`.`role`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE `main`.`User`.`id` = ? LIMIT ? OFFSET ?
+prisma:query COMMIT
+prisma:query INSERT INTO `main`.`UserPreference` (`id`, `userId`, `apps`, `updatedAt`) VALUES (?,?,?,?) ON CONFLICT  (`userId`) DO UPDATE SET `apps` = ?, `updatedAt` = ? WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) RETURNING `id` AS `id`, `userId` AS `userId`, `apps` AS `apps`, `updatedAt` AS `updatedAt`
+ POST /api/os/user-config 200 in 9ms (compile: 2ms, render: 7ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 13ms (compile: 2ms, render: 11ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 13ms (compile: 4ms, render: 9ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 11ms (compile: 5ms, render: 6ms)
