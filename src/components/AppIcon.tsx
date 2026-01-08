@@ -81,7 +81,7 @@ export default function AppIcon({
             onDragEnd={onDragEnd as any}
             onClick={onClick}
             onContextMenu={handleContextMenu}
-            className={`flex flex-col items-center cursor-grab active:cursor-grabbing group border border-red-500/30 border-dashed rounded-xl transition-colors relative focus:outline-none ${isDragging ? 'bg-black/5' : ''}`}
+            className={`flex flex-col items-center cursor-grab active:cursor-grabbing group transition-colors relative focus:outline-none ${isDragging ? 'bg-black/5' : ''}`}
             style={{
                 width: `${gridSettings.iconSize + 8}px`,
                 height: `${gridSettings.iconSize + 8}px` // 아이콘 상자 크기에 맞춰 고정

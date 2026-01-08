@@ -1,0 +1,810 @@
+
+> kos_v7@0.1.0 dev
+> next dev
+
+▲ Next.js 16.1.1 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.30:3000
+- Environments: .env
+
+✓ Starting...
+✓ Ready in 505ms
+⚠ Cross origin request detected from 192.168.0.30 to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+ GET / 200 in 611ms (compile: 333ms, render: 279ms)
+ GET / 200 in 635ms (compile: 378ms, render: 257ms)
+ GET / 200 in 625ms (compile: 501ms, render: 124ms)
+ GET / 200 in 121ms (compile: 11ms, render: 110ms)
+prisma:query SELECT `main`.`UserPreference`.`id`, `main`.`UserPreference`.`userId`, `main`.`UserPreference`.`apps`, `main`.`UserPreference`.`updatedAt` FROM `main`.`UserPreference` WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) LIMIT ? OFFSET ?
+ GET /api/os/user-config?userId=admin-1 200 in 718ms (compile: 96ms, render: 623ms)
+ GET /api/os/user-config?userId=admin-1 200 in 21ms (compile: 11ms, render: 10ms)
+prisma:query SELECT `main`.`UserPreference`.`id`, `main`.`UserPreference`.`userId`, `main`.`UserPreference`.`apps`, `main`.`UserPreference`.`updatedAt` FROM `main`.`UserPreference` WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`UserPreference`.`id`, `main`.`UserPreference`.`userId`, `main`.`UserPreference`.`apps`, `main`.`UserPreference`.`updatedAt` FROM `main`.`UserPreference` WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) LIMIT ? OFFSET ?
+ GET /api/os/user-config?userId=admin-1 200 in 20ms (compile: 11ms, render: 9ms)
+prisma:query SELECT `main`.`UserPreference`.`id`, `main`.`UserPreference`.`userId`, `main`.`UserPreference`.`apps`, `main`.`UserPreference`.`updatedAt` FROM `main`.`UserPreference` WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) LIMIT ? OFFSET ?
+ GET /api/os/user-config?userId=admin-1 200 in 8ms (compile: 5ms, render: 3ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 52ms (compile: 47ms, render: 5ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 4ms (compile: 1466µs, render: 3ms)
+ GET / 200 in 35ms (compile: 5ms, render: 30ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 11ms (compile: 4ms, render: 8ms)
+ GET /api/coating/products 200 in 7ms (compile: 2ms, render: 5ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+OCR EXTRACTED TEXT: * CLEAR *
+1
+-23
+0.0183 mm
+0.0180 mm
+2
+3
+0.0184 mm
+4
+0.0183 mm
+5
+0.0186 mm
+PART NO. :
+DATE 2025/12/31
+TIME 14:54
+NAME :
+* RESULT *
+N
+5
+MAX
+0.0186
+MM
+Σαιχ
+MIN
+0.0180 MM
+0.0006 MM
+0.018320 mm
+on
+0.000194 mm
+on-1
+0.000217 mm
+ POST /api/coating/ocr 200 in 2.9s (compile: 265ms, render: 2.6s)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 10ms (compile: 3ms, render: 6ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 8ms (compile: 2ms, render: 6ms)
+OCR EXTRACTED TEXT: localhost:3000 내용:
+저장 실패: failed to create record
+확인
+ POST /api/coating/ocr 200 in 407ms (compile: 4ms, render: 403ms)
+OCR EXTRACTED TEXT: 1
+0.0029 mm
+2
+0.0028 mm
+3
+0.0029 mm
+4
+0.0028 mm
+5
+0.0029 mm
+6
+0.0028 mm
+7
+0.0027 mm
+8
+0.0028 mm
+9
+0.0028 mm
+10
+0.0027 mm
+PART NO.:
+DATE 2026/ 1/ 5
+TIME 18:55
+NAME:
+3-051448-
+115-48
+* RESULT *
+N
+10
+MAX
+0.0029
+mm
+MIN
+0.0027
+mm
+R
+0.0002
+mm
+☑
+0.002810 mm
+on
+0.000070 mm
+on-1 0.000074 mm
+ POST /api/coating/ocr 200 in 1487ms (compile: 3ms, render: 1484ms)
+prisma:query SELECT 1
+prisma:query BEGIN IMMEDIATE
+prisma:query INSERT INTO `main`.`CoatingRecord` (`id`, `productId`, `imageUrl`, `extractedData`, `rawOcrText`, `degree`, `stage`, `createdAt`, `updatedAt`) VALUES (?,?,?,?,?,?,?,?,?) RETURNING `id` AS `id`
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE `main`.`CoatingRecord`.`id` = ? LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?) LIMIT ? OFFSET ?
+prisma:query COMMIT
+ POST /api/coating/records 200 in 100ms (compile: 38ms, render: 62ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 127ms (compile: 3ms, render: 124ms)
+✓ Compiled in 329ms
+✓ Compiled in 174ms
+✓ Compiled in 27ms
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 12ms (compile: 4ms, render: 7ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 6ms (compile: 1732µs, render: 4ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 168ms (compile: 5ms, render: 163ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 9ms (compile: 4ms, render: 5ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 7ms (compile: 1761µs, render: 5ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 116ms (compile: 3ms, render: 113ms)
+✓ Compiled in 88ms
+✓ Compiled in 63ms
+✓ Compiled in 67ms
+ GET /api/os/user-config?userId=admin-1 200 in 11ms (compile: 5ms, render: 6ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`UserPreference`.`id`, `main`.`UserPreference`.`userId`, `main`.`UserPreference`.`apps`, `main`.`UserPreference`.`updatedAt` FROM `main`.`UserPreference` WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 16ms (compile: 8ms, render: 8ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`UserPreference`.`id`, `main`.`UserPreference`.`userId`, `main`.`UserPreference`.`apps`, `main`.`UserPreference`.`updatedAt` FROM `main`.`UserPreference` WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) LIMIT ? OFFSET ?
+ GET /api/os/user-config?userId=admin-1 200 in 18ms (compile: 8ms, render: 10ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 17ms (compile: 7ms, render: 10ms)
+ GET /api/coating/products 200 in 19ms (compile: 8ms, render: 11ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET / 200 in 363ms (compile: 127ms, render: 236ms)
+ GET /api/coating/products 200 in 26ms (compile: 14ms, render: 12ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET / 200 in 362ms (compile: 237ms, render: 126ms)
+ GET / 200 in 129ms (compile: 22ms, render: 107ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 8ms (compile: 1829µs, render: 6ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 8ms (compile: 2ms, render: 6ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 103ms (compile: 4ms, render: 100ms)
+✓ Compiled in 40ms
+✓ Compiled in 52ms
+ GET /api/os/user-config?userId=admin-1 200 in 28ms (compile: 20ms, render: 8ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`UserPreference`.`id`, `main`.`UserPreference`.`userId`, `main`.`UserPreference`.`apps`, `main`.`UserPreference`.`updatedAt` FROM `main`.`UserPreference` WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 14ms (compile: 7ms, render: 7ms)
+ GET /api/os/user-config?userId=admin-1 200 in 15ms (compile: 4ms, render: 10ms)
+prisma:query SELECT `main`.`UserPreference`.`id`, `main`.`UserPreference`.`userId`, `main`.`UserPreference`.`apps`, `main`.`UserPreference`.`updatedAt` FROM `main`.`UserPreference` WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 54ms (compile: 41ms, render: 13ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET / 200 in 284ms (compile: 146ms, render: 139ms)
+ GET / 200 in 291ms (compile: 117ms, render: 174ms)
+ GET / 200 in 141ms (compile: 8ms, render: 133ms)
+✓ Compiled in 33ms
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 9ms (compile: 2ms, render: 6ms)
+ GET /api/coating/products 200 in 12ms (compile: 1435µs, render: 10ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 80ms (compile: 2ms, render: 78ms)
+✓ Compiled in 45ms
+✓ Compiled in 20ms
+✓ Compiled in 32ms
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 22ms (compile: 12ms, render: 10ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 8ms (compile: 2ms, render: 6ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 130ms (compile: 5ms, render: 125ms)
+✓ Compiled in 40ms
+✓ Compiled in 34ms
+ GET / 200 in 233ms (compile: 68ms, render: 165ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`UserPreference`.`id`, `main`.`UserPreference`.`userId`, `main`.`UserPreference`.`apps`, `main`.`UserPreference`.`updatedAt` FROM `main`.`UserPreference` WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) LIMIT ? OFFSET ?
+ GET /api/os/user-config?userId=admin-1 200 in 4ms (compile: 1391µs, render: 3ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 8ms (compile: 2ms, render: 6ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 6ms (compile: 2ms, render: 4ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 95ms (compile: 4ms, render: 92ms)
+✓ Compiled in 37ms
+✓ Compiled in 81ms
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 12ms (compile: 6ms, render: 7ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 6ms (compile: 1923µs, render: 4ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 13ms (compile: 4ms, render: 8ms)
+ GET /api/coating/products 200 in 7ms (compile: 1803µs, render: 5ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 176ms (compile: 7ms, render: 169ms)
+OCR EXTRACTED TEXT: 유해화학물질 관리자
+순번
+관리자구분
+성명
+중복
+생년월일
+1
+책임자
+홍광석
+741218
+2
+점검원
+홍은석
+1
+HOME > 민원현황 > 유해화학물질 관리자
+현장 종사기간
+2015-01-01 - 2025-09-05
+700906
+2015-01-01 - 2025-09-05
+ POST /api/coating/ocr 200 in 487ms (compile: 5ms, render: 482ms)
+OCR EXTRACTED TEXT: 12345
+0.0048 mm
+2
+0.0048 mm
+0.0048 mm
+4 0.0048 mm
+5
+0.0049 mm
+6
+0.0048 mm
+7
+0.0048 mm
+0.0048 mm
+9
+0.0048 mm
+10
+0.0047 mm
+PART NO.:
+DATE 2026/ 1/ 5
+TIME 12:42
+NAME:
+70301C-FIB
+1/2-52
+* RESULT ✶
+N
+MAX 0.0049
+10
+mm
+MIN
+0.0047
+ww
+R
+0.0002
+mm
+X
+0.004800 mm
+on
+0.000045 mm
+on-1
+0.000047 mm
+ POST /api/coating/ocr 200 in 1351ms (compile: 3ms, render: 1348ms)
+prisma:query SELECT 1
+prisma:query BEGIN IMMEDIATE
+prisma:query INSERT INTO `main`.`CoatingRecord` (`id`, `productId`, `imageUrl`, `extractedData`, `rawOcrText`, `degree`, `stage`, `createdAt`, `updatedAt`) VALUES (?,?,?,?,?,?,?,?,?) RETURNING `id` AS `id`
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE `main`.`CoatingRecord`.`id` = ? LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?) LIMIT ? OFFSET ?
+prisma:query COMMIT
+ POST /api/coating/records 200 in 65ms (compile: 8ms, render: 57ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 157ms (compile: 2ms, render: 154ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 10ms (compile: 4ms, render: 6ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 6ms (compile: 1751µs, render: 5ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 189ms (compile: 5ms, render: 185ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 74ms (compile: 62ms, render: 12ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 5ms (compile: 1697µs, render: 4ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 209ms (compile: 6ms, render: 203ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 181ms (compile: 3ms, render: 178ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 187ms (compile: 7ms, render: 180ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 11ms (compile: 4ms, render: 7ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 6ms (compile: 1222µs, render: 4ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 11ms (compile: 4ms, render: 7ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 5ms (compile: 1069µs, render: 3ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 129ms (compile: 4ms, render: 125ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 14ms (compile: 5ms, render: 9ms)
+ GET /api/coating/products 200 in 16ms (compile: 3ms, render: 13ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 121ms (compile: 5ms, render: 116ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 8ms (compile: 3ms, render: 6ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 7ms (compile: 3ms, render: 4ms)
+✓ Compiled in 61ms
+✓ Compiled in 95ms
+ GET /api/os/user-config?userId=admin-1 200 in 17ms (compile: 6ms, render: 11ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`UserPreference`.`id`, `main`.`UserPreference`.`userId`, `main`.`UserPreference`.`apps`, `main`.`UserPreference`.`updatedAt` FROM `main`.`UserPreference` WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`UserPreference`.`id`, `main`.`UserPreference`.`userId`, `main`.`UserPreference`.`apps`, `main`.`UserPreference`.`updatedAt` FROM `main`.`UserPreference` WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) LIMIT ? OFFSET ?
+ GET /api/os/user-config?userId=admin-1 200 in 28ms (compile: 10ms, render: 18ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 38ms (compile: 13ms, render: 25ms)
+ GET /api/coating/products 200 in 30ms (compile: 23ms, render: 7ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 26ms (compile: 11ms, render: 15ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET / 200 in 346ms (compile: 140ms, render: 206ms)
+ GET / 200 in 356ms (compile: 178ms, render: 178ms)
+ GET / 200 in 206ms (compile: 24ms, render: 182ms)
+ GET /api/coating/products 200 in 38ms (compile: 15ms, render: 22ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 9ms (compile: 4ms, render: 6ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 7ms (compile: 2ms, render: 5ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 148ms (compile: 3ms, render: 145ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 131ms (compile: 5ms, render: 127ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 126ms (compile: 4ms, render: 122ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 10ms (compile: 5ms, render: 5ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 3ms (compile: 928µs, render: 2ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 113ms (compile: 3ms, render: 110ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 10ms (compile: 6ms, render: 4ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 7ms (compile: 2ms, render: 5ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 133ms (compile: 4ms, render: 130ms)
+✓ Compiled in 83ms
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 202ms (compile: 16ms, render: 186ms)
+ GET /api/coating/products 200 in 11ms (compile: 1883µs, render: 10ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 3ms (compile: 1321µs, render: 2ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 5ms (compile: 2ms, render: 3ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 132ms (compile: 4ms, render: 128ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 13ms (compile: 5ms, render: 7ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 5ms (compile: 1305µs, render: 4ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 129ms (compile: 3ms, render: 126ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 8ms (compile: 3ms, render: 6ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 5ms (compile: 1447µs, render: 3ms)
+✓ Compiled in 133ms
+prisma:query SELECT 1
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 285ms (compile: 22ms, render: 263ms)
+✓ Compiled in 803ms
+ GET /api/coating/products 200 in 24ms (compile: 11ms, render: 12ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 14ms (compile: 6ms, render: 8ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 9ms (compile: 3ms, render: 6ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 9ms (compile: 1724µs, render: 7ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 163ms (compile: 3ms, render: 160ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 6ms (compile: 1502µs, render: 4ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 3ms (compile: 828µs, render: 1925µs)
+✓ Compiled in 32ms
+✓ Compiled in 37ms
+ GET / 200 in 231ms (compile: 63ms, render: 168ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`UserPreference`.`id`, `main`.`UserPreference`.`userId`, `main`.`UserPreference`.`apps`, `main`.`UserPreference`.`updatedAt` FROM `main`.`UserPreference` WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) LIMIT ? OFFSET ?
+ GET /api/os/user-config?userId=admin-1 200 in 6ms (compile: 3ms, render: 4ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 5ms (compile: 1979µs, render: 3ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 8ms (compile: 3ms, render: 5ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 145ms (compile: 4ms, render: 141ms)
+✓ Compiled in 175ms
+ GET /api/coating/products 200 in 43ms (compile: 9ms, render: 34ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 46ms (compile: 26ms, render: 19ms)
+ GET /api/coating/products 200 in 10ms (compile: 3ms, render: 8ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 7ms (compile: 3ms, render: 4ms)
+✓ Compiled in 126ms
+✓ Compiled in 72ms
+ GET /api/os/user-config?userId=admin-1 200 in 18ms (compile: 7ms, render: 11ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`UserPreference`.`id`, `main`.`UserPreference`.`userId`, `main`.`UserPreference`.`apps`, `main`.`UserPreference`.`updatedAt` FROM `main`.`UserPreference` WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`UserPreference`.`id`, `main`.`UserPreference`.`userId`, `main`.`UserPreference`.`apps`, `main`.`UserPreference`.`updatedAt` FROM `main`.`UserPreference` WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) LIMIT ? OFFSET ?
+ GET /api/os/user-config?userId=admin-1 200 in 20ms (compile: 13ms, render: 7ms)
+ GET /api/coating/products 200 in 61ms (compile: 14ms, render: 47ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 80ms (compile: 43ms, render: 37ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET / 200 in 382ms (compile: 185ms, render: 198ms)
+ GET / 200 in 392ms (compile: 160ms, render: 231ms)
+ GET /api/coating/products 200 in 60ms (compile: 7ms, render: 53ms)
+ GET /api/coating/products 200 in 65ms (compile: 39ms, render: 26ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET / 200 in 201ms (compile: 3ms, render: 198ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 12ms (compile: 4ms, render: 8ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 5ms (compile: 1878µs, render: 3ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 154ms (compile: 4ms, render: 150ms)
+✓ Compiled in 49ms
+prisma:query SELECT 1
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 140ms (compile: 7ms, render: 133ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 10ms (compile: 3ms, render: 7ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 6ms (compile: 3ms, render: 4ms)
+ GET /api/coating/products 200 in 12ms (compile: 2ms, render: 10ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 7ms (compile: 2ms, render: 5ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 134ms (compile: 4ms, render: 130ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 9ms (compile: 3ms, render: 7ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 8ms (compile: 2ms, render: 6ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 126ms (compile: 4ms, render: 122ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 11ms (compile: 5ms, render: 7ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 5ms (compile: 1170µs, render: 4ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 123ms (compile: 4ms, render: 119ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 12ms (compile: 4ms, render: 8ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 7ms (compile: 1723µs, render: 5ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 133ms (compile: 5ms, render: 128ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 11ms (compile: 3ms, render: 9ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 17ms (compile: 4ms, render: 14ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 122ms (compile: 3ms, render: 119ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 10ms (compile: 2ms, render: 7ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 6ms (compile: 1473µs, render: 4ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 124ms (compile: 4ms, render: 120ms)
+✓ Compiled in 139ms
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 10ms (compile: 4ms, render: 6ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 4ms (compile: 1029µs, render: 3ms)
+ GET / 200 in 298ms (compile: 78ms, render: 219ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`UserPreference`.`id`, `main`.`UserPreference`.`userId`, `main`.`UserPreference`.`apps`, `main`.`UserPreference`.`updatedAt` FROM `main`.`UserPreference` WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) LIMIT ? OFFSET ?
+ GET /api/os/user-config?userId=admin-1 200 in 5ms (compile: 1677µs, render: 3ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 6ms (compile: 1616µs, render: 4ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 8ms (compile: 3ms, render: 5ms)
+ GET / 200 in 122ms (compile: 7ms, render: 115ms)
+prisma:query SELECT `main`.`UserPreference`.`id`, `main`.`UserPreference`.`userId`, `main`.`UserPreference`.`apps`, `main`.`UserPreference`.`updatedAt` FROM `main`.`UserPreference` WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) LIMIT ? OFFSET ?
+ GET /api/os/user-config?userId=admin-1 200 in 6ms (compile: 3ms, render: 4ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 4ms (compile: 1171µs, render: 3ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 6ms (compile: 1696µs, render: 4ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 173ms (compile: 6ms, render: 166ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 14ms (compile: 4ms, render: 10ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 5ms (compile: 1398µs, render: 3ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 103ms (compile: 3ms, render: 99ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 8ms (compile: 1643µs, render: 6ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 7ms (compile: 876µs, render: 6ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 137ms (compile: 3ms, render: 133ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 7ms (compile: 2ms, render: 5ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 6ms (compile: 1216µs, render: 4ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 134ms (compile: 2ms, render: 132ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 10ms (compile: 3ms, render: 7ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 6ms (compile: 1506µs, render: 4ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 132ms (compile: 3ms, render: 129ms)
+✓ Compiled in 129ms
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 17ms (compile: 6ms, render: 11ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 5ms (compile: 1317µs, render: 4ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 169ms (compile: 4ms, render: 165ms)
+prisma:query SELECT 1
+prisma:query SELECT COUNT(*) FROM (SELECT `main`.`CoatingRecord`.`id` FROM `main`.`CoatingRecord` WHERE `main`.`CoatingRecord`.`productId` = ? LIMIT ? OFFSET ?) AS `sub`
+ DELETE /api/coating/products?id=cmk3n9tsi000cizrcindbippq 400 in 11ms (compile: 4ms, render: 8ms)
+prisma:query SELECT COUNT(*) FROM (SELECT `main`.`CoatingRecord`.`id` FROM `main`.`CoatingRecord` WHERE `main`.`CoatingRecord`.`productId` = ? LIMIT ? OFFSET ?) AS `sub`
+ DELETE /api/coating/products?id=cmk3ndbzc0002izperr0p5oyb 400 in 9ms (compile: 3ms, render: 6ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?,?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 138ms (compile: 4ms, render: 134ms)
+prisma:query DELETE FROM `main`.`CoatingRecord` WHERE (`main`.`CoatingRecord`.`id` = ? AND 1=1) RETURNING `id` AS `id`, `productId` AS `productId`, `imageUrl` AS `imageUrl`, `extractedData` AS `extractedData`, `rawOcrText` AS `rawOcrText`, `degree` AS `degree`, `stage` AS `stage`, `createdAt` AS `createdAt`, `updatedAt` AS `updatedAt`
+ DELETE /api/coating/records?id=cmk3ncbia0001izpexyj9sjsa 200 in 20ms (compile: 5ms, render: 15ms)
+prisma:query SELECT 1
+prisma:query DELETE FROM `main`.`CoatingRecord` WHERE (`main`.`CoatingRecord`.`id` = ? AND 1=1) RETURNING `id` AS `id`, `productId` AS `productId`, `imageUrl` AS `imageUrl`, `extractedData` AS `extractedData`, `rawOcrText` AS `rawOcrText`, `degree` AS `degree`, `stage` AS `stage`, `createdAt` AS `createdAt`, `updatedAt` AS `updatedAt`
+ DELETE /api/coating/records?id=cmk3nnf0e0006izpeejjlwtmn 200 in 10ms (compile: 1561µs, render: 9ms)
+prisma:query DELETE FROM `main`.`CoatingRecord` WHERE (`main`.`CoatingRecord`.`id` = ? AND 1=1) RETURNING `id` AS `id`, `productId` AS `productId`, `imageUrl` AS `imageUrl`, `extractedData` AS `extractedData`, `rawOcrText` AS `rawOcrText`, `degree` AS `degree`, `stage` AS `stage`, `createdAt` AS `createdAt`, `updatedAt` AS `updatedAt`
+ DELETE /api/coating/records?id=cmk3noodc0008izpeufw0w9wb 200 in 14ms (compile: 3ms, render: 11ms)
+prisma:query DELETE FROM `main`.`CoatingRecord` WHERE (`main`.`CoatingRecord`.`id` = ? AND 1=1) RETURNING `id` AS `id`, `productId` AS `productId`, `imageUrl` AS `imageUrl`, `extractedData` AS `extractedData`, `rawOcrText` AS `rawOcrText`, `degree` AS `degree`, `stage` AS `stage`, `createdAt` AS `createdAt`, `updatedAt` AS `updatedAt`
+ DELETE /api/coating/records?id=cmk3nqeu5000aizpeugpb17h7 200 in 15ms (compile: 3ms, render: 12ms)
+prisma:query DELETE FROM `main`.`CoatingRecord` WHERE (`main`.`CoatingRecord`.`id` = ? AND 1=1) RETURNING `id` AS `id`, `productId` AS `productId`, `imageUrl` AS `imageUrl`, `extractedData` AS `extractedData`, `rawOcrText` AS `rawOcrText`, `degree` AS `degree`, `stage` AS `stage`, `createdAt` AS `createdAt`, `updatedAt` AS `updatedAt`
+ DELETE /api/coating/records?id=cmk3nu2v5000cizpe7nyacmno 200 in 18ms (compile: 3ms, render: 15ms)
+prisma:query SELECT 1
+prisma:query DELETE FROM `main`.`CoatingRecord` WHERE (`main`.`CoatingRecord`.`id` = ? AND 1=1) RETURNING `id` AS `id`, `productId` AS `productId`, `imageUrl` AS `imageUrl`, `extractedData` AS `extractedData`, `rawOcrText` AS `rawOcrText`, `degree` AS `degree`, `stage` AS `stage`, `createdAt` AS `createdAt`, `updatedAt` AS `updatedAt`
+ DELETE /api/coating/records?id=cmk3p00ql0001izmy3vjkf3vd 200 in 18ms (compile: 3ms, render: 15ms)
+prisma:query DELETE FROM `main`.`CoatingRecord` WHERE (`main`.`CoatingRecord`.`id` = ? AND 1=1) RETURNING `id` AS `id`, `productId` AS `productId`, `imageUrl` AS `imageUrl`, `extractedData` AS `extractedData`, `rawOcrText` AS `rawOcrText`, `degree` AS `degree`, `stage` AS `stage`, `createdAt` AS `createdAt`, `updatedAt` AS `updatedAt`
+ DELETE /api/coating/records?id=cmk3q7qay0003izmyph8vryv2 200 in 14ms (compile: 3ms, render: 12ms)
+prisma:query SELECT COUNT(*) FROM (SELECT `main`.`CoatingRecord`.`id` FROM `main`.`CoatingRecord` WHERE `main`.`CoatingRecord`.`productId` = ? LIMIT ? OFFSET ?) AS `sub`
+prisma:query DELETE FROM `main`.`Product` WHERE (`main`.`Product`.`id` = ? AND 1=1) RETURNING `id` AS `id`, `name` AS `name`, `createdAt` AS `createdAt`, `updatedAt` AS `updatedAt`
+ DELETE /api/coating/products?id=cmk3ndbzc0002izperr0p5oyb 200 in 10ms (compile: 3ms, render: 7ms)
+prisma:query SELECT COUNT(*) FROM (SELECT `main`.`CoatingRecord`.`id` FROM `main`.`CoatingRecord` WHERE `main`.`CoatingRecord`.`productId` = ? LIMIT ? OFFSET ?) AS `sub`
+prisma:query DELETE FROM `main`.`Product` WHERE (`main`.`Product`.`id` = ? AND 1=1) RETURNING `id` AS `id`, `name` AS `name`, `createdAt` AS `createdAt`, `updatedAt` AS `updatedAt`
+ DELETE /api/coating/products?id=cmk3n9tsi000cizrcindbippq 200 in 15ms (compile: 4ms, render: 11ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 79ms (compile: 63ms, render: 16ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 20ms (compile: 9ms, render: 12ms)
+ GET /api/coating/records 200 in 7ms (compile: 3ms, render: 4ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 11ms (compile: 3ms, render: 8ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 10ms (compile: 5ms, render: 6ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 8ms (compile: 2ms, render: 6ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 8ms (compile: 1311µs, render: 6ms)
+ GET / 200 in 267ms (compile: 99ms, render: 168ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`UserPreference`.`id`, `main`.`UserPreference`.`userId`, `main`.`UserPreference`.`apps`, `main`.`UserPreference`.`updatedAt` FROM `main`.`UserPreference` WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) LIMIT ? OFFSET ?
+ GET /api/os/user-config?userId=admin-1 200 in 6ms (compile: 3ms, render: 3ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 5ms (compile: 1415µs, render: 3ms)
+ GET /api/coating/products 200 in 6ms (compile: 1904µs, render: 4ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 9ms (compile: 3ms, render: 6ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 8ms (compile: 3ms, render: 5ms)
+ GET / 200 in 63ms (compile: 5ms, render: 58ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`UserPreference`.`id`, `main`.`UserPreference`.`userId`, `main`.`UserPreference`.`apps`, `main`.`UserPreference`.`updatedAt` FROM `main`.`UserPreference` WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) LIMIT ? OFFSET ?
+ GET /api/os/user-config?userId=admin-1 200 in 3ms (compile: 999µs, render: 2ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 7ms (compile: 2ms, render: 5ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 6ms (compile: 1188µs, render: 5ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 10ms (compile: 1822µs, render: 8ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 8ms (compile: 3ms, render: 5ms)
+✓ Compiled in 70ms
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET /api/os/user-config?userId=admin-1 200 in 76ms (compile: 50ms, render: 27ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`UserPreference`.`id`, `main`.`UserPreference`.`userId`, `main`.`UserPreference`.`apps`, `main`.`UserPreference`.`updatedAt` FROM `main`.`UserPreference` WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) LIMIT ? OFFSET ?
+ GET /api/os/user-config?userId=admin-1 200 in 11ms (compile: 4ms, render: 8ms)
+prisma:query SELECT `main`.`UserPreference`.`id`, `main`.`UserPreference`.`userId`, `main`.`UserPreference`.`apps`, `main`.`UserPreference`.`updatedAt` FROM `main`.`UserPreference` WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) LIMIT ? OFFSET ?
+ GET /api/os/user-config?userId=admin-1 200 in 275ms (compile: 117ms, render: 159ms)
+prisma:query SELECT `main`.`UserPreference`.`id`, `main`.`UserPreference`.`userId`, `main`.`UserPreference`.`apps`, `main`.`UserPreference`.`updatedAt` FROM `main`.`UserPreference` WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) LIMIT ? OFFSET ?
+ GET / 200 in 494ms (compile: 88ms, render: 405ms)
+ GET /api/os/user-config?userId=admin-1 200 in 9ms (compile: 2ms, render: 7ms)
+prisma:query SELECT `main`.`UserPreference`.`id`, `main`.`UserPreference`.`userId`, `main`.`UserPreference`.`apps`, `main`.`UserPreference`.`updatedAt` FROM `main`.`UserPreference` WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) LIMIT ? OFFSET ?
+✓ Compiled in 24ms
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 11ms (compile: 4ms, render: 7ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 12ms (compile: 5ms, render: 7ms)
+ GET /api/coating/products 200 in 12ms (compile: 4ms, render: 8ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 6ms (compile: 1533µs, render: 5ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 9ms (compile: 3ms, render: 6ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 5ms (compile: 1902µs, render: 3ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 9ms (compile: 3ms, render: 5ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 10ms (compile: 3ms, render: 7ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 7ms (compile: 2ms, render: 4ms)
+prisma:query SELECT 1
+prisma:query BEGIN IMMEDIATE
+prisma:query SELECT `main`.`User`.`id` FROM `main`.`User` WHERE (`main`.`User`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`username`, `main`.`User`.`displayName`, `main`.`User`.`role`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE (`main`.`User`.`id` = ? AND (`main`.`User`.`id` = ? AND 1=1)) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`username`, `main`.`User`.`displayName`, `main`.`User`.`role`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE `main`.`User`.`id` = ? LIMIT ? OFFSET ?
+prisma:query COMMIT
+prisma:query INSERT INTO `main`.`UserPreference` (`id`, `userId`, `apps`, `updatedAt`) VALUES (?,?,?,?) ON CONFLICT  (`userId`) DO UPDATE SET `apps` = ?, `updatedAt` = ? WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) RETURNING `id` AS `id`, `userId` AS `userId`, `apps` AS `apps`, `updatedAt` AS `updatedAt`
+ POST /api/os/user-config 200 in 23ms (compile: 7ms, render: 16ms)
+prisma:query BEGIN IMMEDIATE
+prisma:query SELECT `main`.`User`.`id` FROM `main`.`User` WHERE (`main`.`User`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`username`, `main`.`User`.`displayName`, `main`.`User`.`role`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE (`main`.`User`.`id` = ? AND (`main`.`User`.`id` = ? AND 1=1)) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`username`, `main`.`User`.`displayName`, `main`.`User`.`role`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE `main`.`User`.`id` = ? LIMIT ? OFFSET ?
+prisma:query COMMIT
+prisma:query INSERT INTO `main`.`UserPreference` (`id`, `userId`, `apps`, `updatedAt`) VALUES (?,?,?,?) ON CONFLICT  (`userId`) DO UPDATE SET `apps` = ?, `updatedAt` = ? WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) RETURNING `id` AS `id`, `userId` AS `userId`, `apps` AS `apps`, `updatedAt` AS `updatedAt`
+ POST /api/os/user-config 200 in 13ms (compile: 4ms, render: 8ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 9ms (compile: 3ms, render: 6ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 8ms (compile: 2ms, render: 6ms)
+✓ Compiled in 45ms
+✓ Compiled in 21ms
+prisma:query SELECT 1
+prisma:query BEGIN IMMEDIATE
+prisma:query SELECT `main`.`User`.`id` FROM `main`.`User` WHERE (`main`.`User`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`username`, `main`.`User`.`displayName`, `main`.`User`.`role`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE (`main`.`User`.`id` = ? AND (`main`.`User`.`id` = ? AND 1=1)) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`username`, `main`.`User`.`displayName`, `main`.`User`.`role`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE `main`.`User`.`id` = ? LIMIT ? OFFSET ?
+prisma:query COMMIT
+prisma:query INSERT INTO `main`.`UserPreference` (`id`, `userId`, `apps`, `updatedAt`) VALUES (?,?,?,?) ON CONFLICT  (`userId`) DO UPDATE SET `apps` = ?, `updatedAt` = ? WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) RETURNING `id` AS `id`, `userId` AS `userId`, `apps` AS `apps`, `updatedAt` AS `updatedAt`
+ POST /api/os/user-config 200 in 13ms (compile: 5ms, render: 7ms)
+prisma:query BEGIN IMMEDIATE
+prisma:query SELECT `main`.`User`.`id` FROM `main`.`User` WHERE (`main`.`User`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`username`, `main`.`User`.`displayName`, `main`.`User`.`role`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE (`main`.`User`.`id` = ? AND (`main`.`User`.`id` = ? AND 1=1)) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`username`, `main`.`User`.`displayName`, `main`.`User`.`role`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE `main`.`User`.`id` = ? LIMIT ? OFFSET ?
+prisma:query COMMIT
+prisma:query INSERT INTO `main`.`UserPreference` (`id`, `userId`, `apps`, `updatedAt`) VALUES (?,?,?,?) ON CONFLICT  (`userId`) DO UPDATE SET `apps` = ?, `updatedAt` = ? WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) RETURNING `id` AS `id`, `userId` AS `userId`, `apps` AS `apps`, `updatedAt` AS `updatedAt`
+ POST /api/os/user-config 200 in 9ms (compile: 1888µs, render: 7ms)
+prisma:query BEGIN IMMEDIATE
+prisma:query SELECT `main`.`User`.`id` FROM `main`.`User` WHERE (`main`.`User`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`username`, `main`.`User`.`displayName`, `main`.`User`.`role`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE (`main`.`User`.`id` = ? AND (`main`.`User`.`id` = ? AND 1=1)) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`username`, `main`.`User`.`displayName`, `main`.`User`.`role`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE `main`.`User`.`id` = ? LIMIT ? OFFSET ?
+prisma:query COMMIT
+prisma:query INSERT INTO `main`.`UserPreference` (`id`, `userId`, `apps`, `updatedAt`) VALUES (?,?,?,?) ON CONFLICT  (`userId`) DO UPDATE SET `apps` = ?, `updatedAt` = ? WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) RETURNING `id` AS `id`, `userId` AS `userId`, `apps` AS `apps`, `updatedAt` AS `updatedAt`
+ POST /api/os/user-config 200 in 12ms (compile: 3ms, render: 9ms)
+prisma:query BEGIN IMMEDIATE
+prisma:query SELECT `main`.`User`.`id` FROM `main`.`User` WHERE (`main`.`User`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`username`, `main`.`User`.`displayName`, `main`.`User`.`role`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE (`main`.`User`.`id` = ? AND (`main`.`User`.`id` = ? AND 1=1)) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`username`, `main`.`User`.`displayName`, `main`.`User`.`role`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE `main`.`User`.`id` = ? LIMIT ? OFFSET ?
+prisma:query COMMIT
+prisma:query INSERT INTO `main`.`UserPreference` (`id`, `userId`, `apps`, `updatedAt`) VALUES (?,?,?,?) ON CONFLICT  (`userId`) DO UPDATE SET `apps` = ?, `updatedAt` = ? WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) RETURNING `id` AS `id`, `userId` AS `userId`, `apps` AS `apps`, `updatedAt` AS `updatedAt`
+ POST /api/os/user-config 200 in 8ms (compile: 1266µs, render: 7ms)
+prisma:query BEGIN IMMEDIATE
+prisma:query SELECT `main`.`User`.`id` FROM `main`.`User` WHERE (`main`.`User`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`username`, `main`.`User`.`displayName`, `main`.`User`.`role`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE (`main`.`User`.`id` = ? AND (`main`.`User`.`id` = ? AND 1=1)) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`username`, `main`.`User`.`displayName`, `main`.`User`.`role`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE `main`.`User`.`id` = ? LIMIT ? OFFSET ?
+prisma:query COMMIT
+prisma:query INSERT INTO `main`.`UserPreference` (`id`, `userId`, `apps`, `updatedAt`) VALUES (?,?,?,?) ON CONFLICT  (`userId`) DO UPDATE SET `apps` = ?, `updatedAt` = ? WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) RETURNING `id` AS `id`, `userId` AS `userId`, `apps` AS `apps`, `updatedAt` AS `updatedAt`
+ POST /api/os/user-config 200 in 7ms (compile: 1322µs, render: 6ms)
+prisma:query BEGIN IMMEDIATE
+prisma:query SELECT `main`.`User`.`id` FROM `main`.`User` WHERE (`main`.`User`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`username`, `main`.`User`.`displayName`, `main`.`User`.`role`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE (`main`.`User`.`id` = ? AND (`main`.`User`.`id` = ? AND 1=1)) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`username`, `main`.`User`.`displayName`, `main`.`User`.`role`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE `main`.`User`.`id` = ? LIMIT ? OFFSET ?
+prisma:query COMMIT
+prisma:query INSERT INTO `main`.`UserPreference` (`id`, `userId`, `apps`, `updatedAt`) VALUES (?,?,?,?) ON CONFLICT  (`userId`) DO UPDATE SET `apps` = ?, `updatedAt` = ? WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) RETURNING `id` AS `id`, `userId` AS `userId`, `apps` AS `apps`, `updatedAt` AS `updatedAt`
+ POST /api/os/user-config 200 in 10ms (compile: 1949µs, render: 9ms)
+prisma:query BEGIN IMMEDIATE
+prisma:query SELECT `main`.`User`.`id` FROM `main`.`User` WHERE (`main`.`User`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`username`, `main`.`User`.`displayName`, `main`.`User`.`role`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE (`main`.`User`.`id` = ? AND (`main`.`User`.`id` = ? AND 1=1)) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`username`, `main`.`User`.`displayName`, `main`.`User`.`role`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE `main`.`User`.`id` = ? LIMIT ? OFFSET ?
+prisma:query COMMIT
+prisma:query INSERT INTO `main`.`UserPreference` (`id`, `userId`, `apps`, `updatedAt`) VALUES (?,?,?,?) ON CONFLICT  (`userId`) DO UPDATE SET `apps` = ?, `updatedAt` = ? WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) RETURNING `id` AS `id`, `userId` AS `userId`, `apps` AS `apps`, `updatedAt` AS `updatedAt`
+ POST /api/os/user-config 200 in 8ms (compile: 1957µs, render: 6ms)
+prisma:query BEGIN IMMEDIATE
+prisma:query SELECT `main`.`User`.`id` FROM `main`.`User` WHERE (`main`.`User`.`id` = ? AND 1=1) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`username`, `main`.`User`.`displayName`, `main`.`User`.`role`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE (`main`.`User`.`id` = ? AND (`main`.`User`.`id` = ? AND 1=1)) LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`User`.`id`, `main`.`User`.`username`, `main`.`User`.`displayName`, `main`.`User`.`role`, `main`.`User`.`createdAt`, `main`.`User`.`updatedAt` FROM `main`.`User` WHERE `main`.`User`.`id` = ? LIMIT ? OFFSET ?
+prisma:query COMMIT
+prisma:query INSERT INTO `main`.`UserPreference` (`id`, `userId`, `apps`, `updatedAt`) VALUES (?,?,?,?) ON CONFLICT  (`userId`) DO UPDATE SET `apps` = ?, `updatedAt` = ? WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) RETURNING `id` AS `id`, `userId` AS `userId`, `apps` AS `apps`, `updatedAt` AS `updatedAt`
+ POST /api/os/user-config 200 in 7ms (compile: 1212µs, render: 6ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 10ms (compile: 3ms, render: 7ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 7ms (compile: 1443µs, render: 5ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 12ms (compile: 4ms, render: 8ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 7ms (compile: 4ms, render: 4ms)
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 9ms (compile: 3ms, render: 6ms)

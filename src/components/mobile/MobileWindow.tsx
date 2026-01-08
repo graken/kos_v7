@@ -3,19 +3,15 @@
 import { motion } from "framer-motion";
 import { X, Minus } from "lucide-react";
 import { useOSStore, WindowState } from "@/store/useOSStore";
-import Settings from "@/apps/Settings/Settings";
+import { APP_REGISTRY } from "@/apps/registry";
 
 interface MobileWindowProps {
     window: WindowState;
 }
 
-const APP_COMPONENTS: Record<string, React.ComponentType> = {
-    settings: Settings,
-};
-
 export default function MobileWindow({ window: win }: MobileWindowProps) {
     const { closeApp, minimizeApp } = useOSStore();
-    const AppComponent = APP_COMPONENTS[win.id];
+    const AppComponent = APP_REGISTRY[win.id]?.component;
 
     return (
         <motion.div

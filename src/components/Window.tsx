@@ -25,8 +25,8 @@ export default function Window({ window: windowData }: WindowProps) {
     const MIN_WIDTH = 300;
     const MIN_HEIGHT = 200;
 
-    const isFixedSize = !windowData.config.resizable;
-    const hideMaximize = !windowData.config.maximizable;
+    const isFixedSize = !windowData.config?.resizable;
+    const hideMaximize = !windowData.config?.maximizable;
 
     const handleDragStart = (e: React.MouseEvent) => {
         if (windowData.isMaximized) return; // 최대화 상태에선 드래그 불가

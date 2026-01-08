@@ -37,6 +37,16 @@ export const APP_REGISTRY: Record<string, AppDefinition> = {
             maximizable: false
         },
         name: 'App Editor'
+    },
+    'coating-control': {
+        component: dynamic(() => import('@/apps/CoatingControl/CoatingControl')),
+        config: {
+            defaultWidth: 800,
+            defaultHeight: 600,
+            resizable: true,
+            maximizable: true
+        },
+        name: '박막도포관리'
     }
 };
 

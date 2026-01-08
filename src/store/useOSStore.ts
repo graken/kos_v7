@@ -81,6 +81,7 @@ interface OSState {
   };
   currentUser: User | null;
   editingAppId: string | null;
+  hasHydrated: boolean;
 
   setCurrentTime: (time: Date) => void;
   setApps: (apps: AppData[]) => void;
@@ -101,6 +102,7 @@ interface OSState {
   hideContextMenu: () => void;
   setCurrentUser: (user: User | null) => void;
   setEditingAppId: (appId: string | null) => void;
+  setHasHydrated: (val: boolean) => void;
 }
 
 const INITIAL_APPS: AppData[] = [
@@ -116,14 +118,15 @@ const INITIAL_APPS: AppData[] = [
     iconName: 'Calculator',
     windowConfig: {
       defaultWidth: 320,
-      defaultHeight: 480,
+      defaultHeight: 520,
       resizable: false,
       maximizable: false
     }
   },
+  { id: 'coating-control', name: '박막도포관리', iconName: 'Activity' },
 ];
 
-export const INSTALLED_APP_IDS = ['browser', 'files', 'photos', 'messages', 'mail', 'settings', 'calculator'];
+export const INSTALLED_APP_IDS = ['browser', 'files', 'photos', 'messages', 'mail', 'settings', 'calculator', 'coating-control'];
 
 const ADMIN_USER: User = {
   id: 'admin-1',
@@ -134,9 +137,21 @@ const ADMIN_USER: User = {
 
 const STATUS_BAR_HEIGHT = 32;
 
+const syncUserAppsToServer = async (userId: string, apps: AppData[]) => {
+  try {
+    await fetch('/api/os/user-config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, apps }),
+    });
+  } catch (error) {
+    console.error('Failed to sync user apps to server:', error);
+  }
+};
+
 export const useOSStore = create<OSState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       currentTime: new Date(),
       apps: INITIAL_APPS,
       windows: {},
@@ -152,20 +167,34 @@ export const useOSStore = create<OSState>()(
       },
       currentUser: ADMIN_USER,
       editingAppId: null,
+      hasHydrated: false,
 
       setCurrentTime: (time) => set({ currentTime: time }),
-      setApps: (apps) => set({ apps }),
-      addApp: (app) => set((state) => ({ apps: [...state.apps, app] })),
-      removeApp: (appId) => set((state) => ({
-        apps: state.apps.filter(app => app.id !== appId)
-      })),
-      updateApp: (appId, updates) => set((state) => ({
-        apps: state.apps.map(app => app.id === appId ? { ...app, ...updates } : app)
-      })),
+      setApps: (apps) => {
+        set({ apps });
+        const { currentUser } = get();
+        if (currentUser) syncUserAppsToServer(currentUser.id, apps);
+      },
+      addApp: (app) => set((state) => {
+        const newApps = [...state.apps, app];
+        if (state.currentUser) syncUserAppsToServer(state.currentUser.id, newApps);
+        return { apps: newApps };
+      }),
+      removeApp: (appId) => set((state) => {
+        const newApps = state.apps.filter(app => app.id !== appId);
+        if (state.currentUser) syncUserAppsToServer(state.currentUser.id, newApps);
+        return { apps: newApps };
+      }),
+      updateApp: (appId, updates) => set((state) => {
+        const newApps = state.apps.map(app => app.id === appId ? { ...app, ...updates } : app);
+        if (state.currentUser) syncUserAppsToServer(state.currentUser.id, newApps);
+        return { apps: newApps };
+      }),
       reorderApps: (fromIndex, toIndex) => set((state) => {
         const newApps = [...state.apps];
         const [movedApp] = newApps.splice(fromIndex, 1);
         newApps.splice(toIndex, 0, movedApp);
+        if (state.currentUser) syncUserAppsToServer(state.currentUser.id, newApps);
         return { apps: newApps };
       }),
 
@@ -229,12 +258,14 @@ export const useOSStore = create<OSState>()(
       }),
 
       focusApp: (appId) => set((state) => {
-        if (state.focusedWindowId === appId && !state.windows[appId]?.isMinimized) return state;
+        const win = state.windows[appId];
+        if (!win) return state;
+        if (state.focusedWindowId === appId && !win.isMinimized) return state;
         const newZIndex = state.maxZIndex + 1;
         return {
           windows: {
             ...state.windows,
-            [appId]: { ...state.windows[appId], zIndex: newZIndex, isMinimized: false }
+            [appId]: { ...win, zIndex: newZIndex, isMinimized: false }
           },
           focusedWindowId: appId,
           maxZIndex: newZIndex,
@@ -242,14 +273,18 @@ export const useOSStore = create<OSState>()(
         };
       }),
 
-      minimizeApp: (appId) => set((state) => ({
-        windows: {
-          ...state.windows,
-          [appId]: { ...state.windows[appId], isMinimized: true }
-        },
-        focusedWindowId: state.focusedWindowId === appId ? null : state.focusedWindowId,
-        contextMenu: { ...state.contextMenu, isOpen: false }
-      })),
+      minimizeApp: (appId) => set((state) => {
+        const win = state.windows[appId];
+        if (!win) return state;
+        return {
+          windows: {
+            ...state.windows,
+            [appId]: { ...win, isMinimized: true }
+          },
+          focusedWindowId: state.focusedWindowId === appId ? null : state.focusedWindowId,
+          contextMenu: { ...state.contextMenu, isOpen: false }
+        };
+      }),
 
       maximizeApp: (appId) => set((state) => {
         const win = state.windows[appId];
@@ -286,13 +321,17 @@ export const useOSStore = create<OSState>()(
         }
       }),
 
-      updateWindowDimensions: (appId, updates) => set((state) => ({
-        windows: {
-          ...state.windows,
-          [appId]: { ...state.windows[appId], ...updates }
-        },
-        contextMenu: { ...state.contextMenu, isOpen: false }
-      })),
+      updateWindowDimensions: (appId, updates) => set((state) => {
+        const win = state.windows[appId];
+        if (!win) return state;
+        return {
+          windows: {
+            ...state.windows,
+            [appId]: { ...win, ...updates }
+          },
+          contextMenu: { ...state.contextMenu, isOpen: false }
+        };
+      }),
 
       updateGridSettings: (settings, device) => set((state) => {
         const key = device === 'desktop' ? 'desktopGridSettings' : 'mobileGridSettings';
@@ -318,9 +357,11 @@ export const useOSStore = create<OSState>()(
 
       setCurrentUser: (user) => set({ currentUser: user }),
       setEditingAppId: (appId) => set({ editingAppId: appId }),
+      setHasHydrated: (val) => set({ hasHydrated: val }),
     }),
     {
       name: 'kos-v7-storage',
+      version: 1, // 버전업을 통한 저장소 초기화 및 동기화 무결성 확보
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         apps: state.apps,
@@ -328,6 +369,44 @@ export const useOSStore = create<OSState>()(
         mobileGridSettings: state.mobileGridSettings,
         currentUser: state.currentUser,
       }),
+      onRehydrateStorage: (state) => {
+        return async (rehydratedState, error) => {
+          if (error || !rehydratedState) {
+            state.setHasHydrated(true);
+            return;
+          }
+
+          const { currentUser } = rehydratedState;
+          if (currentUser) {
+            try {
+              // 해당 사용자의 설정을 서버에서 가져오기
+              const response = await fetch(`/api/os/user-config?userId=${currentUser.id}`);
+              const data = await response.json();
+
+              if (data.apps && Array.isArray(data.apps) && data.apps.length > 0) {
+                // 서버 설정이 있으면 서버 데이터를 우선 적용
+                useOSStore.setState({ apps: data.apps });
+              } else if (rehydratedState.apps && rehydratedState.apps.length > 0) {
+                // 서버에 설정이 없으면 현재 상태를 서버에 시딩(Seeding)
+                await syncUserAppsToServer(currentUser.id, rehydratedState.apps);
+              }
+            } catch (err) {
+              console.error('Failed to sync user config during hydration:', err);
+            }
+          }
+
+          rehydratedState.setHasHydrated(true);
+        };
+      }
     }
   )
 );
+
+// 탭 간 실시간 동기화 리스너
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (event) => {
+    if (event.key === 'kos-v7-storage') {
+      useOSStore.persist.rehydrate();
+    }
+  });
+}
