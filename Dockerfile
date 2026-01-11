@@ -41,12 +41,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Prisma 관련 파일 복사 (SQLite 환경)
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-COPY entrypoint.sh ./
-RUN chown nextjs:nodejs entrypoint.sh && chmod +x entrypoint.sh
-
 # 사진 업로드 폴더 생성 및 권한 설정
 RUN mkdir -p public/uploads/originals public/uploads/thumbnails && \
-    chown -R nextjs:nodejs /app
+    chown -R nextjs:nodejs /app && \
+    chmod -R 775 /app/public/uploads
 
 USER nextjs
 
@@ -55,5 +53,5 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# 실행 시 데이터베이스 동기화 및 서버 시작
-ENTRYPOINT ["sh", "./entrypoint.sh"]
+# 실행 시 데이터베이스 동기화 및 서버 시작 (파일 권한 문제를 피하기 위해 인라인 명령 사용)
+ENTRYPOINT ["sh", "-c", "./node_modules/.bin/prisma db push --accept-data-loss && node server.js"]
