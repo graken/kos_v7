@@ -1,12 +1,7 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@/generated/client';
-
-// Use a temporary fresh client to ensure schema changes are picked up
-// This is a workaround for the global prisma instance not syncronizing
-const getPrisma = () => new PrismaClient();
+import { prisma } from '@/lib/db';
 
 export async function GET(req: Request) {
-    const prisma = getPrisma();
     try {
         const { searchParams } = new URL(req.url);
         const type = searchParams.get('type');
@@ -60,13 +55,10 @@ export async function GET(req: Request) {
             error: 'failed to fetch records',
             details: error instanceof Error ? error.message : String(error)
         }, { status: 500 });
-    } finally {
-        await prisma.$disconnect();
     }
 }
 
 export async function POST(req: Request) {
-    const prisma = getPrisma();
     try {
         const body = await req.json();
         const { checkDate, equipmentName, part, detail, company, note, completionDate, imageUrls } = body;
@@ -104,13 +96,10 @@ export async function POST(req: Request) {
             error: 'failed to create record',
             details: error instanceof Error ? error.message : String(error)
         }, { status: 500 });
-    } finally {
-        await prisma.$disconnect();
     }
 }
 
 export async function PATCH(req: Request) {
-    const prisma = getPrisma();
     try {
         const body = await req.json();
         const { id, checkDate, equipmentName, part, detail, company, note, completionDate } = body;
@@ -139,13 +128,10 @@ export async function PATCH(req: Request) {
     } catch (error) {
         console.error('Update maintenance error:', error);
         return NextResponse.json({ error: 'failed to update record' }, { status: 500 });
-    } finally {
-        await prisma.$disconnect();
     }
 }
 
 export async function DELETE(req: Request) {
-    const prisma = getPrisma();
     try {
         const { searchParams } = new URL(req.url);
         const id = searchParams.get('id');
@@ -163,7 +149,5 @@ export async function DELETE(req: Request) {
     } catch (error) {
         console.error('Delete maintenance error:', error);
         return NextResponse.json({ error: 'failed to delete record' }, { status: 500 });
-    } finally {
-        await prisma.$disconnect();
     }
 }

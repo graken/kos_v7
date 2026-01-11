@@ -15,9 +15,15 @@ export default function LoginScreen() {
             try {
                 const res = await fetch('/api/users');
                 const data = await res.json();
-                setUsers(data);
+                if (Array.isArray(data)) {
+                    setUsers(data);
+                } else {
+                    console.error('Invalid users data format:', data);
+                    setUsers([]);
+                }
             } catch (err) {
                 console.error('Failed to fetch users:', err);
+                setUsers([]);
             } finally {
                 setLoading(false);
             }

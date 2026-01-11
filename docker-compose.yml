@@ -1,3 +1,4 @@
+# version: 1.0.1
 services:
   kos_app:
     build: .
@@ -5,8 +6,8 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - prisma_data:/app/prisma
+      - ./prisma:/app/prisma
+    environment:
+      - DATABASE_URL=file:/app/prisma/dev.db
+      - NODE_ENV=production
     restart: always
-
-volumes:
-  prisma_data:

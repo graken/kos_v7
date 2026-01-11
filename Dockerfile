@@ -1,9 +1,9 @@
 FROM node:20-alpine AS base
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
 
 # 1. 의존성 설치
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
-WORKDIR /app
 
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -14,11 +14,13 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Prisma 클라이언트 생성
-RUN npx prisma generate
+# Prisma 클라이언트 생성 (로컬 바이너리 사용하여 버전 고정)
+RUN ./node_modules/.bin/prisma generate
 
 # Next.js 빌드
 ENV NEXT_TELEMETRY_DISABLED=1
+# 빌드 시 데이터베이스 URL이 필요할 수 있습니다 (정적 페이지 생성 등)
+ENV DATABASE_URL="file:./dev.db"
 RUN npm run build
 
 # 3. 실행 단계
@@ -39,7 +41,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Prisma 관련 파일 복사 (SQLite 환경)
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nextjs:nodejs /app/src/generated ./src/generated
+COPY --chown=nextjs:nodejs entrypoint.sh ./
+RUN chmod +x entrypoint.sh
 
 USER nextjs
 
@@ -49,4 +52,4 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 # 실행 시 데이터베이스 동기화 및 서버 시작
-CMD ["node", "server.js"]
+ENTRYPOINT ["./entrypoint.sh"]

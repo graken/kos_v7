@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@/generated/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/db';
 
 export async function GET() {
     try {
@@ -12,7 +10,7 @@ export async function GET() {
 
         // 사용자가 한 명도 없으면 초기 관리자 생성
         if (users.length === 0) {
-            const admin = await prisma.user.create({
+            const admin = await (prisma.user as any).create({
                 data: {
                     username: 'admin',
                     displayName: '관리자',
@@ -30,21 +28,24 @@ export async function GET() {
                             })
                         }
                     }
-                },
+                } as any,
                 include: { preferences: true }
             });
             users = [admin];
         }
 
-        const formattedUsers = users.map(user => ({
-            id: user.id,
-            username: user.username,
-            displayName: user.displayName,
-            avatar: user.avatar,
-            role: user.role,
-            apps: JSON.parse(user.preferences?.apps || '[]'),
-            permissions: JSON.parse(user.preferences?.permissions || '{}')
-        }));
+        const formattedUsers = users.map(user => {
+            const u = user as any;
+            return {
+                id: u.id,
+                username: u.username,
+                displayName: u.displayName,
+                avatar: u.avatar,
+                role: u.role,
+                apps: JSON.parse(u.preferences?.apps || '[]'),
+                permissions: JSON.parse(u.preferences?.permissions || '{}')
+            };
+        });
 
         return NextResponse.json(formattedUsers);
     } catch (error) {
@@ -60,7 +61,7 @@ export async function POST(req: Request) {
 
         if (id) {
             // Update
-            const updatedUser = await prisma.user.update({
+            const updatedUser = await (prisma.user as any).update({
                 where: { id },
                 data: {
                     username,
@@ -79,12 +80,12 @@ export async function POST(req: Request) {
                             }
                         }
                     }
-                }
+                } as any
             });
             return NextResponse.json(updatedUser);
         } else {
             // Create
-            const newUser = await prisma.user.create({
+            const newUser = await (prisma.user as any).create({
                 data: {
                     username,
                     displayName,
@@ -96,7 +97,7 @@ export async function POST(req: Request) {
                             permissions: JSON.stringify(permissions || {})
                         }
                     }
-                }
+                } as any
             });
             return NextResponse.json(newUser);
         }

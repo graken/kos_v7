@@ -6313,3 +6313,79 @@ prisma:query SELECT `main`.`UserPreference`.`id`, `main`.`UserPreference`.`userI
  GET /api/os/user-config?userId=admin-1 200 in 10ms (compile: 2ms, render: 8ms)
  GET /api/users 200 in 108ms (compile: 64ms, render: 44ms)
  GET /api/users 200 in 13ms (compile: 9ms, render: 4ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 53ms (compile: 45ms, render: 8ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 6ms (compile: 1475µs, render: 4ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+ GET /api/coating/products 200 in 8ms (compile: 3ms, render: 6ms)
+ GET /api/coating/products 200 in 16ms (compile: 3ms, render: 13ms)
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE 1=1 ORDER BY `main`.`Product`.`name` ASC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`CoatingRecord`.`id`, `main`.`CoatingRecord`.`productId`, `main`.`CoatingRecord`.`imageUrl`, `main`.`CoatingRecord`.`extractedData`, `main`.`CoatingRecord`.`rawOcrText`, `main`.`CoatingRecord`.`degree`, `main`.`CoatingRecord`.`stage`, `main`.`CoatingRecord`.`createdAt`, `main`.`CoatingRecord`.`updatedAt` FROM `main`.`CoatingRecord` WHERE 1=1 ORDER BY `main`.`CoatingRecord`.`createdAt` DESC LIMIT ? OFFSET ?
+prisma:query SELECT `main`.`Product`.`id`, `main`.`Product`.`name`, `main`.`Product`.`createdAt`, `main`.`Product`.`updatedAt` FROM `main`.`Product` WHERE `main`.`Product`.`id` IN (?) LIMIT ? OFFSET ?
+ GET /api/coating/records 200 in 85ms (compile: 60ms, render: 24ms)
+Available models in generated client: [
+  'product',
+  'coatingRecord',
+  'user',
+  'userPreference',
+  'maintenanceRecord',
+  'maintenanceImage'
+]
+ GET /api/maintenance 200 in 82ms (compile: 59ms, render: 23ms)
+Available models in generated client: [
+  'product',
+  'coatingRecord',
+  'user',
+  'userPreference',
+  'maintenanceRecord',
+  'maintenanceImage'
+]
+ GET /api/maintenance 200 in 19ms (compile: 1720µs, render: 17ms)
+Available models in generated client: [
+  'product',
+  'coatingRecord',
+  'user',
+  'userPreference',
+  'maintenanceRecord',
+  'maintenanceImage'
+]
+ GET /api/maintenance 200 in 22ms (compile: 2ms, render: 20ms)
+Available models in generated client: [
+  'product',
+  'coatingRecord',
+  'user',
+  'userPreference',
+  'maintenanceRecord',
+  'maintenanceImage'
+]
+ GET /api/maintenance 200 in 17ms (compile: 2ms, render: 15ms)
+ GET /api/users 200 in 10ms (compile: 2ms, render: 8ms)
+ GET /api/users 200 in 6ms (compile: 1866µs, render: 4ms)
+ GET /api/users 200 in 276ms (compile: 48ms, render: 228ms)
+ GET /api/users 200 in 162ms (compile: 3ms, render: 159ms)
+ GET / 200 in 85ms (compile: 9ms, render: 77ms)
+prisma:query SELECT 1
+prisma:query SELECT `main`.`UserPreference`.`id`, `main`.`UserPreference`.`userId`, `main`.`UserPreference`.`apps`, `main`.`UserPreference`.`updatedAt` FROM `main`.`UserPreference` WHERE (`main`.`UserPreference`.`userId` = ? AND 1=1) LIMIT ? OFFSET ?
+ GET /api/os/user-config?userId=admin-1 200 in 6ms (compile: 1562µs, render: 4ms)
+ GET /api/users 200 in 6ms (compile: 1931µs, render: 4ms)
+ GET /api/users 200 in 7ms (compile: 2ms, render: 4ms)
+Available models in generated client: [
+  'product',
+  'coatingRecord',
+  'user',
+  'userPreference',
+  'maintenanceRecord',
+  'maintenanceImage'
+]
+ GET /api/maintenance 200 in 21ms (compile: 2ms, render: 18ms)
+Available models in generated client: [
+  'product',
+  'coatingRecord',
+  'user',
+  'userPreference',
+  'maintenanceRecord',
+  'maintenanceImage'
+]
+ GET /api/maintenance 200 in 17ms (compile: 1225µs, render: 16ms)
