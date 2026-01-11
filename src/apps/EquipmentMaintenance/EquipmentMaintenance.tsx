@@ -10,10 +10,12 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useOSStore } from '@/store/useOSStore';
+import { processImage } from '@/lib/image-utils';
 
 interface MaintenanceImage {
     id: string;
     url: string;
+    thumbnailUrl?: string;
 }
 
 interface MaintenanceRecord {
@@ -236,7 +238,7 @@ export default function EquipmentMaintenance() {
                                             <div className="flex gap-2">
                                                 {record.images?.map((img) => (
                                                     <div key={img.id} className="w-14 h-14 rounded-xl overflow-hidden border border-slate-100 shadow-sm">
-                                                        <img src={img.url} alt="Maintenance" className="w-full h-full object-cover" />
+                                                        <img src={img.thumbnailUrl || img.url} alt="Maintenance Thumbnail" className="w-full h-full object-cover" />
                                                     </div>
                                                 ))}
                                             </div>
@@ -322,7 +324,7 @@ export default function EquipmentMaintenance() {
                                                             onClick={(e) => { e.stopPropagation(); setOverlayImage(record.images[0].url); }}
                                                             className="w-10 h-10 rounded-lg overflow-hidden mx-auto shadow-sm border border-slate-100 ring-4 ring-white cursor-zoom-in"
                                                         >
-                                                            <img src={record.images[0].url} alt="Main" className="w-full h-full object-cover" />
+                                                            <img src={record.images[0].thumbnailUrl || record.images[0].url} alt="Main Thumbnail" className="w-full h-full object-cover" />
                                                         </div>
                                                     ) : (
                                                         <div className="w-10 h-10 rounded-lg bg-slate-50 border-2 border-dashed border-slate-100 flex items-center justify-center text-slate-200 mx-auto">
@@ -446,7 +448,10 @@ function MaintenanceModal({ onClose, onSuccess, editData, isMobile, canComplete 
         note: editData?.note || '',
         completionDate: editData?.completionDate ? format(new Date(editData.completionDate), 'yyyy-MM-dd') : ''
     });
-    const [imageUrls, setImageUrls] = useState<string[]>(editData?.images?.map(img => img.url) || []);
+    const [imageUrls, setImageUrls] = useState<{ original: string, thumbnail: string }[]>(
+        editData?.images?.map(img => ({ original: img.url, thumbnail: img.thumbnailUrl || img.url })) || []
+    );
+    const [isProcessing, setIsProcessing] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [partSearch, setPartSearch] = useState('');
     const [activeField, setActiveField] = useState<'equipmentName' | 'part' | 'company'>('part');
@@ -485,11 +490,21 @@ function MaintenanceModal({ onClose, onSuccess, editData, isMobile, canComplete 
     const currentList = dbMasterData[activeField] || [];
     const filteredList = currentList.filter(p => p.includes(partSearch));
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (files) {
-            const newUrls = Array.from(files).map(file => URL.createObjectURL(file));
-            setImageUrls([...imageUrls, ...newUrls]);
+            setIsProcessing(true);
+            try {
+                const processed = await Promise.all(
+                    Array.from(files).map(file => processImage(file))
+                );
+                setImageUrls([...imageUrls, ...processed]);
+            } catch (err) {
+                console.error('Image processing error:', err);
+                alert('이미지 처리 중 오류가 발생했습니다.');
+            } finally {
+                setIsProcessing(false);
+            }
         }
     };
 
@@ -518,21 +533,7 @@ function MaintenanceModal({ onClose, onSuccess, editData, isMobile, canComplete 
 
         setSubmitting(true);
         try {
-            // Convert any newly added files to base64 if needed, 
-            // but for simplicity, we'll convert all current imageUrls that are blob urls
-            const processedImageUrls = await Promise.all(
-                imageUrls.map(async (url) => {
-                    if (url.startsWith('blob:')) {
-                        const response = await fetch(url);
-                        const blob = await response.blob();
-                        const file = new File([blob], "image.jpg", { type: "image/jpeg" });
-                        return await fileToBase64(file);
-                    }
-                    return url;
-                })
-            );
-
-            const payload = { ...formData, imageUrls: processedImageUrls };
+            const payload = { ...formData, imageUrls };
             if (editData) (payload as any).id = editData.id;
 
             const res = await fetch('/api/maintenance', {
@@ -687,15 +688,15 @@ function MaintenanceModal({ onClose, onSuccess, editData, isMobile, canComplete 
                                         <Camera size={24} />
                                     </div>
                                     <div className="text-center">
-                                        <p className="text-xs font-black text-slate-500">클릭하여 업로드하거나</p>
-                                        <p className="text-[10px] text-slate-400 font-medium">이미지를 여기로 드래그하세요 (여러 장 가능)</p>
+                                        <p className="text-xs font-black text-slate-500">{isProcessing ? '이미지 최적화 중...' : '클릭하여 업로드하거나'}</p>
+                                        <p className="text-[10px] text-slate-400 font-medium">{isProcessing ? '잠시만 기다려주세요' : '이미지를 여기로 드래그하세요 (여러 장 가능)'}</p>
                                     </div>
                                 </div>
                                 {imageUrls.length > 0 && (
                                     <div className="flex flex-wrap gap-2 mt-2">
-                                        {imageUrls.map((url, i) => (
+                                        {imageUrls.map((img, i) => (
                                             <div key={i} className="relative w-16 h-16 rounded-xl overflow-hidden border-2 border-white shadow-sm ring-1 ring-slate-100">
-                                                <img src={url} alt="upload" className="w-full h-full object-cover" />
+                                                <img src={img.thumbnail} alt="upload" className="w-full h-full object-cover" />
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); setImageUrls(imageUrls.filter((_, idx) => idx !== i)); }}
                                                     className="absolute top-0.5 right-0.5 w-4 h-4 bg-rose-500 text-white rounded-full flex items-center justify-center"
@@ -972,7 +973,7 @@ function DetailModal({ record, canEdit, onClose, onEdit, onZoom }: { record: Mai
                                             onClick={() => setActiveImageIndex(i)}
                                             className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${activeImageIndex === i ? 'border-blue-500 ring-2 ring-blue-100' : 'border-white hover:border-slate-200 opacity-60 hover:opacity-100'}`}
                                         >
-                                            <img src={img.url} alt={`Thumb ${i}`} className="w-full h-full object-cover" />
+                                            <img src={img.thumbnailUrl || img.url} alt={`Thumb ${i}`} className="w-full h-full object-cover" />
                                         </button>
                                     ))}
                                 </div>

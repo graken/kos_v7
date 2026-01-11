@@ -1,4 +1,4 @@
-# version: 1.0.1
+# version: 1.0.2
 services:
   kos_app:
     build: .
@@ -7,6 +7,7 @@ services:
       - "3000:3000"
     volumes:
       - ./prisma:/app/prisma
+      - ./public/uploads:/app/public/uploads
     environment:
       - DATABASE_URL=file:/app/prisma/dev.db
       - NODE_ENV=production

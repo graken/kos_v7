@@ -64,9 +64,10 @@ model MaintenanceRecord {
 }
 
 model MaintenanceImage {
-  id        String            @id @default(cuid())
-  recordId  Int
-  record    MaintenanceRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
-  url       String
-  createdAt DateTime          @default(now())
+  id           String            @id @default(cuid())
+  recordId     Int
+  record       MaintenanceRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  url          String            // 원본 또는 압축된 원본 경로
+  thumbnailUrl String?           // 썸네일 경로
+  createdAt    DateTime          @default(now())
 }

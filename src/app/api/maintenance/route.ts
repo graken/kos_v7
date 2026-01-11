@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { saveImageToFile } from '@/lib/server-utils';
+import fs from 'fs';
+import path from 'path';
 
 export async function GET(req: Request) {
     try {
@@ -73,6 +76,15 @@ export async function POST(req: Request) {
             imageCount: imageUrls?.length || 0
         });
 
+        // 사진 파일 저장 처리
+        const savedImages = await Promise.all(
+            (imageUrls || []).map(async (img: { original: string, thumbnail: string }) => {
+                const originalUrl = await saveImageToFile(img.original, 'originals');
+                const thumbnailUrl = await saveImageToFile(img.thumbnail, 'thumbnails');
+                return { url: originalUrl, thumbnailUrl };
+            })
+        );
+
         const record = await model.create({
             data: {
                 checkDate: checkDate ? new Date(checkDate) : new Date(),
@@ -83,7 +95,7 @@ export async function POST(req: Request) {
                 note,
                 completionDate: completionDate ? new Date(completionDate) : null,
                 images: {
-                    create: (imageUrls || []).map((url: string) => ({ url })),
+                    create: savedImages,
                 },
             },
             include: { images: true },
@@ -140,6 +152,29 @@ export async function DELETE(req: Request) {
 
         const model = (prisma as any).maintenanceRecord || (prisma as any).MaintenanceRecord;
         if (!model) throw new Error('MaintenanceRecord model is missing');
+
+        // 삭제 전 관련 파일 정보 가져오기
+        const recordToDelete = await model.findUnique({
+            where: { id: Number(id) },
+            include: { images: true }
+        });
+
+        if (recordToDelete) {
+            // 실제 파일 삭제 처리
+            for (const img of recordToDelete.images) {
+                try {
+                    const originalPath = path.join(process.cwd(), 'public', img.url);
+                    if (fs.existsSync(originalPath)) fs.unlinkSync(originalPath);
+
+                    if (img.thumbnailUrl) {
+                        const thumbnailPath = path.join(process.cwd(), 'public', img.thumbnailUrl);
+                        if (fs.existsSync(thumbnailPath)) fs.unlinkSync(thumbnailPath);
+                    }
+                } catch (e) {
+                    console.warn('File deletion error:', e);
+                }
+            }
+        }
 
         await model.delete({
             where: { id: Number(id) },

@@ -44,6 +44,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --chown=nextjs:nodejs entrypoint.sh ./
 RUN chmod +x entrypoint.sh
 
+# 사진 업로드 폴더 생성 및 권한 설정
+RUN mkdir -p public/uploads/originals public/uploads/thumbnails && \
+    chown -R nextjs:nodejs public/uploads
+
 USER nextjs
 
 EXPOSE 3000
