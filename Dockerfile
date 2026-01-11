@@ -38,6 +38,7 @@ COPY --from=builder /app/public ./public
 # standalone 빌드 결과물 복사
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 # Prisma 관련 파일 복사 (SQLite 환경)
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
@@ -54,4 +55,4 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 # 실행 시 데이터베이스 동기화 및 서버 시작 (파일 권한 문제를 피하기 위해 인라인 명령 사용)
-ENTRYPOINT ["sh", "-c", "./node_modules/.bin/prisma db push --accept-data-loss && node server.js"]
+ENTRYPOINT ["sh", "-c", "npx prisma db push --accept-data-loss && node server.js"]
