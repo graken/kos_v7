@@ -322,9 +322,26 @@ export default function EquipmentMaintenance() {
                                                     {record.images?.[0] ? (
                                                         <div
                                                             onClick={(e) => { e.stopPropagation(); setOverlayImage(record.images[0].url); }}
-                                                            className="w-10 h-10 rounded-lg overflow-hidden mx-auto shadow-sm border border-slate-100 ring-4 ring-white cursor-zoom-in"
+                                                            className="relative group/thumb cursor-zoom-in inline-block"
                                                         >
-                                                            <img src={record.images[0].thumbnailUrl || record.images[0].url} alt="Main Thumbnail" className="w-full h-full object-cover" />
+                                                            {/* Stack Effect Layers */}
+                                                            {record.images.length > 1 && (
+                                                                <>
+                                                                    <div className="absolute -right-1 -bottom-1 w-10 h-10 rounded-lg bg-slate-200 -z-10 translate-x-0.5 translate-y-0.5 opacity-50" />
+                                                                    <div className="absolute -right-0.5 -bottom-0.5 w-10 h-10 rounded-lg bg-slate-100 -z-10 translate-x-0.5 translate-y-0.5 opacity-80" />
+                                                                </>
+                                                            )}
+
+                                                            <div className="w-10 h-10 rounded-lg overflow-hidden shadow-sm border border-slate-100 ring-4 ring-white relative z-0">
+                                                                <img src={record.images[0].thumbnailUrl || record.images[0].url} alt="Main Thumbnail" className="w-full h-full object-cover" />
+
+                                                                {/* Multi-image Badge */}
+                                                                {record.images.length > 1 && (
+                                                                    <div className="absolute right-0 bottom-0 bg-slate-800 text-white text-[8px] font-black px-1 py-0.5 rounded-tl-md">
+                                                                        +{record.images.length - 1}
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     ) : (
                                                         <div className="w-10 h-10 rounded-lg bg-slate-50 border-2 border-dashed border-slate-100 flex items-center justify-center text-slate-200 mx-auto">

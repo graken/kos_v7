@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Plus, Search, Image as ImageIcon, Upload,
     Clipboard, Save, History, ChevronRight, X,
-    FileText, Loader2, Link, Edit2, Check, AlertCircle, Trash2
+    FileText, Loader2, Link, Edit2, Check, AlertCircle, Trash2, Download
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { useOSStore } from '@/store/useOSStore';
 
 interface Product {
@@ -23,6 +24,7 @@ interface CoatingRecord {
     rawOcrText?: string;
     degree?: string;
     stage?: string;
+    note?: string;
     createdAt: string;
 }
 
@@ -30,8 +32,7 @@ export default function CoatingControl() {
     const [activeTab, setActiveTab] = useState<'upload' | 'history'>('upload');
     const [products, setProducts] = useState<Product[]>([]);
     const [selectedProductId, setSelectedProductId] = useState<string>('');
-    const [newProductName, setNewProductName] = useState('');
-    const [isAddingProduct, setIsAddingProduct] = useState(false);
+    const [productSearchTerm, setProductSearchTerm] = useState('');
 
     const [image, setImage] = useState<string | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
@@ -78,6 +79,7 @@ export default function CoatingControl() {
     const [isSaving, setIsSaving] = useState(false);
     const [degree, setDegree] = useState('');
     const [stage, setStage] = useState('시작');
+    const [note, setNote] = useState('');
 
     const { currentUser } = useOSStore();
     const canCreate = currentUser?.role === 'admin' || currentUser?.permissions?.['coating-control']?.create;
@@ -142,44 +144,26 @@ export default function CoatingControl() {
         }
     }, [activeTab]);
 
-    const handleAddProduct = async () => {
-        if (!newProductName.trim()) return;
-        try {
-            const res = await fetch('/api/coating/products', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: newProductName }),
-            });
-            const data = await res.json();
-            if (data.id) {
-                setProducts([...products, data]);
-                setSelectedProductId(data.id);
-                setNewProductName('');
-                setIsAddingProduct(false);
-            } else if (data.error) {
-                alert(`추가 실패: ${data.error}`);
-            }
-        } catch (error) {
-            console.error('Failed to add product', error);
-            alert('서버와 통신 중 오류가 발생했습니다.');
+    const handleDeleteProduct = async (id: string, name: string) => {
+        if (!canDelete) {
+            alert('삭제 권한이 없습니다.');
+            return;
         }
-    };
-    const handleDeleteProduct = async () => {
-        if (!selectedProductId) return;
-        const productToDelete = products.find(p => p.id === selectedProductId);
-        if (!productToDelete) return;
-
-        if (!confirm(`'${productToDelete.name}' 품명을 삭제하시겠습니까?\n(등록된 기록이 있으면 삭제되지 않습니다.)`)) return;
+        if (!confirm(`'${name}' 품명을 삭제하시겠습니까?\n(등록된 기록이 있으면 삭제되지 않습니다.)`)) return;
 
         try {
-            const res = await fetch(`/api/coating/products?id=${selectedProductId}`, {
+            const res = await fetch(`/api/coating/products?id=${id}`, {
                 method: 'DELETE'
             });
             const data = await res.json();
 
             if (data.success) {
-                setProducts(products.filter(p => p.id !== selectedProductId));
-                setSelectedProductId('');
+                setProducts(products.filter(p => p.id !== id));
+                if (selectedProductId === id) {
+                    setSelectedProductId('');
+                    setProductSearchTerm('');
+                }
+                alert('삭제되었습니다.');
             } else {
                 alert(data.error || '삭제에 실패했습니다.');
             }
@@ -189,6 +173,32 @@ export default function CoatingControl() {
         }
     };
 
+    const handleResolveProduct = async (name: string): Promise<string | null> => {
+        if (!name.trim()) return null;
+
+        // 1. Check if name already exists in current products list
+        const existing = products.find(p => p.name.toLowerCase() === name.trim().toLowerCase());
+        if (existing) return existing.id;
+
+        // 2. If not, create new product
+        try {
+            const res = await fetch('/api/coating/products', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: name.trim() }),
+            });
+            const data = await res.json();
+            if (data.id) {
+                // Refresh products list locally
+                setProducts(prev => [...prev, data]);
+                return data.id;
+            }
+            return null;
+        } catch (error) {
+            console.error('Failed to resolve product', error);
+            return null;
+        }
+    };
 
     const handleUpdateRecord = async () => {
         if (!canEdit) {
@@ -196,6 +206,18 @@ export default function CoatingControl() {
             return;
         }
         if (!selectedRecordId) return;
+
+        // Resolve product ID if it's not already selected or if term changed
+        let productId = selectedProductId;
+        if (!productId || products.find(p => p.id === productId)?.name !== productSearchTerm) {
+            const resolvedId = await handleResolveProduct(productSearchTerm);
+            if (!resolvedId) {
+                alert('품명을 입력하거나 선택해 주세요.');
+                return;
+            }
+            productId = resolvedId;
+        }
+
         setIsSaving(true);
         try {
             const res = await fetch('/api/coating/records', {
@@ -203,11 +225,12 @@ export default function CoatingControl() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     id: selectedRecordId,
-                    productId: selectedProductId,
+                    productId: productId,
                     extractedData: editData,
                     imageUrl: image,
                     degree: degree ? `${degree.toString().replace(/[^0-9]/g, '') || '1'}차` : "",
-                    stage
+                    stage,
+                    note
                 }),
             });
             const updatedRecord = await res.json();
@@ -295,21 +318,30 @@ export default function CoatingControl() {
             alert('저장 권한이 없습니다.');
             return;
         }
-        if (!selectedProductId) {
-            alert('품명을 선택해주세요.');
-            return;
+
+        // Resolve product ID if it's not already selected or if term changed
+        let productId = selectedProductId;
+        if (!productId || products.find(p => p.id === productId)?.name !== productSearchTerm) {
+            const resolvedId = await handleResolveProduct(productSearchTerm);
+            if (!resolvedId) {
+                alert('품명을 입력하거나 선택해 주세요.');
+                return;
+            }
+            productId = resolvedId;
         }
+
         try {
             const res = await fetch('/api/coating/records', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    productId: selectedProductId,
+                    productId: productId,
                     imageUrl: image,
                     extractedData: editData,
                     rawOcrText: ocrResult?.text,
                     degree: degree ? `${degree.toString().replace(/[^0-9]/g, '') || '1'}차` : "",
-                    stage
+                    stage,
+                    note
                 }),
             });
             const data = await res.json();
@@ -318,7 +350,9 @@ export default function CoatingControl() {
                 setOcrResult(null);
                 setEditData({});
                 setDegree('');
+                setNote('');
                 setSelectedProductId('');
+                setProductSearchTerm('');
                 setStage('시작');
                 setActiveTab('history');
             } else if (data.error) {
@@ -346,6 +380,46 @@ export default function CoatingControl() {
         window.addEventListener('paste', handlePaste);
         return () => window.removeEventListener('paste', handlePaste);
     }, []);
+
+    const handleExportExcel = () => {
+        if (filteredRecords.length === 0) {
+            alert('내보낼 데이터가 없습니다.');
+            return;
+        }
+
+        // Header
+        const baseHeaders = ['순번', '측정날짜', '측정시간', '품명', '차수', '시작/끝', '비고', '최소값', '최대값', '평균값'];
+        const measurementHeaders = Array.from({ length: maxMeasurements }, (_, i) => `측정_${i + 1}`);
+        const headers = [...baseHeaders, ...measurementHeaders];
+
+        const rows = filteredRecords.map((record, index) => {
+            let data: any = {};
+            try { data = JSON.parse(record.extractedData || '{}'); } catch (e) { }
+
+            const baseData = [
+                index + 1,
+                data['측정날짜'] || '',
+                data['측정시간'] || '',
+                record.product.name,
+                record.degree || '',
+                record.stage || '',
+                record.note || '',
+                data['최소(MIN)'] || '',
+                data['최대(MAX)'] || '',
+                data['평균(avg)'] || ''
+            ];
+
+            const measurements = Array.from({ length: maxMeasurements }, (_, i) => data[`측정_${i + 1}`] || '');
+            return [...baseData, ...measurements];
+        });
+
+        const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "박막도포관리 이력");
+
+        const dateStr = new Date().toISOString().split('T')[0];
+        XLSX.writeFile(workbook, `박막도포관리_이력_${dateStr}.xlsx`);
+    };
 
     const filteredRecords = useMemo(() => records.filter(r =>
         r.product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -400,64 +474,82 @@ export default function CoatingControl() {
                                     품명 선택
                                 </label>
                                 <div className="flex gap-2">
-                                    {isAddingProduct ? (
-                                        <div className="flex-1 flex gap-2 animate-in slide-in-from-left-2 transition-all">
+                                    <div className="flex-1 relative group/select">
+                                        <div className="relative">
                                             <input
-                                                autoFocus
                                                 type="text"
-                                                value={newProductName}
-                                                onChange={(e) => setNewProductName(e.target.value)}
-                                                onKeyDown={(e) => e.key === 'Enter' && handleAddProduct()}
-                                                placeholder="새 품명 입력..."
-                                                className="flex-1 px-4 py-2 rounded-xl border border-black/10 focus:outline-none focus:border-black/30"
+                                                placeholder="품명 검색 또는 직접 입력..."
+                                                value={productSearchTerm}
+                                                onChange={(e) => {
+                                                    setProductSearchTerm(e.target.value);
+                                                    if (selectedProductId) setSelectedProductId('');
+                                                }}
+                                                className="w-full h-11 pl-10 pr-20 rounded-xl border border-black/10 focus:outline-none focus:border-black/30 bg-black/[0.02] font-bold text-black/80 transition-all focus:bg-white focus:shadow-sm"
                                             />
-                                            <button
-                                                type="button"
-                                                onClick={handleAddProduct}
-                                                className="px-4 py-2 bg-black text-white rounded-xl font-bold hover:bg-black/80 active:scale-95 transition-transform"
-                                            >
-                                                추가
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => setIsAddingProduct(false)}
-                                                className="p-2 text-black/40 hover:text-black/60 active:scale-90 transition-transform"
-                                            >
-                                                <X size={20} />
-                                            </button>
+                                            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-black/20" />
+                                            <div className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                                                {(productSearchTerm || selectedProductId) && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setProductSearchTerm('');
+                                                            setSelectedProductId('');
+                                                        }}
+                                                        className="p-1 hover:bg-black/5 rounded-full text-black/20 hover:text-black/40 transition-colors"
+                                                    >
+                                                        <X size={16} />
+                                                    </button>
+                                                )}
+                                                {selectedProductId && (
+                                                    <div className="text-green-500">
+                                                        <Check size={16} />
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                    ) : (
-                                        <>
-                                            <select
-                                                value={selectedProductId}
-                                                onChange={(e) => setSelectedProductId(e.target.value)}
-                                                className="flex-1 px-4 py-2 rounded-xl border border-black/10 focus:outline-none focus:border-black/30 appearance-none bg-white"
-                                            >
-                                                <option value="">품명을 선택하세요</option>
-                                                {products.map(p => (
-                                                    <option key={p.id} value={p.id}>{p.name}</option>
-                                                ))}
-                                            </select>
-                                            {canCreate && (
-                                                <button
-                                                    onClick={() => setIsAddingProduct(true)}
-                                                    className="px-4 py-2 bg-black/5 hover:bg-black/10 rounded-xl flex items-center gap-2 font-bold"
-                                                >
-                                                    <Plus size={18} />
-                                                    <span>신규</span>
-                                                </button>
+
+                                        {/* Product List Dropdown */}
+                                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-black/5 shadow-2xl rounded-2xl p-2 z-[60] max-h-64 overflow-y-auto hidden group-focus-within/select:block animate-in fade-in slide-in-from-top-2 duration-200">
+                                            {products.filter(p => p.name.toLowerCase().includes(productSearchTerm.toLowerCase())).length > 0 ? (
+                                                products.filter(p => p.name.toLowerCase().includes(productSearchTerm.toLowerCase())).map(p => (
+                                                    <button
+                                                        key={p.id}
+                                                        type="button"
+                                                        onMouseDown={(e) => {
+                                                            // Use onMouseDown to trigger before blur
+                                                            e.preventDefault();
+                                                            setSelectedProductId(p.id);
+                                                            setProductSearchTerm(p.name);
+                                                        }}
+                                                        className={`w-full text-left px-4 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-between group/item ${selectedProductId === p.id ? 'bg-black text-white' : 'text-black/60 hover:bg-black/5'}`}
+                                                    >
+                                                        <span>{p.name}</span>
+                                                        <div className="flex items-center gap-2">
+                                                            {canDelete && (
+                                                                <div
+                                                                    onMouseDown={(e) => {
+                                                                        e.preventDefault();
+                                                                        e.stopPropagation();
+                                                                        handleDeleteProduct(p.id, p.name);
+                                                                    }}
+                                                                    title="품명 삭제"
+                                                                    className={`p-1.5 rounded-lg transition-colors ${selectedProductId === p.id ? 'hover:bg-white/20 text-white/40 hover:text-white' : 'hover:bg-red-50 text-black/10 hover:text-red-500'}`}
+                                                                >
+                                                                    <Trash2 size={14} />
+                                                                </div>
+                                                            )}
+                                                            {selectedProductId === p.id ? <Check size={14} /> : <ChevronRight size={14} className="opacity-0 group-hover/item:opacity-100 transition-opacity" />}
+                                                        </div>
+                                                    </button>
+                                                ))
+                                            ) : (
+                                                <div className="py-8 text-center text-black/20 text-xs font-bold italic">
+                                                    검색결과가 없습니다. {productSearchTerm.trim() && `"${productSearchTerm}"으로 신규 등록됩니다.`}
+                                                </div>
                                             )}
-                                            {selectedProductId && canDelete && (
-                                                <button
-                                                    onClick={handleDeleteProduct}
-                                                    title="품명 삭제"
-                                                    className="p-2 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl transition-colors active:scale-90"
-                                                >
-                                                    <Trash2 size={18} />
-                                                </button>
-                                            )}
-                                        </>
-                                    )}
+                                        </div>
+                                    </div>
                                 </div>
                             </section>
 
@@ -499,6 +591,19 @@ export default function CoatingControl() {
                                         </button>
                                     </div>
                                 </div>
+                            </section>
+
+                            {/* Note Section */}
+                            <section className="space-y-3">
+                                <label className="text-sm font-bold text-black/60 flex items-center gap-2">
+                                    비고
+                                </label>
+                                <textarea
+                                    value={note}
+                                    onChange={(e) => setNote(e.target.value)}
+                                    placeholder="특이사항을 입력하세요..."
+                                    className="w-full px-4 py-3 rounded-xl border border-black/10 focus:outline-none focus:border-black/30 bg-white min-h-[80px] text-sm resize-none"
+                                />
                             </section>
 
                             {/* Image Upload Zone */}
@@ -622,16 +727,24 @@ export default function CoatingControl() {
                             exit={{ opacity: 0, scale: 0.98 }}
                             className="space-y-6"
                         >
-                            {/* Search */}
-                            <div className="relative max-w-md mx-auto">
-                                <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/30" />
-                                <input
-                                    type="text"
-                                    placeholder="품명 또는 내용 검색..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-11 pr-4 py-3 rounded-2xl bg-black/[0.03] focus:outline-none focus:bg-black/[0.05] transition-all"
-                                />
+                            <div className="flex items-center gap-3 max-w-2xl mx-auto">
+                                <div className="relative flex-1">
+                                    <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/30" />
+                                    <input
+                                        type="text"
+                                        placeholder="품명 또는 내용 검색..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="w-full pl-11 pr-4 py-3 rounded-2xl bg-black/[0.03] focus:outline-none focus:bg-black/[0.05] transition-all"
+                                    />
+                                </div>
+                                <button
+                                    onClick={handleExportExcel}
+                                    className="px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-2xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-green-100 shrink-0"
+                                >
+                                    <Download size={18} />
+                                    <span className="hidden sm:inline">Excel 내보내기</span>
+                                </button>
                             </div>
 
                             {/* Records List */}
@@ -677,6 +790,7 @@ export default function CoatingControl() {
                                                                         <div>품명</div>
                                                                         <div className="text-[9px] opacity-50">차수 & 시작,끝</div>
                                                                     </th>
+                                                                    <th className="p-4 w-48">비고</th>
                                                                     <th className="p-4 w-24 text-center">최소값</th>
                                                                     <th className="p-4 w-24 text-center">최대값</th>
                                                                     <th className="p-4 w-24 text-center">평균값</th>
@@ -727,6 +841,11 @@ export default function CoatingControl() {
                                                                                             {record.stage || '시작'}
                                                                                         </span>
                                                                                     </div>
+                                                                                </div>
+                                                                            </td>
+                                                                            <td className="p-3">
+                                                                                <div className="text-[11px] text-black/60 max-w-[180px] line-clamp-2" title={record.note}>
+                                                                                    {record.note || '-'}
                                                                                 </div>
                                                                             </td>
                                                                             <td className="p-3 text-center font-bold text-black/60">{data['최소(MIN)'] || '-'}</td>
@@ -844,6 +963,11 @@ export default function CoatingControl() {
                                                                                 </span>
                                                                             </div>
                                                                         )}
+                                                                        {record.note && (
+                                                                            <p className="text-[10px] text-black/40 mt-1 line-clamp-1 max-w-[120px] italic">
+                                                                                {record.note}
+                                                                            </p>
+                                                                        )}
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -943,10 +1067,12 @@ export default function CoatingControl() {
                                                         const record = records.find(r => r.id === selectedRecordId);
                                                         if (record) {
                                                             setSelectedProductId(record.productId);
+                                                            setProductSearchTerm(record.product.name);
                                                             setEditData(JSON.parse(record.extractedData || '{}'));
                                                             setImage(record.imageUrl || null);
                                                             setDegree((record.degree || '1').replace(/[^0-9]/g, ''));
                                                             setStage(record.stage || '시작');
+                                                            setNote(record.note || '');
                                                             setIsEditingRecord(true);
                                                         }
                                                     }}
@@ -1033,15 +1159,54 @@ export default function CoatingControl() {
                                                     <p className="text-[11px] font-medium text-black/40 mb-1">품명 정보</p>
                                                     {isEditingRecord ? (
                                                         <div className="space-y-2">
-                                                            <select
-                                                                value={selectedProductId}
-                                                                onChange={(e) => setSelectedProductId(e.target.value)}
-                                                                className="w-full bg-white border border-black/10 rounded-lg px-2 py-1 text-xs outline-none focus:border-black/30"
-                                                            >
-                                                                {products.map(p => (
-                                                                    <option key={p.id} value={p.id}>{p.name}</option>
-                                                                ))}
-                                                            </select>
+                                                            <div className="relative group/modal-select">
+                                                                <div className="relative">
+                                                                    <input
+                                                                        type="text"
+                                                                        placeholder="품명 검색..."
+                                                                        value={productSearchTerm}
+                                                                        onChange={(e) => {
+                                                                            setProductSearchTerm(e.target.value);
+                                                                            if (selectedProductId) setSelectedProductId('');
+                                                                        }}
+                                                                        className="w-full bg-white border border-black/10 rounded-lg pl-2 pr-12 py-1.5 text-xs outline-none focus:border-black/30 font-bold"
+                                                                    />
+                                                                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                                                                        {(productSearchTerm || selectedProductId) && (
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setProductSearchTerm('');
+                                                                                    setSelectedProductId('');
+                                                                                }}
+                                                                                className="p-1 hover:bg-black/5 rounded-full text-black/20 hover:text-black/40 transition-colors"
+                                                                            >
+                                                                                <X size={12} />
+                                                                            </button>
+                                                                        )}
+                                                                        {selectedProductId && <Check size={12} className="text-green-500" />}
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Modal Dropdown */}
+                                                                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-black/5 shadow-xl rounded-xl p-1 z-[70] max-h-40 overflow-y-auto hidden group-focus-within/modal-select:block">
+                                                                    {products.filter(p => p.name.toLowerCase().includes(productSearchTerm.toLowerCase())).map(p => (
+                                                                        <button
+                                                                            key={p.id}
+                                                                            type="button"
+                                                                            onMouseDown={(e) => {
+                                                                                e.preventDefault();
+                                                                                setSelectedProductId(p.id);
+                                                                                setProductSearchTerm(p.name);
+                                                                            }}
+                                                                            className={`w-full text-left px-3 py-2 rounded-lg font-bold text-[11px] transition-all flex items-center justify-between ${selectedProductId === p.id ? 'bg-black text-white' : 'text-black/60 hover:bg-black/5'}`}
+                                                                        >
+                                                                            {p.name}
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
                                                             <div className="flex bg-black/5 p-1 rounded-lg gap-1">
                                                                 <input
                                                                     type="text"
@@ -1084,6 +1249,23 @@ export default function CoatingControl() {
                                                         </>
                                                     )}
                                                 </div>
+                                            </div>
+
+                                            {/* Note Detail Section */}
+                                            <div className="p-5 bg-orange-50/30 border border-orange-100/50 rounded-[20px] space-y-2">
+                                                <p className="text-[11px] font-bold text-orange-400">비고 (참고사항)</p>
+                                                {isEditingRecord ? (
+                                                    <textarea
+                                                        value={note}
+                                                        onChange={(e) => setNote(e.target.value)}
+                                                        placeholder="특이사항 입력..."
+                                                        className="w-full bg-white border border-orange-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400 min-h-[60px] resize-none"
+                                                    />
+                                                ) : (
+                                                    <p className="text-sm text-black/70 leading-relaxed min-h-[20px]">
+                                                        {record.note || '등록된 비고 내용이 없습니다.'}
+                                                    </p>
+                                                )}
                                             </div>
 
                                             <div className="space-y-4 mb-6">

@@ -25,6 +25,7 @@ model CoatingRecord {
   rawOcrText  String?
   degree      String?  @default("")
   stage       String?  @default("")
+  note        String?  @default("")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

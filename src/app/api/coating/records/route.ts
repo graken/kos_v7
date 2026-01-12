@@ -20,7 +20,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
     try {
-        const { productId, imageUrl, extractedData, rawOcrText, degree, stage } = await req.json();
+        const { productId, imageUrl, extractedData, rawOcrText, degree, stage, note } = await req.json();
 
         if (!productId) return NextResponse.json({ error: 'productId is required' }, { status: 400 });
 
@@ -32,6 +32,7 @@ export async function POST(req: Request) {
                 rawOcrText,
                 degree: degree || "",
                 stage: stage || "",
+                note: note || "",
             },
             include: { product: true },
         });
@@ -44,7 +45,7 @@ export async function POST(req: Request) {
 
 export async function PATCH(req: Request) {
     try {
-        const { id, productId, imageUrl, extractedData, rawOcrText, degree, stage } = await req.json();
+        const { id, productId, imageUrl, extractedData, rawOcrText, degree, stage, note } = await req.json();
 
         if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
 
@@ -55,6 +56,7 @@ export async function PATCH(req: Request) {
         if (rawOcrText !== undefined) updateData.rawOcrText = rawOcrText;
         if (degree !== undefined) updateData.degree = degree;
         if (stage !== undefined) updateData.stage = stage;
+        if (note !== undefined) updateData.note = note;
 
         const record = await prisma.coatingRecord.update({
             where: { id },

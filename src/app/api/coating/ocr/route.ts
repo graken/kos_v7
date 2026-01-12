@@ -108,10 +108,10 @@ export async function POST(req: Request) {
         }
 
         // 3. 통계 데이터 추출 (전체 텍스트에서 패턴 매칭)
-        const maxMatch = fullText.match(/MAX\s*[:\s]*(\d+\.\d{4})/i);
+        const maxMatch = fullText.match(/MAX\s*[:\s]*(\d+\.\d+)/i);
         if (maxMatch) extractedValues['최대(MAX)'] = maxMatch[1];
 
-        const minMatch = fullText.match(/MIN\s*[:\s]*(\d+\.\d{4})/i);
+        const minMatch = fullText.match(/MIN\s*[:\s]*(\d+\.\d+)/i);
         if (minMatch) extractedValues['최소(MIN)'] = minMatch[1];
 
         // 평균 (다양한 인식 패턴 대응)
