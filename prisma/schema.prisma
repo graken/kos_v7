@@ -37,6 +37,7 @@ model User {
   avatar      String?
   role        String   @default("user")
   preferences UserPreference?
+  memos       Memo[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -48,6 +49,29 @@ model UserPreference {
   apps        String   // JSON stringified AppData[] (바탕화면 구성)
   permissions String   @default("{}") // JSON stringified Record<string, any> (앱별 상세 권한)
   updatedAt   DateTime @updatedAt
+}
+
+model Memo {
+  id        String     @id @default(cuid())
+  title     String
+  content   String     // Rich text content (HTML or JSON)
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  files     MemoFile[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model MemoFile {
+  id           String   @id @default(cuid())
+  memoId       String
+  memo         Memo     @relation(fields: [memoId], references: [id], onDelete: Cascade)
+  url          String   // File path
+  thumbnailUrl String?  // Thumbnail path
+  filename     String
+  size         Int
+  type         String
+  createdAt    DateTime @default(now())
 }
 
 model MaintenanceRecord {
@@ -71,4 +95,38 @@ model MaintenanceImage {
   url          String            // 원본 또는 압축된 원본 경로
   thumbnailUrl String?           // 썸네일 경로
   createdAt    DateTime          @default(now())
+}
+model ShinsungProduct {
+  id        String           @id @default(cuid())
+  name      String           @unique
+  records   ShinsungRecord[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model ShinsungPart {
+  id        String           @id @default(cuid())
+  name      String           @unique
+  records   ShinsungRecord[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model ShinsungRecord {
+  id            String         @id @default(cuid())
+  productId     String
+  product       ShinsungProduct @relation(fields: [productId], references: [id])
+  partId        String?
+  part          ShinsungPart?   @relation(fields: [partId], references: [id])
+  imageUrl      String?
+  thumbnailUrl  String?
+  testDate      String?
+  thickness     String?
+  extractedData String         // JSON stringified data
+  rawOcrText    String?
+  ratio         String?
+  progress      String?
+  note          String?        @default("")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 }

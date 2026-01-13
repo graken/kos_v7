@@ -61,13 +61,22 @@ export async function POST(req: Request) {
         const extractedValues: any = {};
 
         // 1. 기본 정보 추출 (날짜, 시간, N)
-        const dateMatch = fullText.match(/DATE\s*[:\s]*(\d{4}\/\s*\d+\/\s*\d+)/i);
+        // DATE 2026/ 1/12 -> 2026/01/12
+        const dateMatch = fullText.match(/DATE\s*[:\s]*(\d{4})\s*\/\s*(\d{1,2})\s*\/\s*(\d{1,2})/i);
         if (dateMatch) {
-            extractedValues['측정날짜'] = dateMatch[1].replace(/\s+/g, '');
+            const year = dateMatch[1];
+            const month = dateMatch[2].padStart(2, '0');
+            const day = dateMatch[3].padStart(2, '0');
+            extractedValues['측정날짜'] = `${year}/${month}/${day}`;
         }
 
-        const timeMatch = fullText.match(/TIME\s*[:\s]*(\d+:\d+)/i);
-        if (timeMatch) extractedValues['측정시간'] = timeMatch[1];
+        // TIME 19 : 5 -> 19:05
+        const timeMatch = fullText.match(/TIME\s*[:\s]*(\d{1,2})\s*[:\s]\s*(\d{1,2})/i);
+        if (timeMatch) {
+            const hour = timeMatch[1].padStart(2, '0');
+            const minute = timeMatch[2].padStart(2, '0');
+            extractedValues['측정시간'] = `${hour}:${minute}`;
+        }
 
         // 측정 횟수 N 감지 (가변 횟수 지원)
         // \bN\b 를 사용하여 MIN 등의 단어 끝에 있는 N과 혼동되지 않도록 함
@@ -108,29 +117,72 @@ export async function POST(req: Request) {
         }
 
         // 3. 통계 데이터 추출 (전체 텍스트에서 패턴 매칭)
-        const maxMatch = fullText.match(/MAX\s*[:\s]*(\d+\.\d+)/i);
-        if (maxMatch) extractedValues['최대(MAX)'] = maxMatch[1];
+        // MAX 패턴 - \b를 사용하여 정확한 단어 경계 확인 및 오타 대응
+        const maxMatch = fullText.match(/\b(MAX|M4X|MQX)\b\s*[:\s]*(\d+\.\d+)/i);
+        if (maxMatch) extractedValues['최대(MAX)'] = maxMatch[2];
 
-        const minMatch = fullText.match(/MIN\s*[:\s]*(\d+\.\d+)/i);
-        if (minMatch) extractedValues['최소(MIN)'] = minMatch[1];
+        // MIN 패턴 - M1N, MIN 등 대응
+        const minMatch = fullText.match(/\b(MIN|M1N|MlN)\b\s*[:\s]*(\d+\.\d+)/i);
+        if (minMatch) extractedValues['최소(MIN)'] = minMatch[2];
 
         // 평균 (다양한 인식 패턴 대응)
         const avgPatterns = [
-            /ㄡˇ\s*(\d+\.\d{6})/i,
-            /ㄡˇ[\s\S]*?(\d+\.\d{6})/i,
-            /X\s*[:\s]*(\d+\.\d{6})/i,
-            /평균\s*[:\s]*(\d+\.\d{6})/i,
+            /\b(ㄡˇ|X|AVG|평균)\b\s*[:\s]*(\d+\.\d{4,6})/i,
+            /ㄡˇ[\s\S]*?(\d+\.\d{4,6})/i,
             /(\d+\.\d{5,6})/ // 평균은 보통 5-6자리로 인식됨
         ];
 
         for (const pattern of avgPatterns) {
             const match = fullText.match(pattern);
             if (match) {
-                // 이미 추출된 MAX/MIN과 겹치지 않는지 확인 (정규식 순서상 중요)
-                if (match[1] !== extractedValues['최대(MAX)'] && match[1] !== extractedValues['최소(MIN)']) {
-                    extractedValues['평균(avg)'] = match[1];
+                // 캡처 그룹이 있는 경우와 없는 경우 대응
+                const val = match.length > 1 ? match[match.length - 1] : match[0];
+                // 이미 추출된 MAX/MIN과 겹치지 않는지 확인
+                if (val !== extractedValues['최대(MAX)'] && val !== extractedValues['최소(MIN)']) {
+                    extractedValues['평균(avg)'] = val;
                     break;
                 }
+            }
+        }
+
+        // 4. 최종 교정 및 보완 로직 (추가)
+        const measurements: number[] = [];
+        for (let i = 1; i <= totalN; i++) {
+            const v = parseFloat(extractedValues[`측정_${i}`]);
+            if (!isNaN(v)) measurements.push(v);
+        }
+
+        if (measurements.length > 0) {
+            const realMax = Math.max(...measurements);
+            const realMin = Math.min(...measurements);
+            const realMaxStr = realMax.toFixed(4);
+            const realMinStr = realMin.toFixed(4);
+
+            let currentMax = parseFloat(extractedValues['최대(MAX)']);
+            let currentMin = parseFloat(extractedValues['최소(MIN)']);
+
+            // 1. 값이 없으면 측정값으로 채움
+            if (!extractedValues['최대(MAX)']) extractedValues['최대(MAX)'] = realMaxStr;
+            if (!extractedValues['최소(MIN)']) extractedValues['최소(MIN)'] = realMinStr;
+
+            // 2. 값이 있어도 측정값 범위를 벗어나면 교정 (OCR 오인식 방지)
+            // 예: MIN이 0.0050인데 실제 측정값에 0.0048이 있으면 0.0048로 교정
+            if (!isNaN(currentMax) && currentMax < realMax) extractedValues['최대(MAX)'] = realMaxStr;
+            if (!isNaN(currentMin) && currentMin > realMin) extractedValues['최소(MIN)'] = realMinStr;
+
+            // 3. MAX와 MIN이 같게 인식되었는데 실제로는 다른 경우 교정
+            if (extractedValues['최대(MAX)'] === extractedValues['최소(MIN)'] && realMax !== realMin) {
+                extractedValues['최대(MAX)'] = realMaxStr;
+                extractedValues['최소(MIN)'] = realMinStr;
+            }
+
+            // 4. 최종 대소 관계 확인
+            currentMax = parseFloat(extractedValues['최대(MAX)']);
+            currentMin = parseFloat(extractedValues['최소(MIN)']);
+            if (!isNaN(currentMax) && !isNaN(currentMin) && currentMax < currentMin) {
+                const temp = extractedValues['최대(MAX)'];
+                extractedValues['최대(MAX)'] = extractedValues['최소(MIN)'];
+                extractedValues['최소(MIN)'] = temp;
             }
         }
 

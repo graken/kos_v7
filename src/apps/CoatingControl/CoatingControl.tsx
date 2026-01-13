@@ -138,11 +138,26 @@ export default function CoatingControl() {
         }
     };
 
+    const resetForm = useCallback(() => {
+        setImage(null);
+        setOcrResult(null);
+        setEditData({});
+        setDegree('');
+        setNote('');
+        setSelectedProductId('');
+        setProductSearchTerm('');
+        setStage('시작');
+        setSelectedRecordId(null);
+        setIsEditingRecord(false);
+    }, []);
+
     useEffect(() => {
         if (activeTab === 'history') {
             fetchRecords();
+        } else if (activeTab === 'upload') {
+            resetForm();
         }
-    }, [activeTab]);
+    }, [activeTab, resetForm]);
 
     const handleDeleteProduct = async (id: string, name: string) => {
         if (!canDelete) {
@@ -236,8 +251,8 @@ export default function CoatingControl() {
             const updatedRecord = await res.json();
             if (updatedRecord.id) {
                 setRecords(records.map(r => r.id === updatedRecord.id ? updatedRecord : r));
-                setIsEditingRecord(false);
                 alert('수정되었습니다.');
+                resetForm();
             }
         } catch (error) {
             console.error('Update failed', error);
@@ -347,13 +362,7 @@ export default function CoatingControl() {
             const data = await res.json();
             if (data.id) {
                 alert('기록이 저장되었습니다.');
-                setOcrResult(null);
-                setEditData({});
-                setDegree('');
-                setNote('');
-                setSelectedProductId('');
-                setProductSearchTerm('');
-                setStage('시작');
+                resetForm();
                 setActiveTab('history');
             } else if (data.error) {
                 alert(`저장 실패: ${data.error}`);
@@ -1034,7 +1043,7 @@ export default function CoatingControl() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         className="absolute inset-0 z-[998] flex items-center justify-center p-4 bg-black/40 backdrop-blur-md overflow-y-auto"
-                        onClick={() => setSelectedRecordId(null)}
+                        onClick={resetForm}
                     >
                         <motion.div
                             initial={{ scale: 0.95, opacity: 0, y: 20 }}
@@ -1100,10 +1109,7 @@ export default function CoatingControl() {
                                         </button>
                                     )}
                                     <button
-                                        onClick={() => {
-                                            setSelectedRecordId(null);
-                                            setIsEditingRecord(false);
-                                        }}
+                                        onClick={resetForm}
                                         className="w-10 h-10 rounded-full bg-black/5 hover:bg-black/10 flex items-center justify-center transition-colors"
                                     >
                                         <X size={20} className="text-black/40" />

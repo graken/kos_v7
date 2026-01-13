@@ -87,6 +87,26 @@ export const APP_REGISTRY: Record<string, AppDefinition> = {
             maximizable: true
         },
         name: '사용자 관리'
+    },
+    'notepad': {
+        component: dynamic(() => import('@/apps/Notepad/Notepad')),
+        config: {
+            defaultWidth: 1000,
+            defaultHeight: 700,
+            resizable: true,
+            maximizable: true
+        },
+        name: '메모장'
+    },
+    'shinsung-data': {
+        component: dynamic(() => import('@/apps/ShinsungData/ShinsungData')),
+        config: {
+            defaultWidth: 1100,
+            defaultHeight: 800,
+            resizable: true,
+            maximizable: true
+        },
+        name: '신성데이터'
     }
 };
 

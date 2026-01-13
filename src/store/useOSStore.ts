@@ -134,9 +134,10 @@ const INITIAL_APPS: AppData[] = [
   { id: 'gravure-coating', name: '그라비아 도포', iconName: 'Droplets' },
   { id: 'roll-calculator', name: '롤직경계산기', iconName: 'Calculator' },
   { id: 'equipment-maintenance', name: '설비점검', iconName: 'Activity' },
+  { id: 'notepad', name: '메모장', iconName: 'FileText' },
 ];
 
-export const INSTALLED_APP_IDS = ['browser', 'files', 'photos', 'messages', 'mail', 'settings', 'calculator', 'coating-control', 'gravure-coating', 'roll-calculator', 'equipment-maintenance', 'user-manager'];
+export const INSTALLED_APP_IDS = ['browser', 'files', 'photos', 'messages', 'mail', 'settings', 'calculator', 'coating-control', 'gravure-coating', 'roll-calculator', 'equipment-maintenance', 'user-manager', 'notepad', 'shinsung-data'];
 
 const ADMIN_USER: User = {
   id: 'admin-1',
@@ -474,11 +475,14 @@ export const useOSStore = create<OSState>()(
   )
 );
 
-// 탭 간 실시간 동기화 리스너
+// 탭 간 실시간 동기화 리스너 (무한 루프 방지를 위한 가드 추가)
 if (typeof window !== 'undefined') {
+  let isRehydrating = false;
   window.addEventListener('storage', (event) => {
-    if (event.key === 'kos-v7-storage') {
+    if (event.key === 'kos-v7-storage' && !isRehydrating) {
+      isRehydrating = true;
       useOSStore.persist.rehydrate();
+      setTimeout(() => { isRehydrating = false; }, 100);
     }
   });
 }

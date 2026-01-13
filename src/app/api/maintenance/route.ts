@@ -42,9 +42,8 @@ export async function GET(req: Request) {
             ];
         }
 
-        // Check for model existence with detailed logging
+        // Check for model existence
         const availableModels = Object.keys(prisma).filter(k => !k.startsWith('_') && !k.startsWith('$'));
-        console.log('Available models in generated client:', availableModels);
 
         const records = await model.findMany({
             where,
