@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { X, Minus, Square, Copy } from 'lucide-react';
 import { useOSStore, WindowState } from '@/store/useOSStore';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, memo, useMemo } from 'react';
 import { APP_REGISTRY } from '@/apps/registry';
 
 interface WindowProps {
@@ -12,7 +12,7 @@ interface WindowProps {
 
 type ResizeDirection = 'n' | 's' | 'e' | 'w' | 'nw' | 'ne' | 'sw' | 'se';
 
-export default function Window({ window: windowData }: WindowProps) {
+const Window = memo(function Window({ window: windowData }: WindowProps) {
     const { closeApp, focusApp, minimizeApp, maximizeApp, updateWindowDimensions, focusedWindowId } = useOSStore();
     const isFocused = focusedWindowId === windowData.id;
 
@@ -115,45 +115,44 @@ export default function Window({ window: windowData }: WindowProps) {
 
     // if (windowData.isMinimized) return null; // 삭제: 애니메이션을 위해 렌더링 유지
 
-    const AppComponent = APP_REGISTRY[windowData.id]?.component;
+    const AppComponent = useMemo(() => APP_REGISTRY[windowData.id]?.component, [windowData.id]);
 
     return (
         <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 100 }}
             animate={{
                 opacity: windowData.isMinimized ? 0 : 1,
-                scale: windowData.isMinimized ? 0.8 : (isDragging ? 1.02 : 1),
-                y: 0, // initial의 y: 100을 상쇄하여 정확한 좌표(top)에 배치
+                scale: windowData.isMinimized ? 0.8 : (isDragging ? 1.01 : 1), // Slightly reduced scale for better perf
+                x: windowData.x,
+                y: windowData.isMinimized ? (typeof window !== 'undefined' ? window.innerHeight : 1000) : windowData.y,
+                width: windowData.width,
+                height: windowData.height,
                 boxShadow: isDragging || resizeDir
                     ? "0 30px 60px -12px rgba(0, 0, 0, 0.4)"
                     : isFocused ? "0 20px 40px -12px rgba(0, 0, 0, 0.25)" : "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-                // Position and Size properties for animations
-                left: windowData.x,
-                top: windowData.isMinimized ? window.innerHeight : windowData.y,
-                width: windowData.width,
-                height: windowData.height,
             }}
             exit={{ opacity: 0, scale: 0.9, y: 100 }}
             transition={{
-                // 드래그나 리사이징 중일 때는 애니메이션 없이 즉각 반응 (사용자 조작감 보존)
-                // 최대화/복원 시에만 젤리 같은 스프링 효과 적용
                 type: (isDragging || resizeDir) ? "tween" : "spring",
                 duration: (isDragging || resizeDir) ? 0 : undefined,
-                stiffness: 300,
-                damping: 20,
+                stiffness: 400,
+                damping: 30,
                 mass: 0.8,
                 bounce: (isDragging || resizeDir) ? 0 : 0.4,
                 opacity: { duration: 0.2 },
-                left: (isDragging || resizeDir) ? { duration: 0 } : undefined,
-                top: (isDragging || resizeDir) ? { duration: 0 } : undefined,
+                x: (isDragging || resizeDir) ? { duration: 0 } : undefined,
+                y: (isDragging || resizeDir) ? { duration: 0 } : undefined,
                 width: (isDragging || resizeDir) ? { duration: 0 } : undefined,
                 height: (isDragging || resizeDir) ? { duration: 0 } : undefined,
             }}
             style={{
                 zIndex: windowData.zIndex,
                 position: 'fixed',
+                left: 0,
+                top: 0,
                 borderRadius: windowData.isMaximized ? 0 : '0.75rem',
                 pointerEvents: windowData.isMinimized ? 'none' : 'auto',
+                willChange: (isDragging || resizeDir) ? 'transform, width, height' : 'auto',
             }}
             onMouseDown={() => focusApp(windowData.id)}
             onContextMenu={(e) => {
@@ -164,7 +163,7 @@ export default function Window({ window: windowData }: WindowProps) {
         ${isFocused ? 'ring-1 ring-blue-500/30 shadow-2xl' : 'ring-1 ring-black/5 shadow-lg'}
       `}
         >
-            <div className={`absolute inset-0 -z-10 glass ${isFocused ? 'bg-white' : 'bg-white/75'}`} />
+            <div className={`absolute inset-0 -z-10 ${(isDragging || resizeDir) ? 'bg-white shadow-xl' : 'glass ' + (isFocused ? 'bg-white' : 'bg-white/75')}`} />
             {/* Resizing Handles (Hidden if maximized or fixed size) */}
             {!windowData.isMaximized && !isFixedSize && (
                 <>
@@ -238,4 +237,6 @@ export default function Window({ window: windowData }: WindowProps) {
             </div>
         </motion.div>
     );
-}
+});
+
+export default Window;

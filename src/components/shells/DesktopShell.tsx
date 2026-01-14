@@ -9,7 +9,7 @@ import { AnimatePresence } from "framer-motion";
 import ContextMenu from "@/components/common/ContextMenu";
 
 export default function DesktopShell() {
-    const { windows } = useOSStore();
+    const windows = useOSStore(state => state.windows);
     const openWindows = Object.values(windows);
 
     return (
