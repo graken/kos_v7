@@ -20,6 +20,7 @@ function getVisionClient() {
 }
 
 export async function POST(req: Request) {
+    console.log('--- SHINSUNG OCR POST REQUEST RECEIVED ---');
     try {
         const { image } = await req.json();
         if (!image) return NextResponse.json({ error: 'image data is required' }, { status: 400 });
@@ -35,6 +36,10 @@ export async function POST(req: Request) {
 
         const [result] = await client.textDetection({ image: { content: image } });
         const fullText = result.fullTextAnnotation?.text || "";
+
+        console.log('--- Raw Vision Response (Shinsung) ---');
+        console.log(fullText);
+        console.log('--------------------------------------');
 
         const extractedValues: any = {};
 
