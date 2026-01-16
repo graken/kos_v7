@@ -6,9 +6,10 @@ import {
     Plus, Search, Filter, Camera, X, Check,
     ChevronRight, Trash2, Calendar, HardDrive,
     MapPin, User, FileText, AlertCircle, Loader2, Image as ImageIcon,
-    Edit
+    Edit, Download
 } from 'lucide-react';
 import { format } from 'date-fns';
+import * as XLSX from 'xlsx';
 import { useOSStore } from '@/store/useOSStore';
 import { processImage } from '@/lib/image-utils';
 
@@ -38,31 +39,95 @@ export default function EquipmentMaintenance() {
     const [editingRecord, setEditingRecord] = useState<MaintenanceRecord | null>(null);
     const [quickCompleteRecord, setQuickCompleteRecord] = useState<MaintenanceRecord | null>(null);
     const [overlayImage, setOverlayImage] = useState<string | null>(null);
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
     const [incompleteOnly, setIncompleteOnly] = useState(false);
     const [containerWidth, setContainerWidth] = useState(0);
     const observerRef = useRef<ResizeObserver | null>(null);
 
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchQuery(searchTerm);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
     // Fetch records
-    const fetchRecords = useCallback(async () => {
+    const fetchRecords = useCallback(async (pageNum = 1) => {
         try {
             const url = new URL('/api/maintenance', window.location.origin);
             if (incompleteOnly) url.searchParams.append('incompleteOnly', 'true');
-            if (searchQuery) url.searchParams.append('query', searchQuery);
+            if (debouncedSearchQuery) url.searchParams.append('query', debouncedSearchQuery);
+            url.searchParams.append('page', pageNum.toString());
+            url.searchParams.append('limit', '20');
 
             const res = await fetch(url);
             const data = await res.json();
-            setRecords(Array.isArray(data) ? data : []);
+            if (Array.isArray(data)) {
+                if (pageNum === 1) {
+                    setRecords(data);
+                } else {
+                    setRecords(prev => [...prev, ...data]);
+                }
+                setHasMore(data.length === 20);
+                setPage(pageNum);
+            }
         } catch (err) {
             console.error('Failed to fetch records:', err);
         } finally {
             setLoading(false);
         }
-    }, [incompleteOnly, searchQuery]);
+    }, [incompleteOnly, debouncedSearchQuery]);
 
     useEffect(() => {
         fetchRecords();
     }, [fetchRecords]);
+
+    const handleExportExcel = async () => {
+        if (records.length === 0) {
+            alert('내보낼 데이터가 없습니다.');
+            return;
+        }
+
+        let exportData = records;
+
+        if (hasMore || records.length >= 20) {
+            try {
+                const url = new URL('/api/maintenance', window.location.origin);
+                url.searchParams.append('all', 'true');
+                if (incompleteOnly) url.searchParams.append('incompleteOnly', 'true');
+                if (debouncedSearchQuery) url.searchParams.append('query', debouncedSearchQuery);
+
+                const res = await fetch(url);
+                const allData = await res.json();
+                if (Array.isArray(allData)) {
+                    exportData = allData;
+                }
+            } catch (error) {
+                console.error('Failed to fetch all records for export', error);
+                alert('전체 데이터를 불러오는데 실패했습니다. 현재 화면의 데이터만 내보냅니다.');
+            }
+        }
+
+        const rows = exportData.map((r, i) => ({
+            "No": i + 1,
+            "점검일": format(new Date(r.checkDate), 'yyyy-MM-dd'),
+            "설비명": r.equipmentName,
+            "부위": r.part,
+            "점검내용": r.detail,
+            "수리업체": r.company || '',
+            "완료일": r.completionDate ? format(new Date(r.completionDate), 'yyyy-MM-dd') : '미완료',
+            "비고": r.note || '',
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(rows);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "MaintenanceRecords");
+        XLSX.writeFile(workbook, `설비점검이력_${format(new Date(), 'yyyyMMdd')}.xlsx`);
+    };
 
     // View resize listener
     const containerRefCallback = useCallback((node: HTMLDivElement | null) => {
@@ -105,8 +170,37 @@ export default function EquipmentMaintenance() {
         setQuickCompleteRecord(record);
     };
 
+    // --- Back Button Support (Android/Mobile) ---
+    const { pushBackAction, popBackAction } = useOSStore();
+
+    useEffect(() => {
+        if (isModalOpen) pushBackAction('maintenance-register', () => setIsModalOpen(false));
+        else popBackAction('maintenance-register');
+    }, [isModalOpen, pushBackAction, popBackAction]);
+
+    useEffect(() => {
+        if (selectedRecord) pushBackAction('maintenance-detail', () => setSelectedRecord(null));
+        else popBackAction('maintenance-detail');
+    }, [selectedRecord, pushBackAction, popBackAction]);
+
+    useEffect(() => {
+        if (editingRecord) pushBackAction('maintenance-edit', () => setEditingRecord(null));
+        else popBackAction('maintenance-edit');
+    }, [editingRecord, pushBackAction, popBackAction]);
+
+    useEffect(() => {
+        if (quickCompleteRecord) pushBackAction('maintenance-quick-complete', () => setQuickCompleteRecord(null));
+        else popBackAction('maintenance-quick-complete');
+    }, [quickCompleteRecord, pushBackAction, popBackAction]);
+
+    useEffect(() => {
+        if (overlayImage) pushBackAction('maintenance-image-overlay', () => setOverlayImage(null));
+        else popBackAction('maintenance-image-overlay');
+    }, [overlayImage, pushBackAction, popBackAction]);
+    // ------------------------------------------
+
     return (
-        <div ref={containerRefCallback} className="flex flex-col h-full bg-[#f8fafc] text-slate-800 font-sans overflow-hidden">
+        <div ref={containerRefCallback} className="flex flex-col h-full bg-[#f8fafc] text-slate-800 font-sans overflow-hidden relative">
             {/* Top Navigation / Header */}
             <div className="bg-white border-b border-slate-200 px-6 py-4 flex flex-wrap items-center justify-between gap-4 shadow-sm relative z-20">
                 <div className="flex items-center gap-3">
@@ -148,12 +242,20 @@ export default function EquipmentMaintenance() {
                         <span>미완료만 보기</span>
                     </div>
 
+                    <button
+                        onClick={handleExportExcel}
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition-all shadow-lg shadow-emerald-200"
+                    >
+                        <Download size={18} />
+                        Excel 전송
+                    </button>
+
                     <div className="relative">
                         <input
                             type="text"
                             placeholder="검색 (설비명, 내용 등)..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                             className="pl-10 pr-4 py-2 bg-slate-100 border-none rounded-lg text-sm font-medium w-64 focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none"
                         />
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
@@ -362,6 +464,18 @@ export default function EquipmentMaintenance() {
                                     </AnimatePresence>
                                 </tbody>
                             </table>
+                            {hasMore && (
+                                <div className="flex justify-center py-8">
+                                    <button
+                                        onClick={() => fetchRecords(page + 1)}
+                                        disabled={loading}
+                                        className="px-8 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm disabled:opacity-50"
+                                    >
+                                        {loading ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+                                        더 보기
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -420,7 +534,7 @@ export default function EquipmentMaintenance() {
             {/* Image Overlay */}
             <AnimatePresence>
                 {overlayImage && (
-                    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 z-[200] flex items-center justify-center p-4">
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -456,20 +570,11 @@ export default function EquipmentMaintenance() {
 
 // Separate Modal Component for clarity
 function MaintenanceModal({ onClose, onSuccess, editData, isMobile, canComplete }: { onClose: () => void, onSuccess: () => void, editData?: MaintenanceRecord | null, isMobile: boolean, canComplete: boolean }) {
-    const [formData, setFormData] = useState({
-        checkDate: editData ? format(new Date(editData.checkDate), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
-        equipmentName: editData?.equipmentName || '',
-        part: editData?.part || '',
-        detail: editData?.detail || '',
-        company: editData?.company || '',
-        note: editData?.note || '',
-        completionDate: editData?.completionDate ? format(new Date(editData.completionDate), 'yyyy-MM-dd') : ''
-    });
-    const [imageUrls, setImageUrls] = useState<{ original: string, thumbnail: string }[]>(
-        editData?.images?.map(img => ({ original: img.url, thumbnail: img.thumbnailUrl || img.url })) || []
+    const [formData, setFormData] = useState<Partial<MaintenanceRecord>>(
+        editData ? { ...editData } : { checkDate: format(new Date(), 'yyyy-MM-dd'), images: [] }
     );
     const [isProcessing, setIsProcessing] = useState(false);
-    const [submitting, setSubmitting] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     const [partSearch, setPartSearch] = useState('');
     const [activeField, setActiveField] = useState<'equipmentName' | 'part' | 'company'>('part');
     const [showMobileSelector, setShowMobileSelector] = useState(false);
@@ -509,36 +614,35 @@ function MaintenanceModal({ onClose, onSuccess, editData, isMobile, canComplete 
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
-        if (files) {
-            setIsProcessing(true);
-            try {
-                const processed = await Promise.all(
-                    Array.from(files).map(file => processImage(file))
-                );
-                setImageUrls([...imageUrls, ...processed]);
-            } catch (err) {
-                console.error('Image processing error:', err);
-                alert('이미지 처리 중 오류가 발생했습니다.');
-            } finally {
-                setIsProcessing(false);
+        if (!files) return;
+
+        setIsProcessing(true);
+        try {
+            const newImages = [...(formData.images || [])];
+            for (let i = 0; i < files.length; i++) {
+                const processed = await processImage(files[i]);
+                newImages.push({
+                    id: `new-${Date.now()}-${i}`,
+                    url: processed.original,
+                    thumbnailUrl: processed.thumbnail
+                });
             }
+            setFormData({ ...formData, images: newImages });
+        } catch (err) {
+            console.error('Image processing error:', err);
+            alert('이미지 처리 중 오류가 발생했습니다.');
+        } finally {
+            setIsProcessing(false);
         }
     };
 
     const getTitle = () => {
-        if (activeField === 'equipmentName') return '설비명 선택';
-        if (activeField === 'part') return '설비부위 선택';
-        if (activeField === 'company') return '업체 선택';
-        return '';
-    };
-
-    const fileToBase64 = (file: File): Promise<string> => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = error => reject(error);
-        });
+        switch (activeField) {
+            case 'equipmentName': return '설비명';
+            case 'part': return '부위';
+            case 'company': return '수리업체';
+            default: return '';
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -548,15 +652,12 @@ function MaintenanceModal({ onClose, onSuccess, editData, isMobile, canComplete 
             return;
         }
 
-        setSubmitting(true);
+        setIsSaving(true);
         try {
-            const payload = { ...formData, imageUrls };
-            if (editData) (payload as any).id = editData.id;
-
             const res = await fetch('/api/maintenance', {
                 method: editData ? 'PATCH' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(formData)
             });
 
             if (!res.ok) {
@@ -569,12 +670,12 @@ function MaintenanceModal({ onClose, onSuccess, editData, isMobile, canComplete 
             console.error('Submit error:', err);
             alert(`등록 중 오류가 발생했습니다: ${err instanceof Error ? err.message : String(err)}`);
         } finally {
-            setSubmitting(false);
+            setIsSaving(false);
         }
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 z-[100] flex items-center justify-center overflow-hidden p-4 md:p-10">
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -583,10 +684,10 @@ function MaintenanceModal({ onClose, onSuccess, editData, isMobile, canComplete 
                 className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
             />
             <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                initial={{ opacity: 0, scale: 0.9, y: 30 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="relative bg-white w-full max-w-5xl h-[100dvh] md:h-[90vh] rounded-none md:rounded-[32px] shadow-2xl overflow-hidden flex flex-col md:m-4"
+                exit={{ opacity: 0, scale: 0.9, y: 30 }}
+                className={`relative bg-white w-full max-w-5xl ${isMobile ? 'h-full rounded-none' : 'max-h-full rounded-[40px] shadow-2xl'} flex flex-col overflow-hidden`}
             >
                 {/* Modal Header */}
                 <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
@@ -608,7 +709,7 @@ function MaintenanceModal({ onClose, onSuccess, editData, isMobile, canComplete 
                                 <div className="relative">
                                     <input
                                         type="date"
-                                        value={formData.checkDate}
+                                        value={formData.checkDate ? format(new Date(formData.checkDate), 'yyyy-MM-dd') : ''}
                                         onChange={(e) => setFormData({ ...formData, checkDate: e.target.value })}
                                         className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20"
                                     />
@@ -621,11 +722,11 @@ function MaintenanceModal({ onClose, onSuccess, editData, isMobile, canComplete 
                                 <input
                                     type="text"
                                     placeholder="클릭하여 선택하세요"
-                                    value={formData.equipmentName}
+                                    value={formData.equipmentName || ''}
                                     readOnly={isMobile}
                                     onFocus={() => {
                                         setActiveField('equipmentName');
-                                        setPartSearch('');
+                                        setPartSearch(''); // Assuming partSearch is still used for filtering
                                         if (isMobile) setShowMobileSelector(true);
                                     }}
                                     onClick={() => {
@@ -641,7 +742,7 @@ function MaintenanceModal({ onClose, onSuccess, editData, isMobile, canComplete 
                                 <input
                                     type="text"
                                     placeholder="클릭하여 선택하세요"
-                                    value={formData.part}
+                                    value={formData.part || ''}
                                     readOnly={isMobile}
                                     onFocus={() => {
                                         setActiveField('part');
@@ -661,7 +762,7 @@ function MaintenanceModal({ onClose, onSuccess, editData, isMobile, canComplete 
                                 <textarea
                                     placeholder="상세 내용 입력"
                                     rows={4}
-                                    value={formData.detail}
+                                    value={formData.detail || ''}
                                     onChange={(e) => setFormData({ ...formData, detail: e.target.value })}
                                     className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 resize-none"
                                 />
@@ -672,7 +773,7 @@ function MaintenanceModal({ onClose, onSuccess, editData, isMobile, canComplete 
                                 <input
                                     type="text"
                                     placeholder="클릭하여 선택하세요"
-                                    value={formData.company}
+                                    value={formData.company || ''}
                                     readOnly={isMobile}
                                     onFocus={() => {
                                         setActiveField('company');
@@ -709,13 +810,13 @@ function MaintenanceModal({ onClose, onSuccess, editData, isMobile, canComplete 
                                         <p className="text-[10px] text-slate-400 font-medium">{isProcessing ? '잠시만 기다려주세요' : '이미지를 여기로 드래그하세요 (여러 장 가능)'}</p>
                                     </div>
                                 </div>
-                                {imageUrls.length > 0 && (
+                                {formData.images && formData.images.length > 0 && (
                                     <div className="flex flex-wrap gap-2 mt-2">
-                                        {imageUrls.map((img, i) => (
-                                            <div key={i} className="relative w-16 h-16 rounded-xl overflow-hidden border-2 border-white shadow-sm ring-1 ring-slate-100">
-                                                <img src={img.thumbnail} alt="upload" className="w-full h-full object-cover" />
+                                        {formData.images.map((img, i) => (
+                                            <div key={img.id || i} className="relative w-16 h-16 rounded-xl overflow-hidden border-2 border-white shadow-sm ring-1 ring-slate-100">
+                                                <img src={img.thumbnailUrl || img.url} alt="upload" className="w-full h-full object-cover" />
                                                 <button
-                                                    onClick={(e) => { e.stopPropagation(); setImageUrls(imageUrls.filter((_, idx) => idx !== i)); }}
+                                                    onClick={(e) => { e.stopPropagation(); setFormData({ ...formData, images: formData.images?.filter((_, idx) => idx !== i) }); }}
                                                     className="absolute top-0.5 right-0.5 w-4 h-4 bg-rose-500 text-white rounded-full flex items-center justify-center"
                                                 >
                                                     <X size={10} />
@@ -731,7 +832,7 @@ function MaintenanceModal({ onClose, onSuccess, editData, isMobile, canComplete 
                                 <textarea
                                     placeholder=""
                                     rows={3}
-                                    value={formData.note}
+                                    value={formData.note || ''}
                                     onChange={(e) => setFormData({ ...formData, note: e.target.value })}
                                     className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 resize-none"
                                 />
@@ -742,7 +843,7 @@ function MaintenanceModal({ onClose, onSuccess, editData, isMobile, canComplete 
                                 <div className="relative group/date">
                                     <input
                                         type="date"
-                                        value={formData.completionDate}
+                                        value={formData.completionDate ? format(new Date(formData.completionDate), 'yyyy-MM-dd') : ''}
                                         readOnly={!canComplete}
                                         onChange={(e) => setFormData({ ...formData, completionDate: e.target.value })}
                                         className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20"
@@ -765,10 +866,10 @@ function MaintenanceModal({ onClose, onSuccess, editData, isMobile, canComplete 
                                 <div className="flex flex-col gap-3 pt-8 pb-12">
                                     <button
                                         type="submit"
-                                        disabled={submitting}
+                                        disabled={isSaving}
                                         className="w-full py-5 bg-blue-600 text-white rounded-[24px] font-black text-lg transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-2"
                                     >
-                                        {submitting ? <Loader2 className="animate-spin" size={20} /> : <Check size={24} />}
+                                        {isSaving ? <Loader2 className="animate-spin" size={20} /> : <Check size={24} />}
                                         {editData ? '수정하기' : '등록하기'}
                                     </button>
                                     <button
@@ -785,7 +886,7 @@ function MaintenanceModal({ onClose, onSuccess, editData, isMobile, canComplete 
 
                     {/* Side Panel (Right) - Desktop Only */}
                     {!isMobile && (
-                        <div className="w-full lg:w-96 bg-[#f8fafc] border-l border-slate-100 flex flex-col p-6 overflow-hidden">
+                        <div className="w-full lg:w-72 bg-[#f8fafc] border-l border-slate-100 flex flex-col p-6 overflow-hidden">
                             <h3 className="text-xs font-black text-slate-400 uppercase mb-4 tracking-wider">{getTitle()}</h3>
                             <div className="relative mb-6">
                                 <input
@@ -848,10 +949,10 @@ function MaintenanceModal({ onClose, onSuccess, editData, isMobile, canComplete 
                         <button
                             type="submit"
                             form="maintenance-form"
-                            disabled={submitting}
+                            disabled={isSaving}
                             className="flex-[2] py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-[20px] font-black text-base transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {submitting ? <Loader2 className="animate-spin" size={20} /> : <Check size={20} />}
+                            {isSaving ? <Loader2 className="animate-spin" size={20} /> : <Check size={20} />}
                             {editData ? '수정하기' : '등록하기'}
                         </button>
                     </div>
@@ -927,7 +1028,7 @@ function DetailModal({ record, canEdit, onClose, onEdit, onZoom }: { record: Mai
     const [activeImageIndex, setActiveImageIndex] = useState(0);
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden p-4">
+        <div className="absolute inset-0 z-[100] flex items-center justify-center overflow-hidden p-4">
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -939,7 +1040,7 @@ function DetailModal({ record, canEdit, onClose, onEdit, onZoom }: { record: Mai
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="relative bg-white w-full max-w-4xl rounded-[32px] shadow-2xl overflow-hidden flex flex-col"
+                className="relative bg-white w-full max-w-4xl max-h-full rounded-[32px] shadow-2xl overflow-hidden flex flex-col"
             >
                 {/* Header */}
                 <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
@@ -1060,7 +1161,8 @@ function DetailModal({ record, canEdit, onClose, onEdit, onZoom }: { record: Mai
 }
 
 function QuickCompleteModal({ record, onClose, onSuccess }: { record: MaintenanceRecord, onClose: () => void, onSuccess: () => void }) {
-    const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+    const [completionDate, setCompletionDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+    const [note, setNote] = useState(record.note || '');
     const [submitting, setSubmitting] = useState(false);
 
     const handleSave = async () => {
@@ -1069,7 +1171,7 @@ function QuickCompleteModal({ record, onClose, onSuccess }: { record: Maintenanc
             const res = await fetch('/api/maintenance', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: record.id, completionDate: date })
+                body: JSON.stringify({ id: record.id, completionDate, note })
             });
             if (res.ok) onSuccess();
             else alert('저장에 실패했습니다.');
@@ -1082,7 +1184,7 @@ function QuickCompleteModal({ record, onClose, onSuccess }: { record: Maintenanc
     };
 
     return (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+        <div className="absolute inset-0 z-[150] flex items-center justify-center p-4">
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -1109,8 +1211,8 @@ function QuickCompleteModal({ record, onClose, onSuccess }: { record: Maintenanc
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">완료 일자</label>
                         <input
                             type="date"
-                            value={date}
-                            onChange={(e) => setDate(e.target.value)}
+                            value={completionDate}
+                            onChange={(e) => setCompletionDate(e.target.value)}
                             className="w-full h-16 bg-slate-50 border border-slate-100 rounded-2xl px-6 font-black text-slate-700 outline-none focus:ring-4 focus:ring-blue-100 transition-all cursor-pointer text-lg"
                         />
                         <Calendar className="absolute right-6 top-[44px] text-slate-300 pointer-events-none" size={20} />

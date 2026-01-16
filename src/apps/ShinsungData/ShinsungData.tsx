@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, History, FileText, Layers, Percent, Save, Search, Download, Trash2, Calendar, Edit2, Loader2, ImageIcon, Maximize2, X, Check } from 'lucide-react';
+import { Upload, History, FileText, Layers, Percent, Save, Search, Download, Trash2, Calendar, Edit2, Loader2, ImageIcon, Maximize2, X, Check, Clock, Plus } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useOSStore } from '@/store/useOSStore';
 
@@ -59,13 +59,26 @@ export default function ShinsungData() {
     const [records, setRecords] = useState<ShinsungRecord[]>([]);
     const [isLoadingRecords, setIsLoadingRecords] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [note, setNote] = useState('');
+    const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null);
+    const [isEditingRecord, setIsEditingRecord] = useState(false);
     const [containerWidth, setContainerWidth] = useState<number>(0);
     const isDesktop = containerWidth >= 1024;
     const observerRef = useRef<ResizeObserver | null>(null);
+    const loadMoreRef = useRef<HTMLDivElement>(null);
 
-    const { currentUser, pushBackAction } = useOSStore();
+    const { currentUser, pushBackAction, popBackAction } = useOSStore();
+
+    useEffect(() => {
+        if (selectedImage) {
+            pushBackAction('shinsung-image-overlay', () => setSelectedImage(null));
+        } else {
+            popBackAction('shinsung-image-overlay');
+        }
+    }, [selectedImage, pushBackAction, popBackAction]);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -93,12 +106,14 @@ export default function ShinsungData() {
     }, []);
 
     useEffect(() => {
-        if (selectedImage) {
-            pushBackAction('shinsung-image-detail', () => {
+        if (selectedImage || selectedRecordId) {
+            pushBackAction('shinsung-detail', () => {
                 setSelectedImage(null);
+                setSelectedRecordId(null);
+                setIsEditingRecord(false);
             });
         }
-    }, [selectedImage, pushBackAction]);
+    }, [selectedImage, selectedRecordId, pushBackAction]);
 
     useEffect(() => {
         fetchProducts();
@@ -125,18 +140,51 @@ export default function ShinsungData() {
         }
     };
 
-    const fetchRecords = async () => {
+    const fetchRecords = async (pageNum = 1, currentSearch = searchTerm) => {
         setIsLoadingRecords(true);
         try {
-            const res = await fetch('/api/shinsung/records');
+            const res = await fetch(`/api/shinsung/records?page=${pageNum}&limit=20&search=${encodeURIComponent(currentSearch)}`);
             const data = await res.json();
-            if (Array.isArray(data)) setRecords(data);
+            if (Array.isArray(data)) {
+                if (pageNum === 1) {
+                    setRecords(data);
+                } else {
+                    setRecords(prev => [...prev, ...data]);
+                }
+                setHasMore(data.length === 20);
+                setPage(pageNum);
+            }
         } catch (error) {
             console.error('Failed to fetch records', error);
         } finally {
             setIsLoadingRecords(false);
         }
     };
+
+    // Debounced search effect
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            fetchRecords(1, searchTerm);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    // Infinite scroll observer
+    useEffect(() => {
+        if (!loadMoreRef.current) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasMore && !isLoadingRecords) {
+                    fetchRecords(page + 1, searchTerm);
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        observer.observe(loadMoreRef.current);
+        return () => observer.disconnect();
+    }, [hasMore, isLoadingRecords, page, searchTerm]);
 
     const resetForm = useCallback(() => {
         setImage(null);
@@ -151,6 +199,8 @@ export default function ShinsungData() {
         setProgress('');
         setTestDate('');
         setThickness('');
+        setSelectedRecordId(null);
+        setIsEditingRecord(false);
     }, []);
 
     useEffect(() => {
@@ -339,6 +389,251 @@ export default function ShinsungData() {
         }
     };
 
+    const handleUpdateRecord = async () => {
+        if (!selectedRecordId) return;
+        const trimmedProduct = productSearchTerm.trim();
+        const trimmedPart = partSearchTerm.trim();
+
+        if (!trimmedProduct || !trimmedPart) {
+            alert('완제품명과 부위명을 입력해 주세요.');
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            const finalProductId = await handleResolveProduct(trimmedProduct);
+            const finalPartId = await handleResolvePart(trimmedPart);
+
+            if (!finalProductId || !finalPartId) {
+                setIsSaving(false);
+                return;
+            }
+
+            const res = await fetch('/api/shinsung/records', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: selectedRecordId,
+                    productId: finalProductId,
+                    partId: finalPartId,
+                    ratio,
+                    progress,
+                    testDate,
+                    thickness,
+                    extractedData: editData,
+                    note
+                }),
+            });
+            const data = await res.json();
+            if (data.id) {
+                alert('수정되었습니다.');
+                setRecords(prev => prev.map(r => r.id === data.id ? data : r));
+                resetForm();
+            }
+        } catch (error) {
+            alert('수정 실패');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const renderDetailModal = () => {
+        const record = records.find(r => r.id === selectedRecordId);
+        if (!record) return null;
+
+        return (
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[110] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 md:p-10"
+                onClick={resetForm}
+            >
+                <motion.div
+                    initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                    exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                    className="bg-white w-full max-w-4xl rounded-[40px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {/* Header */}
+                    <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+                        <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 bg-indigo-600 rounded-[20px] flex items-center justify-center shadow-lg shadow-indigo-100">
+                                <FileText size={28} className="text-white" />
+                            </div>
+                            <div>
+                                <h2 className="text-2xl font-black text-slate-800">
+                                    {isEditingRecord ? '기록 수정' : record.product.name}
+                                </h2>
+                                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{isEditingRecord ? '데이터 정보 업데이트' : record.part?.name || '성적서 상세 데이터'}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            {!isEditingRecord ? (
+                                <button
+                                    onClick={() => setIsEditingRecord(true)}
+                                    className="px-6 py-3 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center gap-2 font-black text-sm hover:bg-indigo-100 transition-all active:scale-95"
+                                >
+                                    <Edit2 size={18} />
+                                    <span>수정</span>
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={handleUpdateRecord}
+                                    disabled={isSaving}
+                                    className="px-6 py-3 bg-indigo-600 text-white rounded-2xl flex items-center gap-2 font-black text-sm hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 active:scale-95 disabled:opacity-50"
+                                >
+                                    {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                                    <span>저장</span>
+                                </button>
+                            )}
+                            <button
+                                onClick={resetForm}
+                                className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+                            >
+                                <X size={24} />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
+                        {isEditingRecord ? (
+                            <div className="space-y-8">
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-black text-slate-400 uppercase ml-1">완제품명</label>
+                                        <input
+                                            type="text"
+                                            value={productSearchTerm}
+                                            onChange={(e) => { setProductSearchTerm(e.target.value); setSelectedProductId(''); }}
+                                            className="w-full h-12 px-4 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm font-bold"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-black text-slate-400 uppercase ml-1">부위명</label>
+                                        <input
+                                            type="text"
+                                            value={partSearchTerm}
+                                            onChange={(e) => { setPartSearchTerm(e.target.value); setSelectedPartId(''); }}
+                                            className="w-full h-12 px-4 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm font-bold"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-4 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-black text-slate-400 uppercase ml-1">비율</label>
+                                        <input type="text" value={ratio} onChange={(e) => setRatio(e.target.value)} className="w-full h-12 px-4 rounded-2xl border border-slate-200 text-sm font-bold" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-black text-slate-400 uppercase ml-1">두께</label>
+                                        <input type="text" value={thickness} onChange={(e) => setThickness(e.target.value)} className="w-full h-12 px-4 rounded-2xl border border-slate-200 text-sm font-bold" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-black text-slate-400 uppercase ml-1">시험일시</label>
+                                        <input type="text" value={testDate} onChange={(e) => setTestDate(e.target.value)} className="w-full h-12 px-4 rounded-2xl border border-slate-200 text-sm font-bold" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-black text-slate-400 uppercase ml-1 flex items-center gap-1.5">
+                                            <Clock size={12} />
+                                            측정 타이밍
+                                        </label>
+                                        <input type="text" value={progress} onChange={(e) => setProgress(e.target.value)} className="w-full h-12 px-4 rounded-2xl border border-slate-200 text-sm font-bold" placeholder="즉시, 30분..." />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                        <div className="w-1 h-3 bg-indigo-500 rounded-full" />
+                                        상세 추출 데이터
+                                    </h4>
+                                    <div className="grid grid-cols-5 gap-4">
+                                        {Object.entries(editData).map(([key, value]) => (
+                                            <div key={key} className="space-y-2">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase ml-1 truncate block" title={key}>{key}</label>
+                                                <input
+                                                    type="text"
+                                                    value={String(value)}
+                                                    onChange={(e) => setEditData({ ...editData, [key]: e.target.value })}
+                                                    className="w-full h-10 px-3 rounded-xl border border-slate-200 focus:border-indigo-500 text-xs font-bold"
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black text-slate-400 uppercase ml-1">비고</label>
+                                    <textarea
+                                        value={note}
+                                        onChange={(e) => setNote(e.target.value)}
+                                        className="w-full p-4 rounded-2xl border border-slate-200 min-h-[100px] text-sm font-medium resize-none focus:border-indigo-500 outline-none"
+                                        placeholder="추가 참고 사항..."
+                                    />
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                                <div className="space-y-6">
+                                    <div className="rounded-[32px] overflow-hidden border border-slate-100 shadow-xl bg-slate-50 cursor-zoom-in" onClick={() => setSelectedImage(record.imageUrl || null)}>
+                                        <img src={record.imageUrl || record.thumbnailUrl} alt="Record Detail" className="w-full h-auto object-contain" />
+                                    </div>
+                                    {record.note && (
+                                        <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                                            <h4 className="text-xs font-black text-slate-400 uppercase mb-3 flex items-center gap-2">
+                                                <Edit2 size={12} />
+                                                비고 및 특이사항
+                                            </h4>
+                                            <p className="text-sm font-medium text-slate-600 leading-relaxed">{record.note}</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="space-y-8">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="p-5 bg-rose-50 rounded-3xl border border-rose-100 flex flex-col justify-center gap-1">
+                                            <p className="text-[10px] font-black text-rose-400 uppercase tracking-tighter">데이터 두께</p>
+                                            <p className="text-xl font-black text-rose-700">{record.thickness || '-'}</p>
+                                        </div>
+                                        <div className="p-5 bg-indigo-50 rounded-3xl border border-indigo-100 flex flex-col justify-center gap-1">
+                                            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-tighter">추출된 비율</p>
+                                            <p className="text-xl font-black text-indigo-700">{record.ratio || '-'}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 px-2">
+                                            <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
+                                            데이터 그리드 상세
+                                        </h4>
+                                        <div className="bg-slate-50 rounded-[32px] p-6 border border-slate-100 flex items-center justify-center min-h-[300px]">
+                                            <div className="w-full space-y-4">
+                                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                                    {Object.entries(JSON.parse(record.extractedData || '{}')).map(([key, value]) => (
+                                                        <div key={key} className="bg-white p-3 rounded-2xl border border-slate-200/50 shadow-sm">
+                                                            <p className="text-[9px] font-black text-slate-400 uppercase mb-1 truncate">{key}</p>
+                                                            <p className="text-sm font-bold text-slate-700">{String(value)}</p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-6 bg-slate-900 rounded-[32px] text-white">
+                                        <p className="text-[10px] font-black text-white/30 uppercase mb-2 tracking-widest">분석 로그</p>
+                                        <p className="text-xs font-medium text-white/60 leading-relaxed italic opacity-80">"{record.rawOcrText || '추출된 텍스트 로그가 없습니다.'}"</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </motion.div>
+            </motion.div>
+        );
+    };
+
     const handleDeleteRecord = async (id: string) => {
         if (!confirm('삭제하시겠습니까?')) return;
         try {
@@ -349,8 +644,29 @@ export default function ShinsungData() {
         }
     };
 
-    const handleExportExcel = () => {
-        const rows = records.map((r, i) => {
+    const handleExportExcel = async () => {
+        if (records.length === 0) {
+            alert('내보낼 데이터가 없습니다.');
+            return;
+        }
+
+        let exportData = records;
+
+        // Fetch ALL matching records if there are more
+        if (hasMore || records.length >= 20) {
+            try {
+                const res = await fetch(`/api/shinsung/records?all=true&search=${encodeURIComponent(searchTerm)}`);
+                const allData = await res.json();
+                if (Array.isArray(allData)) {
+                    exportData = allData;
+                }
+            } catch (error) {
+                console.error('Failed to fetch all records for export', error);
+                alert('전체 데이터를 불러오는데 실패했습니다. 현재 화면의 데이터만 내보냅니다.');
+            }
+        }
+
+        const rows = exportData.map((r, i) => {
             let data: any = {};
             try { data = JSON.parse(r.extractedData); } catch (e) { }
             return {
@@ -360,7 +676,7 @@ export default function ShinsungData() {
                 "완제품명": r.product.name,
                 "부위명": r.part?.name || '',
                 "비율": r.ratio || '',
-                "진행여부": r.progress || '',
+                "측정 타이밍": r.progress || '',
                 "비고": r.note,
                 ...data
             };
@@ -371,13 +687,7 @@ export default function ShinsungData() {
         XLSX.writeFile(workbook, `신성데이터_${new Date().toISOString().split('T')[0]}.xlsx`);
     };
 
-    const filteredRecords = records.filter(r =>
-        r.product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (r.part?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (r.note || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (r.ratio || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (r.testDate || '').toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredRecords = records;
 
     // Clipboard Paste Handler
     useEffect(() => {
@@ -446,13 +756,13 @@ export default function ShinsungData() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Progress */}
                     <div className="space-y-2">
-                        <label className="text-sm font-bold text-slate-500">진행여부</label>
+                        <label className="text-sm font-bold text-slate-500 flex items-center gap-1.5"><Clock size={14} /> 측정 타이밍</label>
                         <input
                             type="text"
                             value={progress}
                             onChange={(e) => setProgress(e.target.value)}
                             className="w-full h-11 px-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-sm font-medium"
-                            placeholder="진행 상태..."
+                            placeholder="즉시, 30분..."
                         />
                     </div>
 
@@ -567,7 +877,7 @@ export default function ShinsungData() {
             </div>
 
             <div className="space-y-4">
-                {isLoadingRecords ? (
+                {isLoadingRecords && records.length === 0 ? (
                     <div className="py-20 flex flex-col items-center gap-4 text-slate-400">
                         <Loader2 size={40} className="animate-spin" />
                         <p className="font-bold">이력을 불러오고 있습니다...</p>
@@ -578,216 +888,253 @@ export default function ShinsungData() {
                         <p className="font-bold text-lg">데이터가 존재하지 않습니다</p>
                     </div>
                 ) : (
-                    filteredRecords.map(record => {
-                        let dataMap: Record<string, string | number> = {};
-                        try {
-                            // Robust parsing for potentially double-stringified JSON
-                            let parsed = record.extractedData;
-                            if (typeof parsed === 'string') {
-                                try {
-                                    parsed = JSON.parse(parsed);
-                                } catch (e) { /* ignore */ }
-                            }
-                            if (typeof parsed === 'string') {
-                                try {
-                                    parsed = JSON.parse(parsed);
-                                } catch (e) { /* ignore */ }
-                            }
-
-                            if (typeof parsed === 'object' && parsed !== null) {
-                                dataMap = parsed as Record<string, string | number>;
-                            }
-                        } catch (e) {
-                            console.error('Failed to parse extractedData', e);
-                        }
-
-                        // Group data by Row Label (No.1, No.2, ... AVR)
-                        const rows: Record<string, Record<string, string | number>> = {};
-                        const columns = ['20MM', '40MM', '60MM', '80MM', 'AVR'];
-
-                        Object.entries(dataMap).forEach(([key, value]) => {
-                            const upperKey = key.toUpperCase();
-                            // Extract Row Label (e.g. "NO.1", "AVR")
-                            let rowLabel = '';
-                            if (upperKey.includes('NO.')) {
-                                const match = upperKey.match(/(NO\.\d+)/);
-                                if (match) rowLabel = match[1];
-                            } else if (upperKey.includes('AVR') && !columns.some(c => upperKey.endsWith(c))) {
-                                if (upperKey.startsWith('AVR')) rowLabel = 'AVR';
-                            }
-
-                            if (!rowLabel) {
-                                if (upperKey.startsWith('AVR')) rowLabel = 'AVR';
-                            }
-
-                            if (rowLabel) {
-                                if (!rows[rowLabel]) rows[rowLabel] = {};
-
-                                // Determine Column
-                                let col = '';
-                                if (upperKey.includes('20MM')) col = '20MM';
-                                else if (upperKey.includes('40MM')) col = '40MM';
-                                else if (upperKey.includes('60MM')) col = '60MM';
-                                else if (upperKey.includes('80MM')) col = '80MM';
-                                else if (upperKey.includes('AVR') && !upperKey.startsWith('AVR')) col = 'AVR'; // Column AVR, not Row AVR
-                                else if (upperKey.includes('AVR') && upperKey.startsWith('AVR')) {
-                                    if (upperKey.endsWith('AVR')) col = 'AVR';
+                    <>
+                        {filteredRecords.map(record => {
+                            let dataMap: Record<string, string | number> = {};
+                            try {
+                                // Robust parsing for potentially double-stringified JSON
+                                let parsed = record.extractedData;
+                                if (typeof parsed === 'string') {
+                                    try {
+                                        parsed = JSON.parse(parsed);
+                                    } catch (e) { /* ignore */ }
+                                }
+                                if (typeof parsed === 'string') {
+                                    try {
+                                        parsed = JSON.parse(parsed);
+                                    } catch (e) { /* ignore */ }
                                 }
 
-                                if (col) {
-                                    rows[rowLabel][col] = value;
+                                if (typeof parsed === 'object' && parsed !== null) {
+                                    dataMap = parsed as Record<string, string | number>;
                                 }
+                            } catch (e) {
+                                console.error('Failed to parse extractedData', e);
                             }
-                        });
 
-                        // Sort Rows: No.1 -> No.5 -> AVR
-                        const sortedRowKeys = Object.keys(rows).sort((a, b) => {
-                            if (a.startsWith('NO.') && b.startsWith('NO.')) {
-                                const numA = parseInt(a.match(/\d+/)?.[0] || '0');
-                                const numB = parseInt(b.match(/\d+/)?.[0] || '0');
-                                return numA - numB;
-                            }
-                            if (a.startsWith('NO.')) return -1;
-                            if (b.startsWith('NO.')) return 1;
-                            return 0; // AVR vs AVR or others
-                        });
+                            // Group data by Row Label (No.1, No.2, ... AVR)
+                            const rows: Record<string, Record<string, string | number>> = {};
+                            const columns = ['20MM', '40MM', '60MM', '80MM', 'AVR'];
 
-                        // Calculate Min/Max for Non-AVR data
-                        let gridMin = Infinity;
-                        let gridMax = -Infinity;
-                        Object.keys(rows).forEach(rKey => {
-                            if (rKey === 'AVR') return;
-                            columns.forEach(cKey => {
-                                if (cKey === 'AVR') return;
-                                const v = parseFloat(String(rows[rKey][cKey]));
-                                if (!isNaN(v)) {
-                                    if (v < gridMin) gridMin = v;
-                                    if (v > gridMax) gridMax = v;
+                            Object.entries(dataMap).forEach(([key, value]) => {
+                                const upperKey = key.toUpperCase();
+                                // Extract Row Label (e.g. "NO.1", "AVR")
+                                let rowLabel = '';
+                                if (upperKey.includes('NO.')) {
+                                    const match = upperKey.match(/(NO\.\d+)/);
+                                    if (match) rowLabel = match[1];
+                                } else if (upperKey.includes('AVR') && !columns.some(c => upperKey.endsWith(c))) {
+                                    if (upperKey.startsWith('AVR')) rowLabel = 'AVR';
+                                }
+
+                                if (!rowLabel) {
+                                    if (upperKey.startsWith('AVR')) rowLabel = 'AVR';
+                                }
+
+                                if (rowLabel) {
+                                    if (!rows[rowLabel]) rows[rowLabel] = {};
+
+                                    // Determine Column
+                                    let col = '';
+                                    if (upperKey.includes('20MM')) col = '20MM';
+                                    else if (upperKey.includes('40MM')) col = '40MM';
+                                    else if (upperKey.includes('60MM')) col = '60MM';
+                                    else if (upperKey.includes('80MM')) col = '80MM';
+                                    else if (upperKey.includes('AVR') && !upperKey.startsWith('AVR')) col = 'AVR'; // Column AVR, not Row AVR
+                                    else if (upperKey.includes('AVR') && upperKey.startsWith('AVR')) {
+                                        if (upperKey.endsWith('AVR')) col = 'AVR';
+                                    }
+
+                                    if (col) {
+                                        rows[rowLabel][col] = value;
+                                    }
                                 }
                             });
-                        });
 
-                        // Progress: Hide if default "진행중"
-                        const showProgress = record.progress && record.progress !== '진행중';
+                            // Sort Rows: No.1 -> No.5 -> AVR
+                            const sortedRowKeys = Object.keys(rows).sort((a, b) => {
+                                if (a.startsWith('NO.') && b.startsWith('NO.')) {
+                                    const numA = parseInt(a.match(/\d+/)?.[0] || '0');
+                                    const numB = parseInt(b.match(/\d+/)?.[0] || '0');
+                                    return numA - numB;
+                                }
+                                if (a.startsWith('NO.')) return -1;
+                                if (b.startsWith('NO.')) return 1;
+                                return 0; // AVR vs AVR or others
+                            });
 
-                        return (
-                            <div key={record.id} className={`bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:shadow-lg transition-all flex flex-col xl:flex-row gap-6 ${isDesktop ? 'w-full' : ''}`}>
-                                <div className="w-full xl:w-48 h-48 bg-slate-50 rounded-2xl overflow-hidden shrink-0 border border-slate-100 cursor-pointer group relative" onClick={() => setSelectedImage(record.imageUrl || null)}>
-                                    {record.thumbnailUrl || record.imageUrl ? (
-                                        <>
-                                            <img src={record.thumbnailUrl || record.imageUrl} alt="Record" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                                                <Maximize2 className="text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md" size={24} />
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-slate-300">
-                                            <ImageIcon size={32} />
-                                        </div>
-                                    )}
-                                </div>
+                            // Calculate Min/Max for Non-AVR data
+                            let gridMin = Infinity;
+                            let gridMax = -Infinity;
+                            Object.keys(rows).forEach(rKey => {
+                                if (rKey === 'AVR') return;
+                                columns.forEach(cKey => {
+                                    if (cKey === 'AVR') return;
+                                    const v = parseFloat(String(rows[rKey][cKey]));
+                                    if (!isNaN(v)) {
+                                        if (v < gridMin) gridMin = v;
+                                        if (v > gridMax) gridMax = v;
+                                    }
+                                });
+                            });
 
-                                <div className="flex-1 space-y-4 min-w-[300px]">
-                                    <div className="flex justify-between items-start">
-                                        <div className="space-y-1">
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs font-bold text-slate-400">{record.testDate || new Date(record.createdAt).toLocaleDateString()}</span>
-                                                {showProgress && (
-                                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-orange-100 text-orange-600">
-                                                        {record.progress}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <h3 className="text-xl font-black text-slate-800 leading-tight">{record.product.name}</h3>
-                                            {record.part && <p className="text-sm font-bold text-slate-500">{record.part.name}</p>}
-                                        </div>
-                                        <button onClick={() => handleDeleteRecord(record.id)} className="text-slate-300 hover:text-rose-500 transition-colors p-2">
-                                            <Trash2 size={18} />
-                                        </button>
-                                    </div>
+                            // Progress: Hide if default "진행중"
+                            const showProgress = record.progress && record.progress !== '진행중';
 
-                                    <div className="flex flex-wrap gap-3 items-center">
-                                        {record.thickness && (
-                                            <div className="flex items-center gap-2 bg-rose-50 px-4 py-2 rounded-xl border border-rose-100">
-                                                <Layers size={16} className="text-rose-500" />
-                                                <span className="text-sm font-black text-rose-700">두께: {record.thickness}</span>
-                                            </div>
-                                        )}
-                                        {record.ratio && (
-                                            <div className="flex items-center gap-2 bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100">
-                                                <Percent size={16} className="text-indigo-500" />
-                                                <span className="text-sm font-black text-indigo-700">비율: {record.ratio}</span>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {record.note && (
-                                        <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                            <p className="text-xs font-medium text-slate-600 leading-relaxed line-clamp-2">{record.note}</p>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="w-full xl:w-auto xl:min-w-[420px]">
-                                    <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-100 h-full flex flex-col justify-center">
-                                        {Object.keys(rows).length > 0 ? (
-                                            <div className="w-full">
-                                                <div className="grid grid-cols-6 gap-2 mb-2 pb-2 border-b border-slate-200">
-                                                    <div className="text-[10px] font-black text-slate-400 text-center uppercase">NO.</div>
-                                                    {columns.map(h => (
-                                                        <div key={h} className="text-[10px] font-black text-slate-400 text-center uppercase">{h}</div>
-                                                    ))}
+                            return (
+                                <div key={record.id} className={`bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:shadow-lg transition-all flex flex-col xl:flex-row gap-6 ${isDesktop ? 'w-full' : ''}`}>
+                                    <div className="w-full xl:w-48 h-48 bg-slate-50 rounded-2xl overflow-hidden shrink-0 border border-slate-100 cursor-pointer group relative" onClick={() => setSelectedImage(record.imageUrl || null)}>
+                                        {record.thumbnailUrl || record.imageUrl ? (
+                                            <>
+                                                <img src={record.thumbnailUrl || record.imageUrl} alt="Record" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                                                    <Maximize2 className="text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md" size={24} />
                                                 </div>
-                                                <div className="space-y-2">
-                                                    {sortedRowKeys.map(rowLabel => {
-                                                        const isAvrRow = rowLabel === 'AVR';
-                                                        return (
-                                                            <div key={rowLabel} className="grid grid-cols-6 gap-2 items-center">
-                                                                <div className={`text-[10px] font-black text-center rounded-lg py-1.5 ${isAvrRow ? 'bg-indigo-100 text-indigo-700' : 'text-slate-400 bg-slate-100'}`}>{rowLabel}</div>
-                                                                {columns.map(col => {
-                                                                    const isAvrCol = col === 'AVR';
-                                                                    const val = rows[rowLabel][col];
-                                                                    const hasValue = !!val;
-                                                                    const numVal = hasValue ? parseFloat(String(val)) : NaN;
-                                                                    let cellClass = hasValue ? 'bg-white border-slate-200 text-slate-700' : 'bg-slate-50 border-transparent text-slate-300';
-
-                                                                    if (hasValue) {
-                                                                        if (isAvrRow && isAvrCol) {
-                                                                            cellClass = 'bg-indigo-500 border-indigo-600 text-white shadow-md transform scale-105';
-                                                                        } else if (isAvrRow || isAvrCol) {
-                                                                            cellClass = 'bg-indigo-50 border-indigo-100 text-indigo-700';
-                                                                        } else if (!isNaN(numVal) && !isAvrRow && !isAvrCol) {
-                                                                            if (numVal === gridMin) cellClass = 'bg-orange-50 border-orange-100 text-orange-700 font-extrabold ring-1 ring-orange-200';
-                                                                            if (numVal === gridMax) cellClass = 'bg-purple-50 border-purple-100 text-purple-700 font-extrabold ring-1 ring-purple-200';
-                                                                        }
-                                                                    }
-
-                                                                    return (
-                                                                        <div key={col} className={`text-xs font-bold text-center py-1.5 rounded-lg border shadow-sm ${cellClass}`}>
-                                                                            {rows[rowLabel][col] || '-'}
-                                                                        </div>
-                                                                    );
-                                                                })}
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
+                                            </>
                                         ) : (
-                                            <div className="text-center text-xs text-slate-400 font-bold py-10">데이터 없음</div>
+                                            <div className="w-full h-full flex items-center justify-center text-slate-300">
+                                                <ImageIcon size={32} />
+                                            </div>
                                         )}
                                     </div>
+
+                                    <div className="flex-1 space-y-4 min-w-[300px]">
+                                        <div className="flex justify-between items-start">
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs font-bold text-slate-400">{record.testDate || new Date(record.createdAt).toLocaleDateString()}</span>
+                                                    {record.thickness && (
+                                                        <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-rose-100 text-rose-600">
+                                                            {record.thickness}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <h3 className="text-xl font-black text-slate-800 leading-tight">{record.product.name}</h3>
+                                                {record.part && <p className="text-sm font-bold text-slate-500">{record.part.name}</p>}
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedRecordId(record.id);
+                                                        setProductSearchTerm(record.product.name);
+                                                        setSelectedProductId(record.productId);
+                                                        setPartSearchTerm(record.part?.name || '');
+                                                        setSelectedPartId(record.partId || '');
+                                                        setRatio(record.ratio || '');
+                                                        setProgress(record.progress || '');
+                                                        setTestDate(record.testDate || '');
+                                                        setThickness(record.thickness || '');
+                                                        setNote(record.note || '');
+                                                        setEditData(JSON.parse(record.extractedData || '{}'));
+                                                        setIsEditingRecord(false);
+                                                    }}
+                                                    className="text-slate-300 hover:text-indigo-500 transition-colors p-2"
+                                                >
+                                                    <Maximize2 size={18} />
+                                                </button>
+                                                <button onClick={() => handleDeleteRecord(record.id)} className="text-slate-300 hover:text-rose-500 transition-colors p-2">
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-wrap gap-3 items-center">
+                                            {showProgress && (
+                                                <div className="flex items-center gap-2 bg-orange-50 px-4 py-2 rounded-xl border border-orange-100">
+                                                    <Clock size={16} className="text-orange-500" />
+                                                    <span className="text-sm font-black text-orange-700">{record.progress}</span>
+                                                </div>
+                                            )}
+                                            {record.ratio && (
+                                                <div className="flex items-center gap-2 bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-100">
+                                                    <Percent size={16} className="text-indigo-500" />
+                                                    <span className="text-sm font-black text-indigo-700">비율: {record.ratio}</span>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {record.note && (
+                                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                                <p className="text-xs font-medium text-slate-600 leading-relaxed line-clamp-2">{record.note}</p>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="w-full xl:w-auto xl:min-w-[420px]">
+                                        <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-100 h-full flex flex-col justify-center">
+                                            {Object.keys(rows).length > 0 ? (
+                                                <div className="w-full">
+                                                    <div className="grid grid-cols-6 gap-2 mb-2 pb-2 border-b border-slate-200">
+                                                        <div className="text-[10px] font-black text-slate-400 text-center uppercase">NO.</div>
+                                                        {columns.map(h => (
+                                                            <div key={h} className="text-[10px] font-black text-slate-400 text-center uppercase">{h}</div>
+                                                        ))}
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        {sortedRowKeys.map(rowLabel => {
+                                                            const isAvrRow = rowLabel === 'AVR';
+                                                            return (
+                                                                <div key={rowLabel} className="grid grid-cols-6 gap-2 items-center">
+                                                                    <div className={`text-[10px] font-black text-center rounded-lg py-1.5 ${isAvrRow ? 'bg-indigo-100 text-indigo-700' : 'text-slate-400 bg-slate-100'}`}>{rowLabel}</div>
+                                                                    {columns.map(col => {
+                                                                        const isAvrCol = col === 'AVR';
+                                                                        const val = rows[rowLabel][col];
+                                                                        const hasValue = !!val;
+                                                                        const numVal = hasValue ? parseFloat(String(val)) : NaN;
+                                                                        let cellClass = hasValue ? 'bg-white border-slate-200 text-slate-700' : 'bg-slate-50 border-transparent text-slate-300';
+
+                                                                        if (hasValue) {
+                                                                            if (isAvrRow && isAvrCol) {
+                                                                                cellClass = 'bg-indigo-500 border-indigo-600 text-white shadow-md transform scale-105';
+                                                                            } else if (isAvrRow || isAvrCol) {
+                                                                                cellClass = 'bg-indigo-50 border-indigo-100 text-indigo-700';
+                                                                            } else if (!isNaN(numVal) && !isAvrRow && !isAvrCol) {
+                                                                                if (numVal === gridMin) cellClass = 'bg-orange-50 border-orange-100 text-orange-700 font-extrabold ring-1 ring-orange-200';
+                                                                                if (numVal === gridMax) cellClass = 'bg-purple-50 border-purple-100 text-purple-700 font-extrabold ring-1 ring-purple-200';
+                                                                            }
+                                                                        }
+
+
+                                                                        return (
+                                                                            <div key={col} className={`text-xs font-bold text-center py-1.5 rounded-lg border shadow-sm ${cellClass}`}>
+                                                                                {rows[rowLabel][col] || '-'}
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="text-center text-xs text-slate-400 font-bold py-10">데이터 없음</div>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        );
-                    })
+                            );
+                        })}
+                                    <div ref={loadMoreRef} className="py-10 flex justify-center">
+                                        {isLoadingRecords && records.length > 0 && (
+                                            <div className="flex flex-col items-center gap-2 text-indigo-400/40">
+                                                <Loader2 size={24} className="animate-spin" />
+                                                <p className="text-[10px] font-black uppercase tracking-[0.2em]">
+                                                    {page === 1 ? '검색 결과 불러오는 중...' : '더 많은 기록 불러오는 중...'}
+                                                </p>
+                                            </div>
+                                        )}
+                                        {!hasMore && filteredRecords.length > 0 && !isLoadingRecords && (
+                                            <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">모든 기록을 불러왔습니다</p>
+                                        )}
+                                    </div>
+                    </>
                 )}
             </div>
         </motion.div>
     );
 
     return (
-        <div ref={rootRefCallback} className="flex flex-col h-full bg-slate-50 text-slate-900 font-sans relative overflow-hidden">
+        <div className="flex flex-col h-full bg-[#f8fafc] text-slate-800 font-sans overflow-hidden relative">
             {/* Header Tabs - Mobile Only */}
             {!isDesktop && (
                 <div className="flex border-b border-slate-200 bg-white flex-shrink-0">
@@ -863,7 +1210,7 @@ export default function ShinsungData() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={() => setSelectedImage(null)}
-                        className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 cursor-zoom-out"
+                        className="absolute inset-0 z-[120] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 md:p-10 cursor-zoom-out"
                     >
                         <motion.img
                             src={selectedImage}
@@ -878,6 +1225,7 @@ export default function ShinsungData() {
                         </button>
                     </motion.div>
                 )}
+                {selectedRecordId && renderDetailModal()}
             </AnimatePresence>
 
             <footer className="px-8 py-4 bg-white border-t border-slate-100 flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] shadow-inner">

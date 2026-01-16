@@ -42,13 +42,16 @@ export async function GET(req: Request) {
             ];
         }
 
-        // Check for model existence
-        const availableModels = Object.keys(prisma).filter(k => !k.startsWith('_') && !k.startsWith('$'));
+        const page = parseInt(searchParams.get('page') || '1');
+        const limit = parseInt(searchParams.get('limit') || '20');
+        const skip = (page - 1) * limit;
+        const all = searchParams.get('all') === 'true';
 
         const records = await model.findMany({
             where,
             include: { images: true },
             orderBy: { id: 'desc' },
+            ...(all ? {} : { skip, take: limit }),
         });
         return NextResponse.json(records);
     } catch (error) {

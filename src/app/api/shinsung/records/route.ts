@@ -2,11 +2,32 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { saveShinsungImage } from '@/lib/server-utils';
 
-export async function GET() {
+export async function GET(req: Request) {
     try {
+        const { searchParams } = new URL(req.url);
+        const search = searchParams.get('search');
+        const all = searchParams.get('all') === 'true';
+        const page = parseInt(searchParams.get('page') || '1');
+        const limit = parseInt(searchParams.get('limit') || '20');
+        const skip = (page - 1) * limit;
+
+        const where: any = {};
+        if (search) {
+            where.OR = [
+                { product: { name: { contains: search } } },
+                { part: { name: { contains: search } } },
+                { note: { contains: search } },
+                { ratio: { contains: search } },
+                { testDate: { contains: search } },
+                { rawOcrText: { contains: search } }
+            ];
+        }
+
         const records = await (prisma as any).shinsungRecord.findMany({
+            where,
             include: { product: true, part: true },
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
+            ...(all ? {} : { skip, take: limit })
         });
         return NextResponse.json(records);
     } catch (error) {

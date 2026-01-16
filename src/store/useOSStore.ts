@@ -422,13 +422,35 @@ export const useOSStore = create<OSState>()(
           return true;
         }
 
-        // 2. 스택은 없지만 포커스된 앱 창이 있다면 닫음
+        // 2. DOM에서 닫기(X) 버튼이 있는지 확인 (사용자 제안: 활성화된 창에 X 버튼이 있으면 그것부터 클릭)
+        // 특히 z-index가 높은(최상위) 모달의 닫기 버튼을 찾음
+        if (typeof document !== 'undefined') {
+          // Lucide X 아이콘이나 닫기 버튼으로 추정되는 요소들 검색
+          // .absolute .top- 또는 모달 내부의 X 아이콘 버튼 등
+          const closeButtons = Array.from(document.querySelectorAll('button'))
+            .filter(btn => {
+              const rect = btn.getBoundingClientRect();
+              return rect.width > 0 && rect.height > 0 && // 보이는 버튼
+                (btn.innerText.includes('X') ||
+                  btn.querySelector('svg')?.getAttribute('data-lucide') === 'x' ||
+                  btn.querySelector('svg')?.classList.contains('lucide-x'));
+            });
+
+          if (closeButtons.length > 0) {
+            // 가장 최상위에 있을 것으로 예상되는 버튼(DOM 순서상 나중 것) 클릭
+            const topBtn = closeButtons[closeButtons.length - 1];
+            (topBtn as HTMLElement).click();
+            return true;
+          }
+        }
+
+        // 3. 스택은 없지만 포커스된 앱 창이 있다면 닫음
         if (state.focusedWindowId) {
           state.closeApp(state.focusedWindowId);
           return true;
         }
 
-        // 3. 아무것도 처리할 게 없으면 false 반환 (브라우저 기본 뒤로가기 실행)
+        // 4. 아무것도 처리할 게 없으면 false 반환
         return false;
       },
     }),

@@ -5,11 +5,29 @@ export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
         const productId = searchParams.get('productId');
+        const search = searchParams.get('search');
+        const all = searchParams.get('all') === 'true';
+        const page = parseInt(searchParams.get('page') || '1');
+        const limit = parseInt(searchParams.get('limit') || '20');
+        const skip = (page - 1) * limit;
+
+        const where: any = {};
+        if (productId) where.productId = productId;
+        if (search) {
+            where.OR = [
+                { product: { name: { contains: search } } },
+                { note: { contains: search } },
+                { rawOcrText: { contains: search } },
+                { degree: { contains: search } },
+                { stage: { contains: search } },
+            ];
+        }
 
         const records = await prisma.coatingRecord.findMany({
-            where: productId ? { productId } : {},
+            where,
             include: { product: true },
             orderBy: { createdAt: 'desc' },
+            ...(all ? {} : { skip, take: limit }),
         });
         return NextResponse.json(records);
     } catch (error) {

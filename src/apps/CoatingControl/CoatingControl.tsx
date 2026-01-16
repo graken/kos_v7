@@ -47,6 +47,8 @@ export default function CoatingControl() {
     } = useOSStore();
     const [isLoadingRecords, setIsLoadingRecords] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [containerWidth, setContainerWidth] = useState<number>(0);
     const isDesktop = containerWidth >= 1024;
@@ -90,6 +92,7 @@ export default function CoatingControl() {
     const canPhoto = currentUser?.role === 'admin' || currentUser?.permissions?.['coating-control']?.photo;
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const loadMoreRef = useRef<HTMLDivElement>(null);
 
     // 안드로이드 백버튼 지원 (팝업 닫기)
     useEffect(() => {
@@ -126,18 +129,51 @@ export default function CoatingControl() {
         }
     };
 
-    const fetchRecords = async () => {
+    const fetchRecords = async (pageNum = 1, currentSearch = searchTerm) => {
         setIsLoadingRecords(true);
         try {
-            const res = await fetch('/api/coating/records');
+            const res = await fetch(`/api/coating/records?page=${pageNum}&limit=20&search=${encodeURIComponent(currentSearch)}`);
             const data = await res.json();
-            if (Array.isArray(data)) setRecords(data);
+            if (Array.isArray(data)) {
+                if (pageNum === 1) {
+                    setRecords(data);
+                } else {
+                    setRecords(prev => [...prev, ...data]);
+                }
+                setHasMore(data.length === 20);
+                setPage(pageNum);
+            }
         } catch (error) {
             console.error('Failed to fetch records', error);
         } finally {
             setIsLoadingRecords(false);
         }
     };
+
+    // Debounced search effect
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            fetchRecords(1, searchTerm);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    // Infinite scroll observer
+    useEffect(() => {
+        if (!loadMoreRef.current) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasMore && !isLoadingRecords) {
+                    fetchRecords(page + 1);
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        observer.observe(loadMoreRef.current);
+        return () => observer.disconnect();
+    }, [hasMore, isLoadingRecords, page]);
 
     const resetForm = useCallback(() => {
         setImage(null);
@@ -245,7 +281,7 @@ export default function CoatingControl() {
                     productId: productId,
                     extractedData: editData,
                     imageUrl: image,
-                    degree: degree ? `${degree.toString().replace(/[^0-9]/g, '') || '1'}차` : "",
+                    degree: degree ? `${degree.toString().replace(/[^0-9]/g, '') || '1'}번째` : "",
                     stage,
                     note
                 }),
@@ -356,7 +392,7 @@ export default function CoatingControl() {
                     imageUrl: image,
                     extractedData: editData,
                     rawOcrText: ocrResult?.text,
-                    degree: degree ? `${degree.toString().replace(/[^0-9]/g, '') || '1'}차` : "",
+                    degree: degree ? `${degree.toString().replace(/[^0-9]/g, '') || '1'}번째` : "",
                     stage,
                     note
                 }),
@@ -396,18 +432,68 @@ export default function CoatingControl() {
         return () => window.removeEventListener('paste', handlePaste);
     }, []);
 
-    const handleExportExcel = () => {
-        if (filteredRecords.length === 0) {
+    // Auto-calculate stats (Min, Max, Avg) when measurements change
+    useEffect(() => {
+        const measurements = Object.entries(editData)
+            .filter(([key]) => key.startsWith('측정_'))
+            .map(([_, val]) => parseFloat(String(val)))
+            .filter(val => !isNaN(val));
+
+        if (measurements.length > 0) {
+            const min = Math.min(...measurements);
+            const max = Math.max(...measurements);
+            const avg = measurements.reduce((a, b) => a + b, 0) / measurements.length;
+
+            const stats = {
+                '최소(MIN)': min.toFixed(4),
+                '최대(MAX)': max.toFixed(4),
+                '평균(avg)': avg.toFixed(6)
+            };
+
+            let needsUpdate = false;
+            const nextEditData = { ...editData };
+
+            Object.entries(stats).forEach(([key, val]) => {
+                if (String(editData[key] || '') !== val) {
+                    nextEditData[key] = val;
+                    needsUpdate = true;
+                }
+            });
+
+            if (needsUpdate) {
+                setEditData(nextEditData);
+            }
+        }
+    }, [editData]);
+
+    const handleExportExcel = async () => {
+        if (records.length === 0) {
             alert('내보낼 데이터가 없습니다.');
             return;
         }
 
+        let exportData = records;
+
+        // If there might be more records on the server matching the search, fetch ALL of them
+        if (hasMore || records.length >= 20) {
+            try {
+                const res = await fetch(`/api/coating/records?all=true&search=${encodeURIComponent(searchTerm)}`);
+                const allData = await res.json();
+                if (Array.isArray(allData)) {
+                    exportData = allData;
+                }
+            } catch (error) {
+                console.error('Failed to fetch all records for export', error);
+                alert('전체 데이터를 불러오는데 실패했습니다. 현재 화면의 데이터만 내보냅니다.');
+            }
+        }
+
         // Header
-        const baseHeaders = ['순번', '측정날짜', '측정시간', '품명', '차수', '시작/끝', '비고', '최소값', '최대값', '평균값'];
+        const baseHeaders = ['순번', '측정날짜', '측정시간', '품명', '차수', '시작/끝', '비고', '최소(MIN)', '최대(MAX)', '평균(avg)'];
         const measurementHeaders = Array.from({ length: maxMeasurements }, (_, i) => `측정_${i + 1}`);
         const headers = [...baseHeaders, ...measurementHeaders];
 
-        const rows = filteredRecords.map((record, index) => {
+        const rows = exportData.map((record, index) => {
             let data: any = {};
             try { data = JSON.parse(record.extractedData || '{}'); } catch (e) { }
 
@@ -436,10 +522,7 @@ export default function CoatingControl() {
         XLSX.writeFile(workbook, `박막도포관리_이력_${dateStr}.xlsx`);
     };
 
-    const filteredRecords = useMemo(() => records.filter(r =>
-        r.product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.rawOcrText?.toLowerCase().includes(searchTerm.toLowerCase())
-    ), [records, searchTerm]);
+    const filteredRecords = records;
 
     const maxMeasurements = useMemo(() => filteredRecords.reduce((max, record) => {
         try {
@@ -742,12 +825,12 @@ export default function CoatingControl() {
             </div>
 
             {/* Records List */}
-            {isLoadingRecords ? (
+            {isLoadingRecords && records.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-black/20">
                     <Loader2 size={40} className="animate-spin mb-2" />
                     <p className="font-bold">기록 불러오는 중...</p>
                 </div>
-            ) : filteredRecords.length === 0 ? (
+            ) : filteredRecords.length === 0 && !isLoadingRecords ? (
                 <div className="flex flex-col items-center justify-center py-20 text-black/20 text-center">
                     <History size={60} className="mb-4 opacity-50" />
                     <p className="font-bold">저장된 기록이 없습니다.</p>
@@ -829,7 +912,7 @@ export default function CoatingControl() {
                                                                     <span className="font-bold text-black/80 truncate max-w-[160px]" title={record.product.name}>{record.product.name}</span>
                                                                     <div className="flex items-center gap-1">
                                                                         <span className="text-[9px] bg-blue-50 text-blue-500 px-1.5 py-0.5 rounded font-bold">
-                                                                            {record.degree || '1차'}
+                                                                            {record.degree || '1번째'}
                                                                         </span>
                                                                         <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${record.stage === '시작' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
                                                                             {record.stage || '시작'}
@@ -846,14 +929,16 @@ export default function CoatingControl() {
                                                             <td className="p-3 text-center font-bold text-black/60">{data['최대(MAX)'] || '-'}</td>
                                                             <td className="p-3 text-center font-bold text-blue-600 bg-blue-50/30">{data['평균(avg)'] || '-'}</td>
 
-                                                            {[...Array(maxMeasurements)].map((_, i) => {
-                                                                const val = data[`측정_${i + 1}`];
-                                                                return (
-                                                                    <td key={i} className={`p-3 text-center border-l border-black/[0.02] ${val ? 'text-black/70 font-medium' : 'text-black/5'}`}>
-                                                                        {val || '-'}
-                                                                    </td>
-                                                                );
-                                                            })}
+                                                            {
+                                                                [...Array(maxMeasurements)].map((_, i) => {
+                                                                    const val = data[`측정_${i + 1}`];
+                                                                    return (
+                                                                        <td key={i} className={`p-3 text-center border-l border-black/[0.02] ${val ? 'text-black/70 font-medium' : 'text-black/5'}`}>
+                                                                            {val || '-'}
+                                                                        </td>
+                                                                    );
+                                                                })
+                                                            }
 
                                                             <td className="p-3 text-right pr-6">
                                                                 <ChevronRight size={16} className="ml-auto text-black/10 group-hover:text-black/30" />
@@ -950,7 +1035,7 @@ export default function CoatingControl() {
                                                         {(record.degree || record.stage) && (
                                                             <div className="flex items-center gap-1.5 mt-0.5">
                                                                 <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-lg font-bold">
-                                                                    {record.degree || '1차'}
+                                                                    {record.degree || '1번째'}
                                                                 </span>
                                                                 <span className={`text-xs px-1.5 py-0.5 rounded-md ${record.stage === '시작' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
                                                                     {record.stage || '시작'}
@@ -970,9 +1055,25 @@ export default function CoatingControl() {
                                 </div>
                             );
                         })()}
+
+                        {/* Infinite Scroll Sentinel & Loading Indicator */}
+                        <div ref={loadMoreRef} className="py-10 flex justify-center">
+                            {isLoadingRecords && records.length > 0 && (
+                                <div className="flex flex-col items-center gap-2 text-black/20">
+                                    <Loader2 size={24} className="animate-spin" />
+                                    <p className="text-xs font-bold uppercase tracking-widest">
+                                        {page === 1 ? '검색 결과 불러오는 중...' : '더 많은 기록 불러오는 중...'}
+                                    </p>
+                                </div>
+                            )}
+                            {!hasMore && filteredRecords.length > 0 && !isLoadingRecords && (
+                                <p className="text-xs font-bold text-black/10 uppercase tracking-widest">모든 기록을 불러왔습니다</p>
+                            )}
+                        </div>
                     </div>
                 </div>
-            )}
+            )
+            }
         </motion.div>
     );
 
@@ -1297,7 +1398,7 @@ export default function CoatingControl() {
                                                                 {(record.degree || record.stage) && (
                                                                     <>
                                                                         <span className="text-[10px] bg-black/5 text-black/60 px-2 py-0.5 rounded-md font-bold">
-                                                                            {record.degree || '1차'}
+                                                                            {record.degree || '1번째'}
                                                                         </span>
                                                                         <span className={`text-[10px] px-2 py-0.5 rounded-md ${record.stage === '시작' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
                                                                             {record.stage || '시작'}
@@ -1414,8 +1515,9 @@ export default function CoatingControl() {
                             </div>
                         </motion.div>
                     </motion.div>
-                )}
-            </AnimatePresence>
-        </div >
+                )
+                }
+            </AnimatePresence >
+        </div>
     );
 }

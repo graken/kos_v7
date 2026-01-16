@@ -31,8 +31,13 @@ export default function UserManager() {
     const [searchTerm, setSearchTerm] = useState('');
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const { currentUser } = useOSStore();
+    const { currentUser, pushBackAction, popBackAction } = useOSStore();
     const { isMobile } = useDevice();
+
+    useEffect(() => {
+        if (isModalOpen) pushBackAction('user-manager-edit', () => setIsModalOpen(false));
+        else popBackAction('user-manager-edit');
+    }, [isModalOpen, pushBackAction, popBackAction]);
 
     const fetchUsers = async () => {
         setLoading(true);
@@ -118,7 +123,7 @@ export default function UserManager() {
     }
 
     return (
-        <div className="h-full flex flex-col bg-slate-50 overflow-hidden">
+        <div className="h-full flex flex-col bg-slate-50 overflow-hidden relative">
             {/* Header */}
             <div className={`bg-white border-b border-slate-200 ${isMobile ? 'px-4 py-4' : 'px-8 py-6'} flex items-center justify-between`}>
                 <div className="flex items-center gap-3 md:gap-4">
@@ -241,7 +246,7 @@ function UserEditModal({ user, onClose, onSave }: { user: User | null, onClose: 
     const [activeTab, setActiveTab] = useState<'info' | 'apps' | 'perms'>('info');
 
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-0 md:p-6 overflow-hidden">
+        <div className="absolute inset-0 z-[200] flex items-center justify-center p-0 md:p-6 overflow-hidden">
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
