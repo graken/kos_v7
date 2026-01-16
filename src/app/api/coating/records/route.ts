@@ -51,12 +51,14 @@ export async function POST(req: Request) {
             finalThumbnailUrl = saved.thumbnailUrl;
         }
 
+        console.log('[POST] Attempting to create record with:', { productId, finalImageUrl, finalThumbnailUrl, degree, stage });
+
         const record = await prisma.coatingRecord.create({
             data: {
                 productId,
                 imageUrl: finalImageUrl,
                 thumbnailUrl: finalThumbnailUrl,
-                extractedData: JSON.stringify(extractedData),
+                extractedData: JSON.stringify(extractedData || {}),
                 rawOcrText,
                 degree: degree || "",
                 stage: stage || "",
@@ -64,10 +66,16 @@ export async function POST(req: Request) {
             },
             include: { product: true },
         });
+
+        console.log('[POST] Record created successfully:', record.id);
         return NextResponse.json(record);
-    } catch (error) {
-        console.error('Create record error:', error);
-        return NextResponse.json({ error: 'failed to create record' }, { status: 500 });
+    } catch (error: any) {
+        console.error('[POST] Create record error details:', {
+            message: error.message,
+            stack: error.stack,
+            cause: error.cause
+        });
+        return NextResponse.json({ error: `failed to create record: ${error.message}` }, { status: 500 });
     }
 }
 
