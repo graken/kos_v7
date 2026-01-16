@@ -21,6 +21,7 @@ model CoatingRecord {
   productId   String
   product     Product  @relation(fields: [productId], references: [id])
   imageUrl    String?
+  thumbnailUrl String?
   extractedData String // JSON stringified data
   rawOcrText  String?
   degree      String?  @default("")

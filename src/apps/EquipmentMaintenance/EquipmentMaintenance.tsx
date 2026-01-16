@@ -866,7 +866,7 @@ function MaintenanceModal({ onClose, onSuccess, editData, isMobile, canComplete 
                                 <div className="flex flex-col gap-3 pt-8 pb-12">
                                     <button
                                         type="submit"
-                                        disabled={isSaving}
+                                        disabled={isSaving || isProcessing}
                                         className="w-full py-5 bg-blue-600 text-white rounded-[24px] font-black text-lg transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-2"
                                     >
                                         {isSaving ? <Loader2 className="animate-spin" size={20} /> : <Check size={24} />}
@@ -949,7 +949,7 @@ function MaintenanceModal({ onClose, onSuccess, editData, isMobile, canComplete 
                         <button
                             type="submit"
                             form="maintenance-form"
-                            disabled={isSaving}
+                            disabled={isSaving || isProcessing}
                             className="flex-[2] py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-[20px] font-black text-base transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isSaving ? <Loader2 className="animate-spin" size={20} /> : <Check size={20} />}

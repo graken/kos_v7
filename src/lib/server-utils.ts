@@ -126,3 +126,46 @@ export async function saveShinsungImage(base64Data: string): Promise<{ url: stri
 
     return { url: imgRelativePath, thumbnailUrl: thumbRelativePath };
 }
+
+/**
+ * 박막도포 이미지를 압축하여 저장하고 썸네일을 생성합니다.
+ */
+export async function saveCoatingImage(base64Data: string): Promise<{ url: string, thumbnailUrl: string }> {
+    if (!base64Data || !base64Data.startsWith('data:image')) {
+        throw new Error('Invalid image data');
+    }
+
+    const base64Content = base64Data.split(';base64,').pop();
+    if (!base64Content) throw new Error('Invalid base64 content');
+    const buffer = Buffer.from(base64Content, 'base64');
+    const fileName = `${uuidv4()}.jpg`;
+
+    // 1. 원본 압축 저장 (Max Width 1200px, Quality 80%)
+    const imgRelativeDir = path.join('coating', 'uploads', 'images');
+    const imgAbsoluteDir = path.join(process.cwd(), 'public', imgRelativeDir);
+    if (!fs.existsSync(imgAbsoluteDir)) fs.mkdirSync(imgAbsoluteDir, { recursive: true });
+
+    const imgAbsolutePath = path.join(imgAbsoluteDir, fileName);
+    const imgRelativePath = `/${path.join(imgRelativeDir, fileName)}`;
+
+    await sharp(buffer)
+        .resize(1200, undefined, { withoutEnlargement: true, fit: 'inside' })
+        .jpeg({ quality: 80 })
+        .toFile(imgAbsolutePath);
+
+    // 2. 썸네일 생성 (200x200, Cover)
+    const thumbRelativeDir = path.join('coating', 'uploads', 'thumbnails');
+    const thumbAbsoluteDir = path.join(process.cwd(), 'public', thumbRelativeDir);
+    if (!fs.existsSync(thumbAbsoluteDir)) fs.mkdirSync(thumbAbsoluteDir, { recursive: true });
+
+    const thumbFileName = `thumb_${fileName}`;
+    const thumbAbsolutePath = path.join(thumbAbsoluteDir, thumbFileName);
+    const thumbRelativePath = `/${path.join(thumbRelativeDir, thumbFileName)}`;
+
+    await sharp(buffer)
+        .resize(200, 200, { fit: 'cover' })
+        .jpeg({ quality: 70 })
+        .toFile(thumbAbsolutePath);
+
+    return { url: imgRelativePath, thumbnailUrl: thumbRelativePath };
+}

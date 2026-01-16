@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { saveCoatingImage } from '@/lib/server-utils';
 
 export async function GET(req: Request) {
     try {
@@ -35,17 +36,26 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: 'failed to fetch records' }, { status: 500 });
     }
 }
-
 export async function POST(req: Request) {
     try {
         const { productId, imageUrl, extractedData, rawOcrText, degree, stage, note } = await req.json();
 
         if (!productId) return NextResponse.json({ error: 'productId is required' }, { status: 400 });
 
+        let finalImageUrl = imageUrl;
+        let finalThumbnailUrl = null;
+
+        if (imageUrl && imageUrl.startsWith('data:image')) {
+            const saved = await saveCoatingImage(imageUrl);
+            finalImageUrl = saved.url;
+            finalThumbnailUrl = saved.thumbnailUrl;
+        }
+
         const record = await prisma.coatingRecord.create({
             data: {
                 productId,
-                imageUrl,
+                imageUrl: finalImageUrl,
+                thumbnailUrl: finalThumbnailUrl,
                 extractedData: JSON.stringify(extractedData),
                 rawOcrText,
                 degree: degree || "",
@@ -69,7 +79,17 @@ export async function PATCH(req: Request) {
 
         const updateData: any = {};
         if (productId) updateData.productId = productId;
-        if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+        if (imageUrl !== undefined) {
+            if (imageUrl && imageUrl.startsWith('data:image')) {
+                const saved = await saveCoatingImage(imageUrl);
+                updateData.imageUrl = saved.url;
+                updateData.thumbnailUrl = saved.thumbnailUrl;
+            } else {
+                updateData.imageUrl = imageUrl;
+                // If the user cleared the image
+                if (imageUrl === null) updateData.thumbnailUrl = null;
+            }
+        }
         if (extractedData) updateData.extractedData = JSON.stringify(extractedData);
         if (rawOcrText !== undefined) updateData.rawOcrText = rawOcrText;
         if (degree !== undefined) updateData.degree = degree;

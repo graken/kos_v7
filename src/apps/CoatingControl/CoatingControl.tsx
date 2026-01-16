@@ -20,6 +20,7 @@ interface CoatingRecord {
     productId: string;
     product: Product;
     imageUrl?: string;
+    thumbnailUrl?: string;
     extractedData: string; // JSON string
     rawOcrText?: string;
     degree?: string;
@@ -93,6 +94,7 @@ export default function CoatingControl() {
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const loadMoreRef = useRef<HTMLDivElement>(null);
+    const scrollRef = useRef<HTMLElement>(null);
 
     // 안드로이드 백버튼 지원 (팝업 닫기)
     useEffect(() => {
@@ -164,16 +166,19 @@ export default function CoatingControl() {
 
         const observer = new IntersectionObserver(
             (entries) => {
-                if (entries[0].isIntersecting && hasMore && !isLoadingRecords) {
+                if (entries[0].isIntersecting && hasMore && !isLoadingRecords && activeTab === 'history') {
                     fetchRecords(page + 1);
                 }
             },
-            { threshold: 0.1 }
+            {
+                threshold: 0,
+                rootMargin: '400px'
+            }
         );
 
         observer.observe(loadMoreRef.current);
         return () => observer.disconnect();
-    }, [hasMore, isLoadingRecords, page]);
+    }, [hasMore, isLoadingRecords, page, activeTab]);
 
     const resetForm = useCallback(() => {
         setImage(null);
@@ -837,7 +842,7 @@ export default function CoatingControl() {
                     <p className="text-sm">먼저 기록을 등록해 보세요.</p>
                 </div>
             ) : (
-                <div className="h-full w-full">
+                <div className="w-full">
                     <div className="space-y-4 w-full">
                         {(() => {
                             const maxMeasurements = filteredRecords.reduce((max, record) => {
@@ -897,7 +902,7 @@ export default function CoatingControl() {
                                                                             setSelectedImage(record.imageUrl!);
                                                                         }}
                                                                     >
-                                                                        <img src={record.imageUrl} className="w-full h-full object-cover" />
+                                                                        <img src={record.thumbnailUrl || record.imageUrl} className="w-full h-full object-cover" />
                                                                     </div>
                                                                 ) : <div className="w-10 h-10 rounded-lg bg-black/5" />}
                                                             </td>
@@ -973,81 +978,96 @@ export default function CoatingControl() {
                                         return (
                                             <div
                                                 key={record.id}
-                                                className="bg-white border border-black/5 rounded-3xl p-5 hover:shadow-xl hover:border-black/10 transition-all cursor-pointer group flex items-start gap-5 active:scale-[0.99] relative overflow-hidden"
+                                                className="bg-white border border-black/5 rounded-[32px] p-5 hover:shadow-xl transition-all cursor-pointer group active:scale-[0.98] relative overflow-hidden"
                                                 onClick={() => setSelectedRecordId(record.id)}
                                             >
-                                                <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <ChevronRight className="text-black/20" />
+                                                {/* Header: Product Name (Full Width Priority) */}
+                                                <div className="mb-4">
+                                                    <h3 className="font-extrabold text-[17px] text-black/90 leading-snug line-clamp-2">
+                                                        {record.product?.name || '품명 정보 없음'}
+                                                    </h3>
                                                 </div>
 
-                                                {record.imageUrl && (
-                                                    <div
-                                                        className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 bg-black/5 border border-black/5 cursor-pointer hover:ring-2 hover:ring-black/10 transition-all"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            if (record.imageUrl) setSelectedImage(record.imageUrl);
-                                                        }}
-                                                    >
-                                                        <img src={record.imageUrl} alt="Record" className="w-full h-full object-cover" />
+                                                <div className="flex gap-4 items-start">
+                                                    {/* Side: Image */}
+                                                    {record.imageUrl && (
+                                                        <div
+                                                            className="w-[88px] h-[88px] rounded-2xl overflow-hidden flex-shrink-0 bg-black/5 border border-black/5 cursor-pointer hover:ring-2 hover:ring-black/10 transition-all shadow-sm"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (record.imageUrl) setSelectedImage(record.imageUrl);
+                                                            }}
+                                                        >
+                                                            <img src={record.thumbnailUrl || record.imageUrl} alt="Record" className="w-full h-full object-cover" />
+                                                        </div>
+                                                    )}
+
+                                                    {/* Center: Statistics Grid */}
+                                                    <div className="flex-1 flex flex-col gap-2">
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            {/* MIN */}
+                                                            <div className="bg-blue-50/40 p-2.5 rounded-2xl border border-blue-100/30">
+                                                                <p className="text-[9px] font-bold text-blue-400 uppercase tracking-wider mb-0.5">MIN</p>
+                                                                <p className="text-xs font-black text-blue-900">{data['최소(MIN)'] || '-'}</p>
+                                                            </div>
+                                                            {/* MAX */}
+                                                            <div className="bg-blue-50/40 p-2.5 rounded-2xl border border-blue-100/30">
+                                                                <p className="text-[9px] font-bold text-blue-400 uppercase tracking-wider mb-0.5">MAX</p>
+                                                                <p className="text-xs font-black text-blue-900">{data['최대(MAX)'] || '-'}</p>
+                                                            </div>
+                                                        </div>
+                                                        {/* AVG (Highlight) */}
+                                                        <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-2.5 rounded-2xl shadow-[0_4px_12px_rgba(37,99,235,0.2)]">
+                                                            <p className="text-[9px] font-bold text-white/60 uppercase tracking-wider mb-0.5">Average Value (AVG)</p>
+                                                            <p className="text-sm font-black text-white">{data['평균(avg)'] || '-'}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Note (If exists) */}
+                                                {record.note && (
+                                                    <div className="mt-4 p-3 bg-black/[0.02] rounded-2xl border border-dashed border-black/5">
+                                                        <p className="text-[11px] text-black/40 leading-relaxed italic">
+                                                            <span className="font-bold opacity-60 not-italic mr-1.5 inline-flex items-center gap-1">
+                                                                <FileText size={10} /> 비고:
+                                                            </span>
+                                                            {record.note}
+                                                        </p>
                                                     </div>
                                                 )}
-                                                <div className="flex-1 min-w-0 flex justify-between items-start gap-4">
-                                                    {/* Left Column: Product & Summary */}
-                                                    <div className="flex-1 min-w-0 flex flex-col justify-start gap-3">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="font-bold text-lg truncate leading-tight">{record.product.name}</span>
-                                                            <span className="text-[10px] text-white bg-black/30 px-2 py-0.5 rounded-full shrink-0">
-                                                                ID: {record.id.slice(-4).toUpperCase()}
-                                                            </span>
-                                                        </div>
 
-                                                        <div className="flex gap-1.5 flex-wrap">
-                                                            {summaryData.map((item) => (
-                                                                <div
-                                                                    key={item.key}
-                                                                    className={`px-3 py-0.5 rounded-xl border transition-all ${item.isAvg
-                                                                        ? 'bg-blue-600 border-blue-700 shadow-sm'
-                                                                        : 'bg-blue-50/50 border-blue-100'
-                                                                        }`}
-                                                                >
-                                                                    <p className={`text-[9px] font-bold leading-none ${item.isAvg ? 'text-white/70' : 'text-blue-400'}`}>{item.label}</p>
-                                                                    <p className={`text-xs font-bold leading-none ${item.isAvg ? 'text-white' : 'text-blue-900'}`}>{String(item.value)}</p>
-                                                                </div>
-                                                            ))}
-                                                            {summaryData.length === 0 && (
-                                                                <p className="text-[10px] text-black/20 italic">상세 정보 클릭</p>
-                                                            )}
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Right Column: Dates & Process Info */}
-                                                    <div className="text-right shrink-0 flex flex-col items-end gap-1">
-                                                        <p className="text-[9px] text-black/30 leading-tight">
-                                                            {new Date(record.createdAt).toLocaleString('ko-KR', {
-                                                                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                                                            })}
-                                                        </p>
+                                                {/* Footer: Metadata & Status Badges */}
+                                                <div className="mt-4 pt-4 border-t border-black/[0.03] flex justify-between items-end gap-2">
+                                                    <div className="flex flex-col gap-0.5">
                                                         {(measureDate || measureTime) && (
-                                                            <p className="text-[11px] font-bold text-blue-500 leading-tight">
+                                                            <p className="text-[11px] font-extrabold text-blue-600 flex items-center gap-1">
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
                                                                 {measureDate} {measureTime}
                                                             </p>
                                                         )}
-                                                        {(record.degree || record.stage) && (
-                                                            <div className="flex items-center gap-1.5 mt-0.5">
-                                                                <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-lg font-bold">
-                                                                    {record.degree || '1번째'}
-                                                                </span>
-                                                                <span className={`text-xs px-1.5 py-0.5 rounded-md ${record.stage === '시작' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                                                                    {record.stage || '시작'}
-                                                                </span>
-                                                            </div>
-                                                        )}
-                                                        {record.note && (
-                                                            <p className="text-[10px] text-black/40 mt-1 line-clamp-1 max-w-[120px] italic">
-                                                                {record.note}
-                                                            </p>
-                                                        )}
+                                                        <p className="text-[9px] text-black/20 font-medium">
+                                                            등록 {new Date(record.createdAt).toLocaleString('ko-KR', {
+                                                                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                                                            })}
+                                                        </p>
                                                     </div>
+
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="text-[10px] bg-blue-50 text-blue-700 px-2.5 py-1 rounded-xl font-black border border-blue-100/50 shadow-sm">
+                                                            {record.degree || '1번째'}
+                                                        </span>
+                                                        <span className={`text-[10px] px-2.5 py-1 rounded-xl font-black border shadow-sm ${record.stage === '시작'
+                                                            ? 'bg-green-50 text-green-700 border-green-100/50'
+                                                            : 'bg-red-50 text-red-700 border-red-100/50'
+                                                            }`}>
+                                                            {record.stage || '시작'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Menu Indicator */}
+                                                <div className="absolute right-3 top-3 opacity-20 group-hover:opacity-100 transition-opacity">
+                                                    <ChevronRight size={16} />
                                                 </div>
                                             </div>
                                         );
@@ -1057,7 +1077,7 @@ export default function CoatingControl() {
                         })()}
 
                         {/* Infinite Scroll Sentinel & Loading Indicator */}
-                        <div ref={loadMoreRef} className="py-10 flex justify-center">
+                        <div ref={loadMoreRef} className="py-20 flex flex-col items-center gap-6">
                             {isLoadingRecords && records.length > 0 && (
                                 <div className="flex flex-col items-center gap-2 text-black/20">
                                     <Loader2 size={24} className="animate-spin" />
@@ -1066,6 +1086,17 @@ export default function CoatingControl() {
                                     </p>
                                 </div>
                             )}
+
+                            {!isLoadingRecords && hasMore && records.length > 0 && (
+                                <button
+                                    onClick={() => fetchRecords(page + 1)}
+                                    className="px-8 py-3 bg-white border border-black/10 rounded-2xl text-black/40 font-bold text-sm hover:bg-black/5 hover:text-black/60 transition-all flex items-center gap-2 shadow-sm active:scale-95"
+                                >
+                                    <Plus size={16} />
+                                    기록 더보기
+                                </button>
+                            )}
+
                             {!hasMore && filteredRecords.length > 0 && !isLoadingRecords && (
                                 <p className="text-xs font-bold text-black/10 uppercase tracking-widest">모든 기록을 불러왔습니다</p>
                             )}
@@ -1114,7 +1145,7 @@ export default function CoatingControl() {
                 </div>
             )}
 
-            <main className="flex-1 overflow-y-auto custom-scrollbar">
+            <main ref={scrollRef} className="flex-1 overflow-y-auto custom-scrollbar">
                 {isDesktop ? (
                     <div className="flex h-full divide-x divide-black/5">
                         {/* Left: Registration */}
@@ -1139,7 +1170,7 @@ export default function CoatingControl() {
                         </div>
                     </div>
                 ) : (
-                    <div className="p-6 h-full">
+                    <div className="p-6">
                         <AnimatePresence mode="wait">
                             {activeTab === 'upload' ? renderUpload() : renderHistory()}
                         </AnimatePresence>

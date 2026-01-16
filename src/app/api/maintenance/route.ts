@@ -66,7 +66,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { checkDate, equipmentName, part, detail, company, note, completionDate, imageUrls } = body;
+        const { checkDate, equipmentName, part, detail, company, note, completionDate, images } = body;
 
         const model = (prisma as any).maintenanceRecord || (prisma as any).MaintenanceRecord;
         if (!model) throw new Error(`MaintenanceRecord model missing. Available: ${Object.keys(prisma).filter(k => !k.startsWith('_') && !k.startsWith('$')).join(', ')}`);
@@ -75,14 +75,14 @@ export async function POST(req: Request) {
             equipmentName,
             part,
             detail,
-            imageCount: imageUrls?.length || 0
+            imageCount: images?.length || 0
         });
 
         // 사진 파일 저장 처리
         const savedImages = await Promise.all(
-            (imageUrls || []).map(async (img: { original: string, thumbnail: string }) => {
-                const originalUrl = await saveImageToFile(img.original, 'originals');
-                const thumbnailUrl = await saveImageToFile(img.thumbnail, 'thumbnails');
+            (images || []).map(async (img: { url: string, thumbnailUrl: string }) => {
+                const originalUrl = await saveImageToFile(img.url, 'originals');
+                const thumbnailUrl = await saveImageToFile(img.thumbnailUrl, 'thumbnails');
                 return { url: originalUrl, thumbnailUrl };
             })
         );
@@ -116,12 +116,28 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
     try {
         const body = await req.json();
-        const { id, checkDate, equipmentName, part, detail, company, note, completionDate } = body;
+        const { id, checkDate, equipmentName, part, detail, company, note, completionDate, images } = body;
 
         if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
 
         const model = (prisma as any).maintenanceRecord || (prisma as any).MaintenanceRecord;
+        const imageModel = (prisma as any).maintenanceImage || (prisma as any).MaintenanceImage;
         if (!model) throw new Error('MaintenanceRecord model is missing');
+
+        // 1. 사진 파일 저장 처리
+        const savedImages = await Promise.all(
+            (images || []).map(async (img: { url: string, thumbnailUrl: string }) => {
+                const originalUrl = await saveImageToFile(img.url, 'originals');
+                const thumbnailUrl = await saveImageToFile(img.thumbnailUrl, 'thumbnails');
+                return { url: originalUrl, thumbnailUrl };
+            })
+        );
+
+        // 2. 기존 이미지 삭제 (전략: 모두 지우고 새로 생성하거나, 차이점만 처리)
+        // 여기서는 간단하게 기존 이미지를 모두 DB에서 지우고 (파일은 유지하거나 수동 관리) 새로 생성하는 방식 사용
+        await imageModel.deleteMany({
+            where: { recordId: Number(id) }
+        });
 
         const updateData: any = {};
         if (checkDate) updateData.checkDate = new Date(checkDate);
@@ -131,6 +147,11 @@ export async function PATCH(req: Request) {
         if (company !== undefined) updateData.company = company;
         if (note !== undefined) updateData.note = note;
         if (completionDate !== undefined) updateData.completionDate = completionDate ? new Date(completionDate) : null;
+
+        // 이미지 관계 업데이트
+        updateData.images = {
+            create: savedImages
+        };
 
         const record = await model.update({
             where: { id: Number(id) },
