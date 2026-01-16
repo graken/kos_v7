@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { saveCoatingImage } from '@/lib/server-utils';
+import { Prisma } from '@prisma/client';
 
 export async function GET(req: Request) {
     try {
@@ -12,7 +13,7 @@ export async function GET(req: Request) {
         const limit = parseInt(searchParams.get('limit') || '20');
         const skip = (page - 1) * limit;
 
-        const where: any = {};
+        const where: Prisma.CoatingRecordWhereInput = {};
         if (productId) where.productId = productId;
         if (search) {
             where.OR = [
@@ -61,14 +62,15 @@ export async function POST(req: Request) {
                 degree: degree || "",
                 stage: stage || "",
                 note: note || "",
-            } as any,
+            } as Prisma.CoatingRecordUncheckedCreateInput,
             include: { product: true },
         });
 
         return NextResponse.json(record);
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
         console.error('Create record error:', error);
-        return NextResponse.json({ error: `failed to create record: ${error.message}` }, { status: 500 });
+        return NextResponse.json({ error: `failed to create record: ${errorMessage}` }, { status: 500 });
     }
 }
 
@@ -78,7 +80,7 @@ export async function PATCH(req: Request) {
 
         if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
 
-        const updateData: any = {};
+        const updateData: Prisma.CoatingRecordUncheckedUpdateInput = {};
         if (productId) updateData.productId = productId;
         if (imageUrl !== undefined) {
             if (imageUrl && imageUrl.startsWith('data:image')) {
