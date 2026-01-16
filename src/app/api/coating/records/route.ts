@@ -54,7 +54,7 @@ export async function POST(req: Request) {
 
         const record = await prisma.coatingRecord.create({
             data: {
-                productId,
+                product: { connect: { id: productId } },
                 imageUrl: finalImageUrl,
                 thumbnailUrl: finalThumbnailUrl,
                 extractedData: JSON.stringify(extractedData || {}),
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
                 degree: degree || "",
                 stage: stage || "",
                 note: note || "",
-            } as Prisma.CoatingRecordUncheckedCreateInput,
+            } as any,
             include: { product: true },
         });
 
