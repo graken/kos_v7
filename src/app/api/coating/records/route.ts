@@ -80,7 +80,7 @@ export async function PATCH(req: Request) {
 
         if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
 
-        const updateData: Prisma.CoatingRecordUncheckedUpdateInput = {};
+        const updateData: any = {};
         if (productId) updateData.productId = productId;
         if (imageUrl !== undefined) {
             if (imageUrl && imageUrl.startsWith('data:image')) {
