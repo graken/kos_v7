@@ -45,46 +45,80 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-const PlanCardUI = React.memo(({ plan, listeners, isOverlay }: { plan: WorkPlanData, listeners?: any, isOverlay?: boolean }) => {
+const PlanCardUI = React.memo(({ plan, listeners, isOverlay, fontScale = 1 }: { plan: WorkPlanData, listeners?: any, isOverlay?: boolean, fontScale?: number }) => {
+    const isCompact = plan.duration < 120;
+    const isVerySmall = plan.duration < 60;
+
     return (
-        <div className={`group flex flex-col h-full bg-white rounded-xl shadow-sm border border-slate-200 p-3.5 hover:shadow-md hover:border-blue-300 transition-all ${isOverlay ? 'shadow-2xl ring-2 ring-blue-500 scale-105 rotate-2' : ''}`}>
-            <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full font-black uppercase tracking-wider">
+        <div className={`group flex flex-col h-full bg-white rounded-xl shadow-sm border border-slate-200 ${isVerySmall ? 'p-1.5' : 'p-2.5'} hover:shadow-md hover:border-blue-300 transition-all ${isOverlay ? 'shadow-2xl ring-2 ring-blue-500 scale-105 rotate-2' : ''} overflow-hidden`}>
+            {/* Header: Customer, Duration & Grip */}
+            <div className={`flex items-center justify-between ${isVerySmall ? 'mb-0' : 'mb-0.5'}`}>
+                <span
+                    style={{ fontSize: `${(isVerySmall ? 7 : 9) * fontScale}px` }}
+                    className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-black uppercase tracking-wider truncate max-w-[55%]"
+                >
                     {plan.customer || '미지정'}
                 </span>
-                {!isOverlay && (
-                    <div {...listeners} className="p-1 hover:bg-slate-100 rounded cursor-grab active:cursor-grabbing text-slate-400 group-hover:text-blue-500 transition-colors">
-                        <GripVertical size={16} />
+                <div className="flex items-center space-x-1 shrink-0">
+                    <div
+                        style={{ fontSize: `${8 * fontScale}px` }}
+                        className="flex items-center bg-slate-50 px-1.5 py-0.5 rounded font-bold text-slate-400"
+                    >
+                        <Clock size={8 * fontScale} className="mr-0.5" />
+                        {plan.duration}분
                     </div>
-                )}
+                    {!isOverlay && (
+                        <div {...listeners} className="p-0.5 hover:bg-slate-100 rounded cursor-grab active:cursor-grabbing text-slate-400 group-hover:text-blue-500 transition-colors">
+                            <GripVertical size={isVerySmall ? 9 : 12} />
+                        </div>
+                    )}
+                </div>
             </div>
-            <div className="text-sm font-black text-slate-800 line-clamp-1 mb-1.5">
+
+            {/* Product Name: Essential */}
+            <div
+                style={{ fontSize: `${(isVerySmall ? 9 : 11) * fontScale}px` }}
+                className={`font-black text-slate-900 line-clamp-1 ${isVerySmall ? 'mb-0' : 'mb-0.5'}`}
+            >
                 {plan.outputProduct || '생산제품 없음'}
             </div>
+
+            {/* Dimensions: Essential */}
             {(plan.outputWidth || plan.outputLength) && (
-                <div className="text-[11px] font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-md self-start mb-1.5">
-                    {Number(plan.outputWidth?.toString().replace(/,/g, '') || 0).toLocaleString()}mm * {Number(plan.outputLength?.toString().replace(/,/g, '') || 0).toLocaleString()}m
+                <div
+                    style={{ fontSize: `${(isVerySmall ? 7 : 9) * fontScale}px` }}
+                    className="font-black text-blue-600 bg-blue-50/50 rounded-md self-start px-1.5 py-0.5"
+                >
+                    {Number(plan.outputWidth?.toString().replace(/,/g, '') || 0).toLocaleString()} * {Number(plan.outputLength?.toString().replace(/,/g, '') || 0).toLocaleString()}
                 </div>
             )}
-            <div className="text-[11px] text-slate-600 line-clamp-1 leading-relaxed font-medium">
-                {plan.inputProduct} → {plan.outputProduct}
-            </div>
+
+            {/* Path: Only for large cards */}
+            {!isCompact && (
+                <div
+                    style={{ fontSize: `${9 * fontScale}px` }}
+                    className="text-slate-500 line-clamp-1 leading-relaxed font-medium mb-0.5"
+                >
+                    {plan.inputProduct} → {plan.outputProduct}
+                </div>
+            )}
+
+            {/* Important Notice: Essential */}
             {plan.importantNotice && (
-                <div className="mt-2 px-2.5 py-1.5 bg-red-50 rounded-md border border-red-100">
-                    <div className="text-[11px] font-black text-red-600 line-clamp-2 leading-tight">
-                        <span className="mr-1">📢</span>{plan.importantNotice}
+                <div className={`${isVerySmall ? 'mt-0 px-1 py-0' : 'mt-0.5 px-2 py-0.5'} bg-red-50 rounded border border-red-100`}>
+                    <div
+                        style={{ fontSize: `${(isVerySmall ? 7 : 9) * fontScale}px` }}
+                        className="font-black text-red-600 line-clamp-1 leading-tight"
+                    >
+                        <span className={isVerySmall ? "mr-0.5" : "mr-1"}>📢</span>{plan.importantNotice}
                     </div>
                 </div>
             )}
-            <div className="mt-auto flex items-center text-xs text-slate-500 font-bold pt-2 border-t border-slate-50">
-                <Clock size={14} className="mr-1" />
-                {plan.duration}분
-            </div>
         </div>
     );
 });
 
-const SortablePlanCard = React.memo(({ plan, onClick }: { plan: WorkPlanData, onClick: () => void }) => {
+const SortablePlanCard = React.memo(({ plan, onClick, slotHeight }: { plan: WorkPlanData, onClick: () => void, slotHeight: number }) => {
     const {
         attributes,
         listeners,
@@ -97,7 +131,7 @@ const SortablePlanCard = React.memo(({ plan, onClick }: { plan: WorkPlanData, on
     const style = {
         transform: CSS.Translate.toString(transform),
         transition,
-        height: `${Math.max(85, plan.duration * 1.66)}px`,
+        height: `${Math.max(75, plan.duration * (slotHeight / 60))}px`,
         opacity: isDragging ? 0 : 1,
         zIndex: isDragging ? 100 : 1,
     };
@@ -110,7 +144,7 @@ const SortablePlanCard = React.memo(({ plan, onClick }: { plan: WorkPlanData, on
             className={`cursor-pointer overflow-hidden relative`}
             onClick={onClick}
         >
-            <PlanCardUI plan={plan} listeners={listeners} />
+            <PlanCardUI plan={plan} listeners={listeners} fontScale={Math.max(1, slotHeight / 72)} />
         </div>
     );
 });
@@ -169,9 +203,29 @@ const WorkPlan = () => {
     const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
     const [timeRange, setTimeRange] = useState<'week' | 'month' | 'year' | 'all'>('week');
     const [searchQuery, setSearchQuery] = useState('');
+    const [slotHeight, setSlotHeight] = useState(72);
+    const containerRef = useRef<HTMLDivElement>(null);
     const plansRef = useRef<WorkPlanData[]>([]);
     const previousPlansRef = useRef<WorkPlanData[]>([]);
     const dateInputRef = useRef<HTMLInputElement>(null);
+
+    // Calculate slotHeight based on container height to fit 09:00 - 18:00 (9 hours)
+    useEffect(() => {
+        if (!containerRef.current || viewMode !== 'calendar') return;
+
+        const observer = new ResizeObserver((entries) => {
+            for (let entry of entries) {
+                const height = entry.contentRect.height;
+                // Subtract the day header height (32px) and some padding
+                const usableHeight = height - 40;
+                const calculatedSlot = Math.max(60, usableHeight / 9.5); // Using 9.5 to leave a little breathing room at the bottom
+                setSlotHeight(calculatedSlot);
+            }
+        });
+
+        observer.observe(containerRef.current);
+        return () => observer.disconnect();
+    }, [viewMode]);
 
     useEffect(() => {
         plansRef.current = plans;
@@ -531,20 +585,20 @@ const WorkPlan = () => {
     return (
         <div className="flex flex-col h-full bg-[#f8fafc] overflow-hidden select-none font-sans text-slate-800">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 bg-white border-b border-slate-200 shadow-sm shrink-0">
+            <div className="flex items-center justify-between py-2 px-6 bg-white border-b border-slate-200 shadow-sm shrink-0">
                 <div className="flex items-center space-x-4">
-                    <h1 className="text-xl font-bold text-slate-900">작업계획서</h1>
-                    <div className="flex items-center bg-slate-100 rounded-lg p-1">
-                        <button onClick={() => setCurrentDate(subWeeks(currentDate, 1))} className="p-1.5 hover:bg-white rounded-md transition-all text-slate-500 hover:text-blue-600">
-                            <ChevronLeft size={20} />
+                    <h1 className="text-lg font-bold text-slate-900">작업계획서</h1>
+                    <div className="flex items-center bg-slate-100 rounded-lg p-0.5">
+                        <button onClick={() => setCurrentDate(subWeeks(currentDate, 1))} className="p-1 hover:bg-white rounded-md transition-all text-slate-500 hover:text-blue-600">
+                            <ChevronLeft size={16} />
                         </button>
                         <div className="relative">
                             <button
                                 onClick={() => dateInputRef.current?.showPicker?.() || dateInputRef.current?.click()}
-                                className="px-4 py-1.5 hover:bg-white rounded-md transition-all font-black min-w-[140px] text-center flex items-center justify-center space-x-2 text-slate-700 hover:text-blue-600"
+                                className="px-3 py-1 hover:bg-white rounded-md transition-all font-black min-w-[120px] text-center flex items-center justify-center space-x-2 text-slate-700 hover:text-blue-600"
                             >
-                                <Calendar size={16} className="text-blue-500" />
-                                <span>{format(currentDate, 'yyyy년 MM월', { locale: ko })}</span>
+                                <Calendar size={14} className="text-blue-500" />
+                                <span className="text-xs">{format(currentDate, 'yyyy년 MM월', { locale: ko })}</span>
                             </button>
                             <input
                                 ref={dateInputRef}
@@ -554,8 +608,8 @@ const WorkPlan = () => {
                                 onChange={(e) => e.target.value && setCurrentDate(new Date(e.target.value))}
                             />
                         </div>
-                        <button onClick={() => setCurrentDate(addWeeks(currentDate, 1))} className="p-1.5 hover:bg-white rounded-md transition-all text-slate-500 hover:text-blue-600">
-                            <ChevronRight size={20} />
+                        <button onClick={() => setCurrentDate(addWeeks(currentDate, 1))} className="p-1 hover:bg-white rounded-md transition-all text-slate-500 hover:text-blue-600">
+                            <ChevronRight size={16} />
                         </button>
                     </div>
                     <div className="flex items-center space-x-6">
@@ -582,34 +636,34 @@ const WorkPlan = () => {
                             </div>
                         )}
 
-                        <div className="flex items-center bg-slate-100 rounded-lg p-1">
+                        <div className="flex items-center bg-slate-100 rounded-lg p-0.5">
                             <button
                                 onClick={() => {
                                     setViewMode('calendar');
                                     setTimeRange('week'); // Reset range for calendar
                                 }}
-                                className={`flex items-center space-x-2 px-3 py-1.5 rounded-md transition-all text-xs font-bold ${viewMode === 'calendar' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                className={`flex items-center space-x-1.5 px-3 py-1 rounded-md transition-all text-[11px] font-bold ${viewMode === 'calendar' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                             >
-                                <LayoutGrid size={14} />
+                                <LayoutGrid size={13} />
                                 <span>캘린더형</span>
                             </button>
                             <button
                                 onClick={() => setViewMode('list')}
-                                className={`flex items-center space-x-2 px-3 py-1.5 rounded-md transition-all text-xs font-bold ${viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                className={`flex items-center space-x-1.5 px-3 py-1 rounded-md transition-all text-[11px] font-bold ${viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                             >
-                                <List size={14} />
+                                <List size={13} />
                                 <span>목록형</span>
                             </button>
                         </div>
 
                         <div className="relative group">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={16} />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={14} />
                             <input
                                 type="text"
                                 placeholder="업체, 제품, 비고 검색..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="bg-slate-100 border-none rounded-xl pl-10 pr-4 py-2 text-xs font-bold w-64 focus:ring-4 focus:ring-blue-100 transition-all outline-none"
+                                className="bg-slate-100 border-none rounded-xl pl-9 pr-4 py-1.5 text-xs font-bold w-64 focus:ring-4 focus:ring-blue-50 transition-all outline-none"
                             />
                         </div>
                     </div>
@@ -626,21 +680,21 @@ const WorkPlan = () => {
                                 setFormData(INITIAL_FORM);
                                 setIsModalOpen(true);
                             }}
-                            className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all font-medium shadow-md shadow-blue-100"
+                            className="flex items-center space-x-1.5 bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-all font-bold shadow-md shadow-blue-100 text-xs"
                         >
-                            <Plus size={18} />
+                            <Plus size={16} />
                             <span>작업 추가</span>
                         </button>
                     </div>
                 </div>
 
                 {/* Machine Tabs */}
-                <div className="flex items-center space-x-2 px-4 py-2 bg-white border-b border-slate-200 shrink-0 overflow-x-auto no-scrollbar">
+                <div className="flex items-center space-x-1 px-4 py-1.5 bg-white border-b border-slate-200 shrink-0 overflow-x-auto no-scrollbar">
                     {machines.map(m => (
                         <button
                             key={m}
                             onClick={() => setSelectedMachine(m)}
-                            className={`px-4 py-1.5 rounded-full text-[11px] font-black transition-all whitespace-nowrap shadow-sm border ${selectedMachine === m
+                            className={`px-3 py-1 rounded-full text-[10px] font-black transition-all whitespace-nowrap shadow-sm border ${selectedMachine === m
                                 ? 'bg-blue-600 text-white border-blue-600 shadow-blue-100'
                                 : 'bg-white text-slate-500 border-slate-200 hover:border-blue-300 hover:text-blue-500'
                                 }`}
@@ -652,13 +706,17 @@ const WorkPlan = () => {
             </div>
 
             {/* Scheduler Body */}
-            <div className="flex-1 overflow-auto p-4 flex">
+            <div ref={containerRef} className="flex-1 overflow-auto p-4 flex">
                 {viewMode === 'calendar' ? (
                     <div className="flex flex-1 min-w-full h-fit min-h-full">
                         {/* Time Scale Sidebar */}
-                        <div className="w-16 flex flex-col pt-[72px] border-r border-slate-200 bg-white/50 sticky left-0 z-10 shrink-0">
+                        <div className="w-16 flex flex-col pt-[32px] border-r border-slate-200 bg-white/50 sticky left-0 z-10 shrink-0">
                             {Array.from({ length: 15 }, (_, i) => 9 + i).map(hour => (
-                                <div key={hour} className="h-[100px] text-[10px] font-bold text-slate-400 text-center border-b border-slate-100/50 flex flex-col justify-start pt-1">
+                                <div
+                                    key={hour}
+                                    style={{ height: `${slotHeight}px`, fontSize: `${9 * Math.max(1, slotHeight / 72)}px` }}
+                                    className="font-bold text-slate-400 text-center border-b border-slate-100/50 flex flex-col justify-start pt-1"
+                                >
                                     {String(hour).padStart(2, '0')}:00
                                 </div>
                             ))}
@@ -678,20 +736,26 @@ const WorkPlan = () => {
 
                                     return (
                                         <div key={dateKey} className="flex flex-col flex-1 min-w-[180px] border-r border-slate-200 last:border-r-0">
-                                            <div className={`p-4 sticky top-0 bg-[#f8fafc] z-10 border-b h-[72px] flex flex-col justify-center ${isSameDay(day, new Date()) ? 'border-b-blue-500' : 'border-b-slate-200'}`}>
-                                                <div className={`text-xs font-bold ${isSameDay(day, new Date()) ? 'text-blue-600' : 'text-slate-500'}`}>
+                                            <div className={`px-3 py-1 sticky top-0 bg-[#f8fafc] z-10 border-b h-[32px] flex items-center justify-between ${isSameDay(day, new Date()) ? 'border-b-blue-500' : 'border-b-slate-200'}`}>
+                                                <div
+                                                    style={{ fontSize: `${11 * Math.max(1, slotHeight / 72)}px` }}
+                                                    className={`font-bold ${isSameDay(day, new Date()) ? 'text-blue-600' : 'text-slate-500'}`}
+                                                >
                                                     {format(day, 'MM/dd (E)', { locale: ko })}
                                                 </div>
                                                 {isSameDay(day, new Date()) && (
-                                                    <div className="text-[10px] text-blue-500 font-black mt-0.5">TODAY</div>
+                                                    <div
+                                                        style={{ fontSize: `${9 * Math.max(1, slotHeight / 72)}px` }}
+                                                        className="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-black"
+                                                    >TODAY</div>
                                                 )}
                                             </div>
 
-                                            <DayDroppableContainer id={`day-${format(day, 'yyyy-MM-dd')}`}>
+                                            <DayDroppableContainer id={`day-${format(day, 'yyyy-MM-dd')}`} slotHeight={slotHeight}>
                                                 {/* Grid Lines */}
                                                 <div className="absolute inset-0 pointer-events-none">
                                                     {Array.from({ length: 15 }).map((_, i) => (
-                                                        <div key={i} className="h-[100px] border-b border-slate-100/50 w-full" />
+                                                        <div key={i} style={{ height: `${slotHeight}px` }} className="border-b border-slate-100/50 w-full" />
                                                     ))}
                                                 </div>
 
@@ -705,6 +769,7 @@ const WorkPlan = () => {
                                                             <SortablePlanCard
                                                                 key={plan.id}
                                                                 plan={plan}
+                                                                slotHeight={slotHeight}
                                                                 onClick={() => handlePlanClick(plan)}
                                                             />
                                                         ))}
@@ -719,6 +784,7 @@ const WorkPlan = () => {
                                         <div className="w-[180px] h-fit">
                                             <PlanCardUI
                                                 plan={plans.find(p => p.id === activeId)!}
+                                                fontScale={Math.max(1, slotHeight / 72)}
                                                 isOverlay
                                             />
                                         </div>
@@ -885,12 +951,13 @@ const WorkPlan = () => {
 
 // --- Sub-components ---
 
-const DayDroppableContainer = ({ id, children }: { id: string, children: React.ReactNode }) => {
+const DayDroppableContainer = ({ id, children, slotHeight }: { id: string, children: React.ReactNode, slotHeight: number }) => {
     const { setNodeRef, isOver } = useDroppable({ id });
     return (
         <div
             ref={setNodeRef}
-            className={`flex-1 relative min-h-[1500px] transition-colors ${isOver ? 'bg-blue-50/50' : 'bg-white/30'}`}
+            style={{ minHeight: `${slotHeight * 15}px` }}
+            className={`flex-1 relative transition-colors ${isOver ? 'bg-blue-50/50' : 'bg-white/30'}`}
         >
             {children}
         </div>
