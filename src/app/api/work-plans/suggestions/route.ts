@@ -5,6 +5,7 @@ export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
         const field = searchParams.get('field');
+        const machineName = searchParams.get('machineName');
 
         if (!field) {
             return NextResponse.json({ error: 'Field parameter is required' }, { status: 400 });
@@ -17,15 +18,21 @@ export async function GET(req: Request) {
         }
 
         // Fetch unique values for the requested field
+        const where: any = {
+            AND: [
+                { [field]: { not: null } },
+                { [field]: { not: "" } }
+            ]
+        };
+
+        if (machineName) {
+            where.AND.push({ machineName });
+        }
+
         const results = await (prisma as any).workPlan.findMany({
             select: { [field]: true },
             distinct: [field],
-            where: {
-                AND: [
-                    { [field]: { not: null } },
-                    { [field]: { not: "" } }
-                ]
-            },
+            where,
             take: 50
         });
 

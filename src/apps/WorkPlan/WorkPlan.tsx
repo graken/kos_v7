@@ -14,14 +14,18 @@ import {
     ArrowRightLeft,
     Search,
     GripVertical,
-    Check
+    Check,
+    LayoutGrid,
+    List,
+    Calendar
 } from 'lucide-react';
-import { format, addDays, startOfWeek, endOfWeek, isSameDay, addWeeks, subWeeks } from 'date-fns';
+import { format, addDays, startOfWeek, endOfWeek, isSameDay, addWeeks, subWeeks, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     DndContext,
     closestCorners,
+    closestCenter,
     KeyboardSensor,
     PointerSensor,
     useSensor,
@@ -43,37 +47,37 @@ import { CSS } from '@dnd-kit/utilities';
 
 const PlanCardUI = React.memo(({ plan, listeners, isOverlay }: { plan: WorkPlanData, listeners?: any, isOverlay?: boolean }) => {
     return (
-        <div className={`group flex flex-col h-full bg-white rounded-xl shadow-sm border border-slate-200 p-3 hover:shadow-md hover:border-blue-300 transition-all ${isOverlay ? 'shadow-2xl ring-2 ring-blue-500 scale-105 rotate-2' : ''}`}>
-            <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+        <div className={`group flex flex-col h-full bg-white rounded-xl shadow-sm border border-slate-200 p-3.5 hover:shadow-md hover:border-blue-300 transition-all ${isOverlay ? 'shadow-2xl ring-2 ring-blue-500 scale-105 rotate-2' : ''}`}>
+            <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full font-black uppercase tracking-wider">
                     {plan.customer || '미지정'}
                 </span>
                 {!isOverlay && (
                     <div {...listeners} className="p-1 hover:bg-slate-100 rounded cursor-grab active:cursor-grabbing text-slate-400 group-hover:text-blue-500 transition-colors">
-                        <GripVertical size={14} />
+                        <GripVertical size={16} />
                     </div>
                 )}
             </div>
-            <div className="text-xs font-black text-slate-800 line-clamp-1 mb-1">
+            <div className="text-sm font-black text-slate-800 line-clamp-1 mb-1.5">
                 {plan.outputProduct || '생산제품 없음'}
             </div>
             {(plan.outputWidth || plan.outputLength) && (
-                <div className="text-[10px] font-black text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded-md self-start mb-1">
+                <div className="text-[11px] font-black text-blue-600 bg-blue-50 px-2 py-1 rounded-md self-start mb-1.5">
                     {Number(plan.outputWidth?.toString().replace(/,/g, '') || 0).toLocaleString()}mm * {Number(plan.outputLength?.toString().replace(/,/g, '') || 0).toLocaleString()}m
                 </div>
             )}
-            <div className="text-[10px] text-slate-500 line-clamp-1 leading-relaxed opacity-70">
+            <div className="text-[11px] text-slate-600 line-clamp-1 leading-relaxed font-medium">
                 {plan.inputProduct} → {plan.outputProduct}
             </div>
             {plan.importantNotice && (
-                <div className="mt-1 px-2 py-1 bg-red-50 rounded-md border border-red-100">
-                    <div className="text-[9px] font-black text-red-600 line-clamp-2 leading-tight">
+                <div className="mt-2 px-2.5 py-1.5 bg-red-50 rounded-md border border-red-100">
+                    <div className="text-[11px] font-black text-red-600 line-clamp-2 leading-tight">
                         <span className="mr-1">📢</span>{plan.importantNotice}
                     </div>
                 </div>
             )}
-            <div className="mt-auto flex items-center text-[10px] text-slate-400 font-medium pt-1.5 border-t border-slate-50">
-                <Clock size={12} className="mr-1" />
+            <div className="mt-auto flex items-center text-xs text-slate-500 font-bold pt-2 border-t border-slate-50">
+                <Clock size={14} className="mr-1" />
                 {plan.duration}분
             </div>
         </div>
@@ -134,7 +138,7 @@ interface WorkPlanData {
 
 const INITIAL_FORM: Partial<WorkPlanData> = {
     planDate: '',
-    duration: undefined,
+    duration: '' as any,
     customer: '',
     inputProduct: '',
     outputProduct: '',
@@ -161,35 +165,95 @@ const WorkPlan = () => {
     const [loading, setLoading] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
     const [activeId, setActiveId] = useState<string | null>(null);
+    const [selectedMachine, setSelectedMachine] = useState<string>('합지5호기');
+    const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+    const [timeRange, setTimeRange] = useState<'week' | 'month' | 'year' | 'all'>('week');
+    const [searchQuery, setSearchQuery] = useState('');
     const plansRef = useRef<WorkPlanData[]>([]);
     const previousPlansRef = useRef<WorkPlanData[]>([]);
+    const dateInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         plansRef.current = plans;
     }, [plans]);
 
-    // Group plans by date for efficient rendering
+    // Extract unique machines from existing plans + defaults
+    const machines = React.useMemo(() => {
+        const uniqueMachines = Array.from(new Set(plans.map(p => p.machineName).filter(Boolean)));
+        // Ensure standard machines are present for quick selection
+        if (!uniqueMachines.includes('합지5호기')) uniqueMachines.unshift('합지5호기');
+        if (!uniqueMachines.includes('합지3호기') && !uniqueMachines.includes('합지3호기')) {
+            if (uniqueMachines.indexOf('합지5호기') === 0) uniqueMachines.splice(1, 0, '합지3호기');
+            else uniqueMachines.push('합지3호기');
+        }
+        return uniqueMachines;
+    }, [plans]);
+
+    // Group plans by date AND filter by selected machine (for calendar view)
     const plansByDate = React.useMemo(() => {
         const grouped: Record<string, WorkPlanData[]> = {};
         if (Array.isArray(plans)) {
-            plans.forEach(p => {
-                // Normalize date key to yyyy-MM-dd to match UI's dateKey
-                const dateKey = format(new Date(p.planDate), 'yyyy-MM-dd');
-                if (!grouped[dateKey]) grouped[dateKey] = [];
-                grouped[dateKey].push(p);
-            });
+            plans
+                .filter(p => !selectedMachine || p.machineName === selectedMachine)
+                .forEach(p => {
+                    const dateKey = format(new Date(p.planDate), 'yyyy-MM-dd');
+                    if (!grouped[dateKey]) grouped[dateKey] = [];
+                    grouped[dateKey].push(p);
+                });
         }
-        console.log('Grouped plans by date:', Object.keys(grouped));
         return grouped;
-    }, [plans]);
+    }, [plans, selectedMachine]);
+
+    // Filtered plans for List View and Search
+    const filteredPlans = React.useMemo(() => {
+        let result = plans;
+        if (selectedMachine) {
+            result = result.filter(p => p.machineName === selectedMachine);
+        }
+        if (searchQuery) {
+            const q = searchQuery.toLowerCase();
+            result = result.filter(p =>
+                p.customer?.toLowerCase().includes(q) ||
+                p.inputProduct?.toLowerCase().includes(q) ||
+                p.outputProduct?.toLowerCase().includes(q) ||
+                p.note?.toLowerCase().includes(q) ||
+                p.importantNotice?.toLowerCase().includes(q)
+            );
+        }
+        return result.sort((a, b) => {
+            const dateDiff = new Date(a.planDate).getTime() - new Date(b.planDate).getTime();
+            if (dateDiff !== 0) return dateDiff;
+            return a.order - b.order;
+        });
+    }, [plans, selectedMachine, searchQuery]);
 
     // Fetch plans for the current week
     const fetchPlans = React.useCallback(async () => {
         setLoading(true);
         try {
-            const start = startOfWeek(currentDate, { weekStartsOn: 1 });
-            const end = endOfWeek(currentDate, { weekStartsOn: 1 });
-            const res = await fetch(`/api/work-plans?start=${format(start, 'yyyy-MM-dd')}&end=${format(end, 'yyyy-MM-dd')}`);
+            let url = '/api/work-plans';
+            const params = new URLSearchParams();
+
+            if (timeRange !== 'all') {
+                let start, end;
+                if (timeRange === 'week') {
+                    start = startOfWeek(currentDate, { weekStartsOn: 1 });
+                    end = endOfWeek(currentDate, { weekStartsOn: 1 });
+                } else if (timeRange === 'month') {
+                    start = startOfMonth(currentDate);
+                    end = endOfMonth(currentDate);
+                } else if (timeRange === 'year') {
+                    start = startOfYear(currentDate);
+                    end = endOfYear(currentDate);
+                }
+
+                if (start && end) {
+                    params.append('start', format(start, 'yyyy-MM-dd'));
+                    params.append('end', format(end, 'yyyy-MM-dd'));
+                }
+            }
+
+            const res = await fetch(`${url}${params.toString() ? '?' + params.toString() : ''}`);
             const data = await res.json();
             if (Array.isArray(data)) {
                 const sorted = data.sort((a, b) => {
@@ -206,16 +270,17 @@ const WorkPlan = () => {
         } finally {
             setLoading(false);
         }
-    }, [currentDate]);
+    }, [currentDate, timeRange]);
 
     useEffect(() => {
         fetchPlans();
-    }, [currentDate]);
+    }, [currentDate, timeRange]);
 
     const handleHistoryLookup = async (inputProduct: string, outputProduct: string) => {
         if (!inputProduct && !outputProduct) return;
         try {
-            const res = await fetch(`/api/work-plans/latest-history?inputProduct=${inputProduct}&outputProduct=${outputProduct}`);
+            const machineParam = formData.machineName ? `&machineName=${encodeURIComponent(formData.machineName)}` : '';
+            const res = await fetch(`/api/work-plans/latest-history?inputProduct=${encodeURIComponent(inputProduct)}&outputProduct=${encodeURIComponent(outputProduct)}${machineParam}`);
             const data = await res.json();
             if (data && data.id) {
                 // Auto-fill form from history
@@ -303,31 +368,26 @@ const WorkPlan = () => {
         }
     };
 
-    const sensors = React.useMemo(() => [
-        {
-            sensor: PointerSensor,
-            options: {
-                activationConstraint: {
-                    distance: 8,
-                },
-            }
-        },
-        {
-            sensor: KeyboardSensor,
-            options: {
-                coordinateGetter: sortableKeyboardCoordinates,
-            }
-        }
-    ], []);
-
-    const sensorsContext = useSensors(
-        useSensor(sensors[0].sensor, sensors[0].options),
-        useSensor(sensors[1].sensor, sensors[1].options)
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
     );
 
     const handleDragStart = React.useCallback((event: DragStartEvent) => {
         setActiveId(event.active.id as string);
     }, []);
+
+    const findContainer = (id: string) => {
+        if (id.startsWith('day-')) return id.replace('day-', '');
+        const plan = plansRef.current.find(p => p.id === id);
+        return plan ? plan.planDate : null;
+    };
 
     const handleDragOver = React.useCallback((event: DragOverEvent) => {
         const { active, over } = event;
@@ -336,45 +396,29 @@ const WorkPlan = () => {
         const activeId = active.id as string;
         const overId = over.id as string;
 
+        const activeContainer = findContainer(activeId);
+        const overContainer = findContainer(overId);
+
+        if (!activeContainer || !overContainer || activeContainer !== overContainer) {
+            return;
+        }
+
         setPlans((prev) => {
             const activeIdx = prev.findIndex(p => p.id === activeId);
-            if (activeIdx === -1) return prev;
+            let overIdx = prev.findIndex(p => p.id === overId);
 
-            const activePlan = prev[activeIdx];
-            let overDate: string | null = null;
-            let overIdx = -1;
-
-            if (overId.startsWith('day-')) {
-                overDate = overId.replace('day-', '');
-                // Find potential index to insert: end of that day's plans
-                const dayIndices = prev.reduce((acc: number[], p, i) => p.planDate === overDate ? [...acc, i] : acc, []);
-
+            // 만약 카드 위가 아니라 배경(day-) 위에 있다면 해당 날짜의 맨 마지막 인덱스로 지정
+            if (overIdx === -1 && overId.startsWith('day-')) {
+                const dayIndices = prev.reduce((acc: number[], p, i) => p.planDate === overContainer ? [...acc, i] : acc, []);
                 if (dayIndices.length > 0) {
                     overIdx = dayIndices[dayIndices.length - 1];
-                } else {
-                    // Empty day: find the correct chronological position in the full plans array
-                    // to keep the array sorted by date.
-                    overIdx = prev.findIndex(p => new Date(p.planDate) > new Date(overDate!));
-                    if (overIdx === -1) overIdx = prev.length - 1;
-                }
-            } else {
-                overIdx = prev.findIndex(p => p.id === overId);
-                if (overIdx !== -1) {
-                    overDate = prev[overIdx].planDate;
                 }
             }
 
-            if (!overDate || overIdx === -1) return prev;
+            if (activeIdx === -1 || overIdx === -1) return prev;
+            if (activeIdx === overIdx) return prev;
 
-            // Stable: Avoid redundant updates
-            if (activePlan.planDate === overDate && activeIdx === overIdx) return prev;
-
-            const next = [...prev];
-            if (activePlan.planDate !== overDate) {
-                next[activeIdx] = { ...activePlan, planDate: overDate };
-            }
-
-            return arrayMove(next, activeIdx, overIdx);
+            return arrayMove(prev, activeIdx, overIdx);
         });
     }, []);
 
@@ -384,6 +428,17 @@ const WorkPlan = () => {
 
         if (!over) {
             fetchPlans();
+            return;
+        }
+
+        const activeId = active.id as string;
+        const overId = over.id as string;
+        const activeContainer = findContainer(activeId);
+        const overContainer = findContainer(overId);
+
+        // 다른 날짜로 드롭된 경우 이동 방지 (안정성을 위해 수정 모달에서 날짜 변경 유도)
+        if (activeContainer !== overContainer) {
+            fetchPlans(); // 원래 위치로 복구
             return;
         }
 
@@ -457,14 +512,20 @@ const WorkPlan = () => {
             return true;
         });
 
+        // 드래그 중에는 레이아웃 고정
         if (activeId && lastVisibleWeekDays.current.length > 0) {
-            // During drag, keep displaying the days that were already visible 
-            // to avoid abrupt disappearing/collapsing of columns
             return lastVisibleWeekDays.current;
         }
 
-        lastVisibleWeekDays.current = current;
-        return current;
+        // 내용 비교를 통한 참조 안정성 확보
+        const isSame = lastVisibleWeekDays.current.length === current.length &&
+            lastVisibleWeekDays.current.every((d, i) => isSameDay(d, current[i]));
+
+        if (!isSame) {
+            lastVisibleWeekDays.current = current;
+        }
+
+        return lastVisibleWeekDays.current;
     }, [allWeekDays, plans, activeId]);
 
     return (
@@ -474,151 +535,350 @@ const WorkPlan = () => {
                 <div className="flex items-center space-x-4">
                     <h1 className="text-xl font-bold text-slate-900">작업계획서</h1>
                     <div className="flex items-center bg-slate-100 rounded-lg p-1">
-                        <button onClick={() => setCurrentDate(subWeeks(currentDate, 1))} className="p-1.5 hover:bg-white rounded-md transition-all">
+                        <button onClick={() => setCurrentDate(subWeeks(currentDate, 1))} className="p-1.5 hover:bg-white rounded-md transition-all text-slate-500 hover:text-blue-600">
                             <ChevronLeft size={20} />
                         </button>
-                        <span className="px-4 font-semibold min-w-[140px] text-center">
-                            {format(currentDate, 'yyyy년 MM월', { locale: ko })}
-                        </span>
-                        <button onClick={() => setCurrentDate(addDays(currentDate, 7))} className="p-1.5 hover:bg-white rounded-md transition-all">
+                        <div className="relative">
+                            <button
+                                onClick={() => dateInputRef.current?.showPicker?.() || dateInputRef.current?.click()}
+                                className="px-4 py-1.5 hover:bg-white rounded-md transition-all font-black min-w-[140px] text-center flex items-center justify-center space-x-2 text-slate-700 hover:text-blue-600"
+                            >
+                                <Calendar size={16} className="text-blue-500" />
+                                <span>{format(currentDate, 'yyyy년 MM월', { locale: ko })}</span>
+                            </button>
+                            <input
+                                ref={dateInputRef}
+                                type="date"
+                                className="absolute opacity-0 pointer-events-none w-0 h-0"
+                                value={format(currentDate, 'yyyy-MM-dd')}
+                                onChange={(e) => e.target.value && setCurrentDate(new Date(e.target.value))}
+                            />
+                        </div>
+                        <button onClick={() => setCurrentDate(addWeeks(currentDate, 1))} className="p-1.5 hover:bg-white rounded-md transition-all text-slate-500 hover:text-blue-600">
                             <ChevronRight size={20} />
                         </button>
                     </div>
-                </div>
-                <div className="flex items-center space-x-4">
-                    {isSyncing && (
-                        <div className="flex items-center space-x-2 text-blue-500 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100 animate-pulse">
-                            <Clock size={14} className="animate-spin" />
-                            <span className="text-xs font-bold">저장 중...</span>
+                    <div className="flex items-center space-x-6">
+                        {/* Time Range Selector (Only for List View) */}
+                        {viewMode === 'list' && (
+                            <div className="flex items-center bg-blue-50/50 rounded-lg p-1 border border-blue-100">
+                                {[
+                                    { id: 'week', label: '해당 주' },
+                                    { id: 'month', label: '해당 월' },
+                                    { id: 'year', label: '1년' },
+                                    { id: 'all', label: '전체' }
+                                ].map((range) => (
+                                    <button
+                                        key={range.id}
+                                        onClick={() => setTimeRange(range.id as any)}
+                                        className={`px-3 py-1.5 rounded-md text-[11px] font-black transition-all ${timeRange === range.id
+                                            ? 'bg-blue-600 text-white shadow-sm'
+                                            : 'text-blue-400 hover:bg-white hover:text-blue-600'
+                                            }`}
+                                    >
+                                        {range.label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="flex items-center bg-slate-100 rounded-lg p-1">
+                            <button
+                                onClick={() => {
+                                    setViewMode('calendar');
+                                    setTimeRange('week'); // Reset range for calendar
+                                }}
+                                className={`flex items-center space-x-2 px-3 py-1.5 rounded-md transition-all text-xs font-bold ${viewMode === 'calendar' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                            >
+                                <LayoutGrid size={14} />
+                                <span>캘린더형</span>
+                            </button>
+                            <button
+                                onClick={() => setViewMode('list')}
+                                className={`flex items-center space-x-2 px-3 py-1.5 rounded-md transition-all text-xs font-bold ${viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                            >
+                                <List size={14} />
+                                <span>목록형</span>
+                            </button>
                         </div>
-                    )}
-                    <button
-                        onClick={() => {
-                            setFormData(INITIAL_FORM);
-                            setIsModalOpen(true);
-                        }}
-                        className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all font-medium shadow-md shadow-blue-100"
-                    >
-                        <Plus size={18} />
-                        <span>작업 추가</span>
-                    </button>
+
+                        <div className="relative group">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={16} />
+                            <input
+                                type="text"
+                                placeholder="업체, 제품, 비고 검색..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="bg-slate-100 border-none rounded-xl pl-10 pr-4 py-2 text-xs font-bold w-64 focus:ring-4 focus:ring-blue-100 transition-all outline-none"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex items-center space-x-4">
+                        {isSyncing && (
+                            <div className="flex items-center space-x-2 text-blue-500 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100 animate-pulse">
+                                <Clock size={14} className="animate-spin" />
+                                <span className="text-xs font-bold">저장 중...</span>
+                            </div>
+                        )}
+                        <button
+                            onClick={() => {
+                                setFormData(INITIAL_FORM);
+                                setIsModalOpen(true);
+                            }}
+                            className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all font-medium shadow-md shadow-blue-100"
+                        >
+                            <Plus size={18} />
+                            <span>작업 추가</span>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Machine Tabs */}
+                <div className="flex items-center space-x-2 px-4 py-2 bg-white border-b border-slate-200 shrink-0 overflow-x-auto no-scrollbar">
+                    {machines.map(m => (
+                        <button
+                            key={m}
+                            onClick={() => setSelectedMachine(m)}
+                            className={`px-4 py-1.5 rounded-full text-[11px] font-black transition-all whitespace-nowrap shadow-sm border ${selectedMachine === m
+                                ? 'bg-blue-600 text-white border-blue-600 shadow-blue-100'
+                                : 'bg-white text-slate-500 border-slate-200 hover:border-blue-300 hover:text-blue-500'
+                                }`}
+                        >
+                            {m}
+                        </button>
+                    ))}
                 </div>
             </div>
 
             {/* Scheduler Body */}
-            <div className="flex-1 overflow-x-auto p-4 flex">
-                <div className="flex flex-1 min-w-full h-fit min-h-full">
-                    {/* Time Scale Sidebar */}
-                    <div className="w-16 flex flex-col pt-[72px] border-r border-slate-200 bg-white/50 sticky left-0 z-10 shrink-0">
-                        {Array.from({ length: 15 }, (_, i) => 9 + i).map(hour => (
-                            <div key={hour} className="h-[100px] text-[10px] font-bold text-slate-400 text-center border-b border-slate-100/50 flex flex-col justify-start pt-1">
-                                {String(hour).padStart(2, '0')}:00
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="flex flex-1 h-fit min-h-full">
-                        <DndContext
-                            sensors={sensorsContext}
-                            collisionDetection={closestCorners}
-                            onDragStart={handleDragStart}
-                            onDragOver={handleDragOver}
-                            onDragEnd={handleDragEnd}
-                        >
-                            {weekDays.map(day => {
-                                const dateKey = format(day, 'yyyy-MM-dd');
-                                const dayPlans = plansByDate[dateKey] || [];
-
-                                return (
-                                    <div key={dateKey} className="flex flex-col flex-1 min-w-[180px] border-r border-slate-200 last:border-r-0">
-                                        <div className={`p-4 sticky top-0 bg-[#f8fafc] z-10 border-b h-[72px] flex flex-col justify-center ${isSameDay(day, new Date()) ? 'border-b-blue-500' : 'border-b-slate-200'}`}>
-                                            <div className={`text-xs font-bold ${isSameDay(day, new Date()) ? 'text-blue-600' : 'text-slate-500'}`}>
-                                                {format(day, 'MM/dd (E)', { locale: ko })}
-                                            </div>
-                                            {isSameDay(day, new Date()) && (
-                                                <div className="text-[10px] text-blue-500 font-black mt-0.5">TODAY</div>
-                                            )}
-                                        </div>
-
-                                        <DayDroppableContainer id={`day-${format(day, 'yyyy-MM-dd')}`}>
-                                            {/* Grid Lines */}
-                                            <div className="absolute inset-0 pointer-events-none">
-                                                {Array.from({ length: 15 }).map((_, i) => (
-                                                    <div key={i} className="h-[100px] border-b border-slate-100/50 w-full" />
-                                                ))}
-                                            </div>
-
-                                            <div className="relative z-0 p-2 space-y-1">
-                                                <SortableContext
-                                                    items={dayPlans.map(p => p.id)}
-                                                    strategy={verticalListSortingStrategy}
-                                                >
-                                                    {dayPlans.map(plan => (
-                                                        <SortablePlanCard
-                                                            key={plan.id}
-                                                            plan={plan}
-                                                            onClick={() => handlePlanClick(plan)}
-                                                        />
-                                                    ))}
-                                                </SortableContext>
-                                            </div>
-                                        </DayDroppableContainer>
-                                    </div>
-                                );
-                            })}
-                            <DragOverlay adjustScale={true}>
-                                {activeId ? (
-                                    <div className="w-[180px] h-fit">
-                                        <PlanCardUI
-                                            plan={plans.find(p => p.id === activeId)!}
-                                            isOverlay
-                                        />
-                                    </div>
-                                ) : null}
-                            </DragOverlay>
-                        </DndContext>
-                    </div>
-                </div>
-
-                {/* Modal & Detail Popup */}
-                <AnimatePresence>
-                    {isModalOpen && (
-                        <WorkPlanModal
-                            isOpen={isModalOpen}
-                            onClose={() => setIsModalOpen(false)}
-                            formData={formData}
-                            setFormData={setFormData}
-                            onSave={handleSave}
-                            onHistoryLookup={handleHistoryLookup}
-                            loading={loading}
-                        />
-                    )}
-                    {isDetailOpen && selectedPlan && (
-                        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                            <motion.div
-                                initial={{ scale: 0.9, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0.9, opacity: 0 }}
-                                className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[95%] overflow-y-auto border border-slate-100"
-                            >
-                                <WorkPlanDetailCard
-                                    plan={selectedPlan}
-                                    onClose={() => setIsDetailOpen(false)}
-                                    onEdit={() => {
-                                        setFormData({
-                                            ...selectedPlan,
-                                            planDate: format(new Date(selectedPlan.planDate), 'yyyy-MM-dd')
-                                        });
-                                        setIsDetailOpen(false);
-                                        setIsModalOpen(true);
-                                    }}
-                                    onDelete={handleDelete}
-                                />
-                            </motion.div>
+            <div className="flex-1 overflow-auto p-4 flex">
+                {viewMode === 'calendar' ? (
+                    <div className="flex flex-1 min-w-full h-fit min-h-full">
+                        {/* Time Scale Sidebar */}
+                        <div className="w-16 flex flex-col pt-[72px] border-r border-slate-200 bg-white/50 sticky left-0 z-10 shrink-0">
+                            {Array.from({ length: 15 }, (_, i) => 9 + i).map(hour => (
+                                <div key={hour} className="h-[100px] text-[10px] font-bold text-slate-400 text-center border-b border-slate-100/50 flex flex-col justify-start pt-1">
+                                    {String(hour).padStart(2, '0')}:00
+                                </div>
+                            ))}
                         </div>
-                    )}
-                </AnimatePresence>
+
+                        <div className="flex flex-1 h-fit min-h-full">
+                            <DndContext
+                                sensors={sensors}
+                                collisionDetection={closestCorners}
+                                onDragStart={handleDragStart}
+                                onDragOver={handleDragOver}
+                                onDragEnd={handleDragEnd}
+                            >
+                                {weekDays.map(day => {
+                                    const dateKey = format(day, 'yyyy-MM-dd');
+                                    const dayPlans = plansByDate[dateKey] || [];
+
+                                    return (
+                                        <div key={dateKey} className="flex flex-col flex-1 min-w-[180px] border-r border-slate-200 last:border-r-0">
+                                            <div className={`p-4 sticky top-0 bg-[#f8fafc] z-10 border-b h-[72px] flex flex-col justify-center ${isSameDay(day, new Date()) ? 'border-b-blue-500' : 'border-b-slate-200'}`}>
+                                                <div className={`text-xs font-bold ${isSameDay(day, new Date()) ? 'text-blue-600' : 'text-slate-500'}`}>
+                                                    {format(day, 'MM/dd (E)', { locale: ko })}
+                                                </div>
+                                                {isSameDay(day, new Date()) && (
+                                                    <div className="text-[10px] text-blue-500 font-black mt-0.5">TODAY</div>
+                                                )}
+                                            </div>
+
+                                            <DayDroppableContainer id={`day-${format(day, 'yyyy-MM-dd')}`}>
+                                                {/* Grid Lines */}
+                                                <div className="absolute inset-0 pointer-events-none">
+                                                    {Array.from({ length: 15 }).map((_, i) => (
+                                                        <div key={i} className="h-[100px] border-b border-slate-100/50 w-full" />
+                                                    ))}
+                                                </div>
+
+                                                <div className="relative z-0 p-2 space-y-1">
+                                                    <SortableContext
+                                                        id={`sortable-${dateKey}`}
+                                                        items={dayPlans.map(p => p.id)}
+                                                        strategy={verticalListSortingStrategy}
+                                                    >
+                                                        {dayPlans.map(plan => (
+                                                            <SortablePlanCard
+                                                                key={plan.id}
+                                                                plan={plan}
+                                                                onClick={() => handlePlanClick(plan)}
+                                                            />
+                                                        ))}
+                                                    </SortableContext>
+                                                </div>
+                                            </DayDroppableContainer>
+                                        </div>
+                                    );
+                                })}
+                                <DragOverlay>
+                                    {activeId ? (
+                                        <div className="w-[180px] h-fit">
+                                            <PlanCardUI
+                                                plan={plans.find(p => p.id === activeId)!}
+                                                isOverlay
+                                            />
+                                        </div>
+                                    ) : null}
+                                </DragOverlay>
+                            </DndContext>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="w-full h-full bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col shadow-sm">
+                        <div className="overflow-auto flex-1">
+                            <table className="w-full text-left border-collapse min-w-[1000px]">
+                                <thead className="bg-slate-50 sticky top-0 z-10 border-b border-slate-200">
+                                    <tr>
+                                        <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-wider w-[100px]">날짜</th>
+                                        <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-wider w-[180px]">업체명</th>
+                                        <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-wider w-[280px]">제품 정보</th>
+                                        <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-wider w-[160px]">생산 규격</th>
+                                        <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-wider w-[320px]">작업 데이터</th>
+                                        <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-wider w-[120px]">시간</th>
+                                        <th className="px-4 py-3 text-[10px] font-black text-slate-400 uppercase tracking-wider">비고 / 중요공지</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {filteredPlans.length > 0 ? (
+                                        filteredPlans.map((plan, idx) => {
+                                            const prevPlan = idx > 0 ? filteredPlans[idx - 1] : null;
+                                            const isNewDay = !prevPlan || !isSameDay(new Date(plan.planDate), new Date(prevPlan.planDate));
+
+                                            return (
+                                                <tr
+                                                    key={plan.id}
+                                                    onClick={() => handlePlanClick(plan)}
+                                                    className={`hover:bg-blue-50/30 transition-colors cursor-pointer ${plan.importantNotice ? 'bg-red-50/20' : ''} ${isNewDay && idx !== 0 ? 'border-t-4 border-slate-200' : ''}`}
+                                                >
+                                                    <td className={`px-4 py-6 text-sm font-bold ${isNewDay ? 'text-blue-600 bg-blue-50/10' : 'text-slate-500 opacity-60'}`}>
+                                                        {format(new Date(plan.planDate), 'MM/dd (E)', { locale: ko })}
+                                                    </td>
+                                                    <td className="px-4 py-6"><span className="text-sm font-black text-slate-800">{plan.customer}</span></td>
+                                                    <td className="px-4 py-6">
+                                                        <div className="flex flex-col space-y-0.5">
+                                                            <span className="text-sm font-bold text-blue-600">{plan.outputProduct}</span>
+                                                            <span className="text-xs text-slate-500 font-semibold">{plan.inputProduct || '-'}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-6">
+                                                        {(plan.outputWidth || plan.outputLength) && (
+                                                            <span className="text-[13px] font-black text-slate-700 bg-slate-100 px-2.5 py-1.5 rounded-md whitespace-nowrap">
+                                                                {Number(plan.outputWidth?.replace(/,/g, '') || 0).toLocaleString()}mm * {Number(plan.outputLength?.replace(/,/g, '') || 0).toLocaleString()}m
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-6">
+                                                        <div className="flex flex-col space-y-2.5">
+                                                            <div className="flex items-center space-x-2">
+                                                                <span className="text-xs font-bold text-slate-500 w-12">점착제</span>
+                                                                <span className="text-sm font-black text-slate-800">{plan.adhesive || '-'}</span>
+                                                            </div>
+                                                            {plan.mixingRatio && (
+                                                                <div className="flex items-start space-x-2">
+                                                                    <span className="text-xs font-bold text-slate-500 w-12 pt-1.5">배합비</span>
+                                                                    <div className="inline-flex flex-col border border-blue-200 rounded-lg overflow-hidden shadow-sm">
+                                                                        <div className="flex border-b border-blue-100 divide-x divide-blue-100 bg-blue-50/50">
+                                                                            {Object.entries(JSON.parse(plan.mixingRatio) as Record<string, any>)
+                                                                                .filter(([_, v]) => v && v !== '0')
+                                                                                .map(([k]) => (
+                                                                                    <div key={k} className="px-3 py-1 text-[11px] font-bold text-blue-500 text-center min-w-[50px]">{k}</div>
+                                                                                ))}
+                                                                        </div>
+                                                                        <div className="flex divide-x divide-blue-100 bg-white">
+                                                                            {Object.entries(JSON.parse(plan.mixingRatio) as Record<string, any>)
+                                                                                .filter(([_, v]) => v && v !== '0')
+                                                                                .map(([k, v]) => (
+                                                                                    <div key={k} className="px-3 py-1 text-[13px] font-black text-blue-700 text-center min-w-[50px]">{String(v)}</div>
+                                                                                ))}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                            <div className="flex items-center space-x-2">
+                                                                <span className="text-xs font-bold text-slate-500 w-12">망목/속도</span>
+                                                                <span className="text-sm font-black text-slate-800">#{plan.mesh || '-'}목 / {plan.speed || '-'}m</span>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-6">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-sm font-bold text-slate-800">{plan.duration}분</span>
+                                                            {plan.duration >= 60 && (
+                                                                <span className="text-xs text-slate-500 font-bold whitespace-nowrap">
+                                                                    ({Math.floor(plan.duration / 60)}시간 {plan.duration % 60 > 0 ? `${plan.duration % 60}분` : ''})
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-6">
+                                                        <div className="space-y-2 max-w-sm">
+                                                            {plan.importantNotice && (
+                                                                <div className="text-sm font-black text-red-600 bg-red-50 px-2 py-1 rounded inline-block">
+                                                                    [중요] {plan.importantNotice}
+                                                                </div>
+                                                            )}
+                                                            <div className="text-sm text-slate-700 font-bold leading-relaxed whitespace-pre-wrap">
+                                                                {plan.note || '-'}
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
+                                    ) : (
+                                        <tr>
+                                            <td colSpan={7} className="px-4 py-24 text-center text-slate-400 font-bold text-base">검색 결과가 없습니다.</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
             </div>
+
+            {/* Modals & Detail Popup */}
+            <AnimatePresence>
+                {isModalOpen && (
+                    <WorkPlanModal
+                        isOpen={isModalOpen}
+                        onClose={() => setIsModalOpen(false)}
+                        formData={formData}
+                        setFormData={setFormData}
+                        onSave={handleSave}
+                        onHistoryLookup={handleHistoryLookup}
+                        loading={loading}
+                    />
+                )}
+                {isDetailOpen && selectedPlan && (
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[95%] overflow-y-auto border border-slate-100"
+                        >
+                            <WorkPlanDetailCard
+                                plan={selectedPlan}
+                                onClose={() => setIsDetailOpen(false)}
+                                onEdit={() => {
+                                    setFormData({
+                                        ...selectedPlan,
+                                        planDate: format(new Date(selectedPlan.planDate), 'yyyy-MM-dd')
+                                    });
+                                    setIsDetailOpen(false);
+                                    setIsModalOpen(true);
+                                }}
+                                onDelete={handleDelete}
+                            />
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
@@ -640,7 +900,7 @@ const DayDroppableContainer = ({ id, children }: { id: string, children: React.R
 // React.memo used above locally for SortablePlanCard and PlanCardUI
 
 const WorkPlanDetailCard = ({ plan, onClose, onEdit, onDelete }: { plan: WorkPlanData, onClose: () => void, onEdit: () => void, onDelete: (id: string) => void }) => {
-    const ratio = JSON.parse(plan.mixingRatio || '{}');
+    const ratio = JSON.parse(plan.mixingRatio || '{ }');
 
     return (
         <div className="relative p-8">
@@ -666,7 +926,7 @@ const WorkPlanDetailCard = ({ plan, onClose, onEdit, onDelete }: { plan: WorkPla
                     <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">생산제품</div>
                     <div className="text-sm font-medium text-slate-900 border-b-2 border-blue-200 inline-block">{plan.outputProduct}</div>
                 </div>
-                <div className="col-span-2 text-center py-2 bg-slate-50 rounded-xl text-xs font-bold text-slate-500">
+                <div className="col-span-2 text-center py-3 bg-slate-50 rounded-xl text-lg font-black text-slate-700">
                     {(plan.outputWidth || plan.outputLength)
                         ? `${Number(plan.outputWidth?.replace(/,/g, '') || 0).toLocaleString()}mm * ${Number(plan.outputLength?.replace(/,/g, '') || 0).toLocaleString()}m`
                         : (plan.outputSize || '규격 정보 없음')}
@@ -680,7 +940,7 @@ const WorkPlanDetailCard = ({ plan, onClose, onEdit, onDelete }: { plan: WorkPla
                 <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 border-b border-slate-800 pb-2">작업데이터</div>
                 <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                        <div className="text-slate-500">점착제 :</div>
+                        <div className="text-slate-500">점착제/실리콘 :</div>
                         <div className="font-bold text-right">{plan.adhesive}</div>
                         <div className="col-span-2 mt-2 pt-2 border-t border-slate-800">
                             <div className="flex flex-col space-y-1">
@@ -689,7 +949,7 @@ const WorkPlanDetailCard = ({ plan, onClose, onEdit, onDelete }: { plan: WorkPla
                                         .filter(([_, v]) => v && v !== '0')
                                         .map(([k], i, arr) => (
                                             <div key={k} className="flex items-center">
-                                                <span className="min-w-[40px] text-center">{k}</span>
+                                                <span className="min-w-[40px] text-center">{k === '점착제' ? '점착제/실리콘' : k}</span>
                                                 {i < arr.length - 1 && <span className="text-slate-700 mx-1">:</span>}
                                             </div>
                                         ))
@@ -708,8 +968,16 @@ const WorkPlanDetailCard = ({ plan, onClose, onEdit, onDelete }: { plan: WorkPla
                                 </div>
                             </div>
                         </div>
-                        <div className="text-slate-500">망목수 / 스피드 :</div>
-                        <div className="font-bold text-right">#{plan.mesh || '-'}목 / {plan.speed}m</div>
+                        {(plan.mesh || plan.speed) && (
+                            <>
+                                <div className="text-slate-500">망목수 / 스피드 :</div>
+                                <div className="font-bold text-right">
+                                    {plan.mesh ? `#${plan.mesh}목` : ''}
+                                    {plan.mesh && plan.speed ? ' / ' : ''}
+                                    {plan.speed ? `${plan.speed}m` : ''}
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
@@ -744,7 +1012,7 @@ const WorkPlanDetailCard = ({ plan, onClose, onEdit, onDelete }: { plan: WorkPla
 
 // --- Utils ---
 
-const AutocompleteInput = ({ label, name, value, onChange, field, placeholder, className }: any) => {
+const AutocompleteInput = ({ label, name, value, onChange, field, placeholder, className, machineName }: any) => {
     const [suggestions, setSuggestions] = useState<string[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -761,7 +1029,8 @@ const AutocompleteInput = ({ label, name, value, onChange, field, placeholder, c
 
     const fetchSuggestions = async () => {
         try {
-            const res = await fetch(`/api/work-plans/suggestions?field=${field}`);
+            const machineParam = machineName ? `&machineName=${encodeURIComponent(machineName)}` : '';
+            const res = await fetch(`/api/work-plans/suggestions?field=${field}${machineParam}`);
             const data = await res.json();
             if (Array.isArray(data)) setSuggestions(data);
         } catch (error) {
@@ -822,6 +1091,32 @@ const AutocompleteInput = ({ label, name, value, onChange, field, placeholder, c
 
 const WorkPlanModal = ({ isOpen, onClose, formData, setFormData, onSave, onHistoryLookup, loading }: any) => {
     const isEdit = !!formData.id;
+    const [historyDate, setHistoryDate] = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+        const fetchLatestHistoryDate = async () => {
+            if (!formData.outputProduct) {
+                setHistoryDate(null);
+                return;
+            }
+            try {
+                const machineParam = formData.machineName ? `&machineName=${encodeURIComponent(formData.machineName)}` : '';
+                const res = await fetch(`/api/work-plans/latest-history?outputProduct=${encodeURIComponent(formData.outputProduct)}${machineParam}`);
+                const data = await res.json();
+                if (data && data.planDate) {
+                    const date = new Date(data.planDate);
+                    setHistoryDate(format(date, 'yyyy년 MM월 dd일'));
+                } else {
+                    setHistoryDate(null);
+                }
+            } catch (error) {
+                console.error('History date fetch error:', error);
+                setHistoryDate(null);
+            }
+        };
+
+        fetchLatestHistoryDate();
+    }, [formData.outputProduct, formData.machineName]);
 
     const formatNumber = (val: string | number) => {
         if (!val && val !== 0) return '';
@@ -845,7 +1140,7 @@ const WorkPlanModal = ({ isOpen, onClose, formData, setFormData, onSave, onHisto
     };
 
     const mixingRatioString = typeof formData.mixingRatio === 'string' ? formData.mixingRatio : JSON.stringify(formData.mixingRatio || {});
-    const mixingRatio = JSON.parse(mixingRatioString || '{}');
+    const mixingRatio = JSON.parse(mixingRatioString || '{ }');
 
     const updateRatio = (key: string, val: string) => {
         const newRatio = { ...mixingRatio, [key]: val };
@@ -877,27 +1172,26 @@ const WorkPlanModal = ({ isOpen, onClose, formData, setFormData, onSave, onHisto
                             <input
                                 type="date"
                                 name="planDate"
-                                value={formData.planDate}
+                                value={formData.planDate ?? ''}
                                 onChange={handleChange}
                                 className="w-full bg-slate-100 border-none rounded-2xl px-5 py-3.5 text-sm font-bold focus:ring-4 focus:ring-blue-100 transition-all outline-none"
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">작업 시간 (분)</label>
-                            <input
-                                type="number"
-                                name="duration"
-                                value={formData.duration}
+                            <AutocompleteInput
+                                label="설비명"
+                                name="machineName"
+                                value={formData.machineName ?? ''}
                                 onChange={handleChange}
-                                placeholder="예: 60"
-                                className="w-full bg-slate-100 border-none rounded-2xl px-5 py-3.5 text-sm font-bold focus:ring-4 focus:ring-blue-100 transition-all outline-none"
+                                field="machineName"
+                                placeholder="합지5호기"
                             />
                         </div>
                         <div className="space-y-2 md:col-span-2">
                             <AutocompleteInput
                                 label="업체명"
                                 name="customer"
-                                value={formData.customer}
+                                value={formData.customer ?? ''}
                                 onChange={handleChange}
                                 field="customer"
                                 placeholder="업체명을 입력하세요"
@@ -911,102 +1205,114 @@ const WorkPlanModal = ({ isOpen, onClose, formData, setFormData, onSave, onHisto
                             <AutocompleteInput
                                 label="투입제품"
                                 name="inputProduct"
-                                value={formData.inputProduct}
+                                value={formData.inputProduct ?? ''}
                                 onChange={handleChange}
                                 field="inputProduct"
-                                className="w-full bg-white border-blue-100 border-2 rounded-2xl px-5 py-3.5 text-sm font-bold focus:ring-4 focus:ring-blue-100 transition-all outline-none"
+                                placeholder="투입 원단명"
+                                machineName={formData.machineName}
+                                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 text-sm font-bold focus:ring-4 focus:ring-blue-100 transition-all outline-none"
                             />
                         </div>
                         <div className="space-y-2">
                             <AutocompleteInput
                                 label="생산제품"
                                 name="outputProduct"
-                                value={formData.outputProduct}
+                                value={formData.outputProduct ?? ''}
                                 onChange={handleChange}
                                 field="outputProduct"
-                                className="w-full bg-white border-blue-100 border-2 rounded-2xl px-5 py-3.5 text-sm font-bold focus:ring-4 focus:ring-blue-100 transition-all outline-none"
+                                placeholder="생산 제품명"
+                                machineName={formData.machineName}
+                                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-3.5 text-sm font-bold focus:ring-4 focus:ring-blue-100 transition-all outline-none"
                             />
-                            <div className="flex justify-end mt-1">
+                            <div className="flex justify-between items-center mt-1 px-1 min-h-[24px]">
+                                <span className="text-[10px] font-bold text-slate-400">
+                                    {historyDate ? `최종작업이력 : ${historyDate}` : ''}
+                                </span>
                                 <button
                                     onClick={() => onHistoryLookup(formData.inputProduct, formData.outputProduct)}
-                                    className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded-lg text-[10px] hover:bg-blue-200 transition-colors"
-                                >이력 조회</button>
+                                    className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded-lg text-[10px] font-bold hover:bg-blue-200 transition-colors"
+                                >이력 채우기</button>
                             </div>
                         </div>
                         <div className="space-y-2 md:col-span-2">
-                            <label className="text-xs font-black text-blue-400 uppercase tracking-widest pl-1">생산 규격</label>
-                            <div className="flex items-center gap-3">
-                                <div className="flex-1 relative">
-                                    <input
-                                        type="text"
-                                        name="outputWidth"
-                                        value={formData.outputWidth}
-                                        onChange={handleChange}
-                                        placeholder="폭"
-                                        className="w-full bg-white border-blue-100 border-2 rounded-2xl px-5 py-3.5 text-sm font-bold focus:ring-4 focus:ring-blue-100 transition-all outline-none"
-                                    />
-                                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">mm</span>
+                            <div className="flex items-end gap-4">
+                                <div className="flex-[2] space-y-2">
+                                    <label className="text-xs font-black text-blue-400 uppercase tracking-widest pl-1">생산 규격</label>
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex-1 relative">
+                                            <input
+                                                type="text"
+                                                name="outputWidth"
+                                                value={formData.outputWidth ?? ''}
+                                                onChange={handleChange}
+                                                placeholder="폭"
+                                                className="w-full bg-white border-blue-100 border-2 rounded-2xl px-5 py-3.5 text-sm font-bold focus:ring-4 focus:ring-blue-100 transition-all outline-none"
+                                            />
+                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">mm</span>
+                                        </div>
+                                        <X size={12} className="text-blue-200 shrink-0" />
+                                        <div className="flex-1 relative">
+                                            <input
+                                                type="text"
+                                                name="outputLength"
+                                                value={formData.outputLength ?? ''}
+                                                onChange={handleChange}
+                                                placeholder="길이"
+                                                className="w-full bg-white border-blue-100 border-2 rounded-2xl px-5 py-3.5 text-sm font-bold focus:ring-4 focus:ring-blue-100 transition-all outline-none"
+                                            />
+                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">m</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <X size={14} className="text-blue-200 shrink-0" />
-                                <div className="flex-1 relative">
+                                <div className="flex-1 space-y-2">
+                                    <label className="text-[10px] font-black text-blue-400 uppercase tracking-widest pl-1">작업 시간(분)</label>
                                     <input
-                                        type="text"
-                                        name="outputLength"
-                                        value={formData.outputLength}
+                                        type="number"
+                                        name="duration"
+                                        value={formData.duration ?? ''}
                                         onChange={handleChange}
-                                        placeholder="길이"
+                                        placeholder="60"
                                         className="w-full bg-white border-blue-100 border-2 rounded-2xl px-5 py-3.5 text-sm font-bold focus:ring-4 focus:ring-blue-100 transition-all outline-none"
                                     />
-                                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">m</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Specs */}
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                        <div className="space-y-2">
-                            <AutocompleteInput
-                                label="설비명"
-                                name="machineName"
-                                value={formData.machineName}
-                                onChange={handleChange}
-                                field="machineName"
-                                placeholder="합지5호기"
-                                className="w-full bg-slate-100 border-none rounded-xl px-4 py-3 text-xs font-bold outline-none"
-                            />
-                        </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-slate-400 uppercase pl-1">용도</label>
-                            <input type="text" name="processType" value={formData.processType} onChange={handleChange} placeholder="합지용" className="w-full bg-slate-100 border-none rounded-xl px-4 py-3 text-xs font-bold outline-none" />
+                            <input type="text" name="processType" value={formData.processType ?? ''} onChange={handleChange} placeholder="합지용" className="w-full bg-slate-100 border-none rounded-xl px-4 py-3 text-xs font-bold outline-none" />
                         </div>
                         <div className="space-y-2">
                             <AutocompleteInput
-                                label="점착제"
+                                label="점착제/실리콘"
                                 name="adhesive"
-                                value={formData.adhesive}
+                                value={formData.adhesive ?? ''}
                                 onChange={handleChange}
                                 field="adhesive"
+                                machineName={formData.machineName}
                                 className="w-full bg-slate-100 border-none rounded-xl px-4 py-3 text-xs font-bold outline-none"
                             />
                         </div>
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-slate-400 uppercase pl-1">망목수(Mesh)</label>
-                            <input type="text" name="mesh" value={formData.mesh} onChange={handleChange} placeholder="70" className="w-full bg-slate-100 border-none rounded-xl px-4 py-3 text-xs font-bold outline-none" />
+                            <input type="text" name="mesh" value={formData.mesh ?? ''} onChange={handleChange} placeholder="70" className="w-full bg-slate-100 border-none rounded-xl px-4 py-3 text-xs font-bold outline-none" />
                         </div>
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-slate-400 uppercase pl-1">속도</label>
-                            <input type="text" name="speed" value={formData.speed} onChange={handleChange} placeholder="50m" className="w-full bg-slate-100 border-none rounded-xl px-4 py-3 text-xs font-bold outline-none" />
+                            <input type="text" name="speed" value={formData.speed ?? ''} onChange={handleChange} placeholder="50m" className="w-full bg-slate-100 border-none rounded-xl px-4 py-3 text-xs font-bold outline-none" />
                         </div>
                     </div>
 
                     {/* Mixing Ratio Grid */}
                     <div className="bg-slate-900 rounded-[28px] p-5 shadow-xl shadow-slate-100">
-                        <label className="text-xs font-black text-slate-500 uppercase tracking-widest pl-1 block mb-3">점착제 배합 비율</label>
+                        <label className="text-xs font-black text-slate-500 uppercase tracking-widest pl-1 block mb-3">점착제/실리콘 배합 비율</label>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4">
                             {['점착제', '톨루엔', 'MEK', 'N/H'].map(key => (
                                 <div key={key} className="space-y-2">
-                                    <span className="text-[10px] text-slate-500 font-bold block ml-1">{key}</span>
+                                    <span className="text-[10px] text-slate-500 font-bold block ml-1">{key === '점착제' ? '점착제/실리콘' : key}</span>
                                     <div className="flex items-center bg-slate-800 rounded-xl px-3 border border-slate-700 focus-within:border-blue-500 transition-colors">
                                         <input
                                             type="text"
@@ -1030,7 +1336,7 @@ const WorkPlanModal = ({ isOpen, onClose, formData, setFormData, onSave, onHisto
                         <label className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">비고 / 주의사항</label>
                         <textarea
                             name="note"
-                            value={formData.note}
+                            value={formData.note ?? ''}
                             onChange={handleChange}
                             rows={3}
                             className="w-full bg-slate-100 border-none rounded-[24px] px-6 py-4 text-sm font-medium focus:ring-4 focus:ring-blue-100 transition-all outline-none resize-none"
@@ -1042,7 +1348,7 @@ const WorkPlanModal = ({ isOpen, onClose, formData, setFormData, onSave, onHisto
                         <label className="text-xs font-black text-red-400 uppercase tracking-widest pl-1">[중요공지사항]</label>
                         <textarea
                             name="importantNotice"
-                            value={formData.importantNotice}
+                            value={formData.importantNotice ?? ''}
                             onChange={handleChange}
                             rows={3}
                             className="w-full bg-red-50 border-2 border-red-100 rounded-[24px] px-6 py-4 text-sm font-bold focus:ring-4 focus:ring-red-100 transition-all outline-none resize-none text-red-900 placeholder:text-red-300"
