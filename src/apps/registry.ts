@@ -107,6 +107,16 @@ export const APP_REGISTRY: Record<string, AppDefinition> = {
             maximizable: true
         },
         name: '신성데이터'
+    },
+    'work-plan': {
+        component: dynamic(() => import('@/apps/WorkPlan/WorkPlan')),
+        config: {
+            defaultWidth: 1100,
+            defaultHeight: 850,
+            resizable: true,
+            maximizable: true
+        },
+        name: '작업계획서'
     }
 };
 

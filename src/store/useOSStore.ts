@@ -135,9 +135,10 @@ const INITIAL_APPS: AppData[] = [
   { id: 'roll-calculator', name: '롤직경계산기', iconName: 'Calculator' },
   { id: 'equipment-maintenance', name: '설비점검', iconName: 'Activity' },
   { id: 'notepad', name: '메모장', iconName: 'FileText' },
+  { id: 'work-plan', name: '작업계획서', iconName: 'Calendar' },
 ];
 
-export const INSTALLED_APP_IDS = ['browser', 'files', 'photos', 'messages', 'mail', 'settings', 'calculator', 'coating-control', 'gravure-coating', 'roll-calculator', 'equipment-maintenance', 'user-manager', 'notepad', 'shinsung-data'];
+export const INSTALLED_APP_IDS = ['browser', 'files', 'photos', 'messages', 'mail', 'settings', 'calculator', 'coating-control', 'gravure-coating', 'roll-calculator', 'equipment-maintenance', 'user-manager', 'notepad', 'shinsung-data', 'work-plan'];
 
 const ADMIN_USER: User = {
   id: 'admin-1',

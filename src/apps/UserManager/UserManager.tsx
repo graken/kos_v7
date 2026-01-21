@@ -9,7 +9,7 @@ import {
     Users, Plus, Search, Shield, User as UserIcon,
     Check, X, ChevronRight, Settings, Trash2, Loader2,
     Lock, Smartphone, Laptop, Globe, Folder, Image as ImageIcon,
-    MessageSquare, Mail, Calculator, Activity, Droplets, Users as UsersIcon
+    MessageSquare, Mail, Calculator, Activity, Droplets, Users as UsersIcon, Calendar
 } from 'lucide-react';
 
 const ICON_MAP: Record<string, any> = {
@@ -23,6 +23,7 @@ const ICON_MAP: Record<string, any> = {
     Activity: <Activity size={20} />,
     Droplets: <Droplets size={20} />,
     Users: <UsersIcon size={20} />,
+    Calendar: <Calendar size={20} />,
 };
 
 export default function UserManager() {
@@ -379,6 +380,10 @@ function UserEditModal({ user, onClose, onSave }: { user: User | null, onClose: 
                                             ] : []),
                                             ...(app.id === 'equipment-maintenance' ? [
                                                 { id: 'complete', name: '완료 처리 권한' }
+                                            ] : []),
+                                            ...(app.id === 'work-plan' ? [
+                                                { id: 'save', name: '저장 권한' },
+                                                { id: 'delete_record', name: '기록 삭제 권한' }
                                             ] : [])
                                         ].map((p) => {
                                             const isChecked = formData.permissions[app.id]?.[p.id];
