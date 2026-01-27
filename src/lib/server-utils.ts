@@ -85,20 +85,25 @@ export async function saveMemoFile(data: string | Buffer, filename: string, type
 }
 
 /**
- * 신성데이터 이미지를 압축하여 저장하고 썸네일을 생성합니다.
+ * 내부 공통 이미지 처리 함수
  */
-export async function saveShinsungImage(base64Data: string): Promise<{ url: string, thumbnailUrl: string }> {
+async function _processAndSaveImage(
+    base64Data: string,
+    dirName: string,
+    options: { maxWidth?: number, quality?: number, thumbSize?: number } = {}
+): Promise<{ url: string, thumbnailUrl: string }> {
     if (!base64Data || !base64Data.startsWith('data:image')) {
         throw new Error('Invalid image data');
     }
 
+    const { maxWidth = 1200, quality = 80, thumbSize = 200 } = options;
     const base64Content = base64Data.split(';base64,').pop();
     if (!base64Content) throw new Error('Invalid base64 content');
     const buffer = Buffer.from(base64Content, 'base64');
     const fileName = `${uuidv4()}.jpg`;
 
-    // 1. 원본 압축 저장 (Max Width 1200px, Quality 80%)
-    const imgRelativeDir = path.join('shinsung', 'uploads', 'images');
+    // 1. 원본 압축 저장
+    const imgRelativeDir = path.join(dirName, 'uploads', 'images');
     const imgAbsoluteDir = path.join(process.cwd(), 'public', imgRelativeDir);
     if (!fs.existsSync(imgAbsoluteDir)) fs.mkdirSync(imgAbsoluteDir, { recursive: true });
 
@@ -106,12 +111,12 @@ export async function saveShinsungImage(base64Data: string): Promise<{ url: stri
     const imgRelativePath = `/${path.join(imgRelativeDir, fileName)}`;
 
     await sharp(buffer)
-        .resize(1200, undefined, { withoutEnlargement: true, fit: 'inside' })
-        .jpeg({ quality: 80 })
+        .resize(maxWidth, undefined, { withoutEnlargement: true, fit: 'inside' })
+        .jpeg({ quality })
         .toFile(imgAbsolutePath);
 
-    // 2. 썸네일 생성 (200x200, Cover)
-    const thumbRelativeDir = path.join('shinsung', 'uploads', 'thumbnails');
+    // 2. 썸네일 생성
+    const thumbRelativeDir = path.join(dirName, 'uploads', 'thumbnails');
     const thumbAbsoluteDir = path.join(process.cwd(), 'public', thumbRelativeDir);
     if (!fs.existsSync(thumbAbsoluteDir)) fs.mkdirSync(thumbAbsoluteDir, { recursive: true });
 
@@ -120,52 +125,23 @@ export async function saveShinsungImage(base64Data: string): Promise<{ url: stri
     const thumbRelativePath = `/${path.join(thumbRelativeDir, thumbFileName)}`;
 
     await sharp(buffer)
-        .resize(200, 200, { fit: 'cover' })
-        .jpeg({ quality: 70 })
+        .resize(thumbSize, thumbSize, { fit: 'cover' })
+        .jpeg({ quality: Math.max(quality - 10, 60) })
         .toFile(thumbAbsolutePath);
 
     return { url: imgRelativePath, thumbnailUrl: thumbRelativePath };
 }
 
 /**
+ * 신성데이터 이미지를 압축하여 저장하고 썸네일을 생성합니다.
+ */
+export async function saveShinsungImage(base64Data: string): Promise<{ url: string, thumbnailUrl: string }> {
+    return _processAndSaveImage(base64Data, 'shinsung');
+}
+
+/**
  * 박막도포 이미지를 압축하여 저장하고 썸네일을 생성합니다.
  */
 export async function saveCoatingImage(base64Data: string): Promise<{ url: string, thumbnailUrl: string }> {
-    if (!base64Data || !base64Data.startsWith('data:image')) {
-        throw new Error('Invalid image data');
-    }
-
-    const base64Content = base64Data.split(';base64,').pop();
-    if (!base64Content) throw new Error('Invalid base64 content');
-    const buffer = Buffer.from(base64Content, 'base64');
-    const fileName = `${uuidv4()}.jpg`;
-
-    // 1. 원본 압축 저장 (Max Width 1200px, Quality 80%)
-    const imgRelativeDir = path.join('coating', 'uploads', 'images');
-    const imgAbsoluteDir = path.join(process.cwd(), 'public', imgRelativeDir);
-    if (!fs.existsSync(imgAbsoluteDir)) fs.mkdirSync(imgAbsoluteDir, { recursive: true });
-
-    const imgAbsolutePath = path.join(imgAbsoluteDir, fileName);
-    const imgRelativePath = `/${path.join(imgRelativeDir, fileName)}`;
-
-    await sharp(buffer)
-        .resize(1200, undefined, { withoutEnlargement: true, fit: 'inside' })
-        .jpeg({ quality: 80 })
-        .toFile(imgAbsolutePath);
-
-    // 2. 썸네일 생성 (200x200, Cover)
-    const thumbRelativeDir = path.join('coating', 'uploads', 'thumbnails');
-    const thumbAbsoluteDir = path.join(process.cwd(), 'public', thumbRelativeDir);
-    if (!fs.existsSync(thumbAbsoluteDir)) fs.mkdirSync(thumbAbsoluteDir, { recursive: true });
-
-    const thumbFileName = `thumb_${fileName}`;
-    const thumbAbsolutePath = path.join(thumbAbsoluteDir, thumbFileName);
-    const thumbRelativePath = `/${path.join(thumbRelativeDir, thumbFileName)}`;
-
-    await sharp(buffer)
-        .resize(200, 200, { fit: 'cover' })
-        .jpeg({ quality: 70 })
-        .toFile(thumbAbsolutePath);
-
-    return { url: imgRelativePath, thumbnailUrl: thumbRelativePath };
+    return _processAndSaveImage(base64Data, 'coating');
 }

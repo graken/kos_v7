@@ -48,6 +48,8 @@ export default function CoatingControl() {
     } = useOSStore();
     const [isLoadingRecords, setIsLoadingRecords] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -131,10 +133,10 @@ export default function CoatingControl() {
         }
     };
 
-    const fetchRecords = async (pageNum = 1, currentSearch = searchTerm) => {
+    const fetchRecords = async (pageNum = 1, currentSearch = searchTerm, sDate = startDate, eDate = endDate) => {
         setIsLoadingRecords(true);
         try {
-            const res = await fetch(`/api/coating/records?page=${pageNum}&limit=20&search=${encodeURIComponent(currentSearch)}`);
+            const res = await fetch(`/api/coating/records?page=${pageNum}&limit=20&search=${encodeURIComponent(currentSearch)}&startDate=${sDate}&endDate=${eDate}`);
             const data = await res.json();
             if (Array.isArray(data)) {
                 if (pageNum === 1) {
@@ -155,10 +157,10 @@ export default function CoatingControl() {
     // Debounced search effect
     useEffect(() => {
         const timer = setTimeout(() => {
-            fetchRecords(1, searchTerm);
+            fetchRecords(1, searchTerm, startDate, endDate);
         }, 500);
         return () => clearTimeout(timer);
-    }, [searchTerm]);
+    }, [searchTerm, startDate, endDate]);
 
     // Infinite scroll observer
     useEffect(() => {
@@ -166,7 +168,9 @@ export default function CoatingControl() {
 
         const observer = new IntersectionObserver(
             (entries) => {
-                if (entries[0].isIntersecting && hasMore && !isLoadingRecords && activeTab === 'history') {
+                // 데스크탑 모드이거나 히스토리 탭인 경우에만 작동
+                const shouldLoad = activeTab === 'history' || isDesktop;
+                if (entries[0].isIntersecting && hasMore && !isLoadingRecords && shouldLoad) {
                     fetchRecords(page + 1);
                 }
             },
@@ -178,7 +182,7 @@ export default function CoatingControl() {
 
         observer.observe(loadMoreRef.current);
         return () => observer.disconnect();
-    }, [hasMore, isLoadingRecords, page, activeTab]);
+    }, [hasMore, isLoadingRecords, page, activeTab, isDesktop]);
 
     const resetForm = useCallback(() => {
         setImage(null);
@@ -807,25 +811,64 @@ export default function CoatingControl() {
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.98 }}
-            className="space-y-6 w-full"
+            className="space-y-4 w-full"
         >
-            <div className="flex items-center gap-3 max-w-2xl mx-auto">
-                <div className="relative flex-1">
-                    <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/30" />
+            <div className="flex flex-wrap items-center gap-3 w-full">
+                {/* 검색바 (유연하게 확장) */}
+                <div className="relative flex-1 min-w-[240px]">
+                    <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-black/30" />
                     <input
                         type="text"
                         placeholder="품명 또는 내용 검색..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3 rounded-2xl bg-black/[0.03] focus:outline-none focus:bg-black/[0.05] transition-all"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-black/[0.03] focus:outline-none focus:bg-black/[0.05] transition-all text-sm font-bold"
                     />
                 </div>
+
+                {/* 기간 검색 UI (슬림하게 통합) */}
+                <div className="flex items-center gap-2 bg-black/[0.02] p-1.5 rounded-xl border border-black/5">
+                    <div className="flex items-center gap-2 px-2 py-1 bg-white rounded-lg border border-black/5">
+                        <span className="text-[10px] font-bold text-black/30">시작</span>
+                        <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className="text-xs font-bold bg-transparent focus:outline-none text-black/60 w-[110px]"
+                        />
+                    </div>
+                    <span className="text-black/20 text-xs">~</span>
+                    <div className="flex items-center gap-2 px-2 py-1 bg-white rounded-lg border border-black/5">
+                        <span className="text-[10px] font-bold text-black/30">종료</span>
+                        <input
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="text-xs font-bold bg-transparent focus:outline-none text-black/60 w-[110px]"
+                        />
+                    </div>
+                    {(startDate || endDate) && (
+                        <button
+                            onClick={() => {
+                                setStartDate('');
+                                setEndDate('');
+                            }}
+                            className="p-1.5 hover:bg-black/5 rounded-lg text-black/20 hover:text-black/50 transition-colors"
+                            title="날짜 초기화"
+                        >
+                            <X size={14} />
+                        </button>
+                    )}
+                </div>
+
+                {/* 엑셀 내보내기 버튼 (축소) */}
                 <button
                     onClick={handleExportExcel}
-                    className="px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-2xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-green-100 shrink-0"
+                    className="p-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl transition-all shadow-sm flex items-center gap-2 shrink-0 group"
+                    title="Excel 내보내기"
                 >
-                    <Download size={18} />
-                    <span className="hidden sm:inline">Excel 내보내기</span>
+                    <Download size={16} />
+                    <span className="text-xs font-bold sm:hidden lg:inline group-hover:block">EXCEL</span>
                 </button>
             </div>
 

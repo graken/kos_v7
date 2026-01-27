@@ -50,70 +50,85 @@ const PlanCardUI = React.memo(({ plan, listeners, isOverlay, fontScale = 1 }: { 
     const isVerySmall = plan.duration < 60;
 
     return (
-        <div className={`group flex flex-col h-full bg-white rounded-xl shadow-sm border border-slate-200 ${isVerySmall ? 'p-1.5' : 'p-2.5'} hover:shadow-md hover:border-blue-300 transition-all ${isOverlay ? 'shadow-2xl ring-2 ring-blue-500 scale-105 rotate-2' : ''} overflow-hidden`}>
-            {/* Header: Customer, Duration & Grip */}
-            <div className={`flex items-center justify-between ${isVerySmall ? 'mb-0' : 'mb-0.5'}`}>
-                <span
-                    style={{ fontSize: `${(isVerySmall ? 7 : 9) * fontScale}px` }}
-                    className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-black uppercase tracking-wider truncate max-w-[55%]"
-                >
-                    {plan.customer || '미지정'}
-                </span>
-                <div className="flex items-center space-x-1 shrink-0">
-                    <div
-                        style={{ fontSize: `${8 * fontScale}px` }}
-                        className="flex items-center bg-slate-50 px-1.5 py-0.5 rounded font-bold text-slate-400"
+        <div className={`group flex flex-col h-full bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-md hover:border-blue-300 transition-all ${isOverlay ? 'shadow-2xl ring-2 ring-blue-500 scale-105 rotate-2' : ''}`}>
+            <div className={`sticky top-[32px] flex flex-col ${isVerySmall ? 'p-1.5' : 'p-2.5'}`}>
+                {/* Header: Customer, Duration & Grip */}
+                <div className={`flex items-center justify-between ${isVerySmall ? 'mb-0' : 'mb-0.5'}`}>
+                    <span
+                        style={{ fontSize: `${(isVerySmall ? 7 : 9) * fontScale}px` }}
+                        className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-black uppercase tracking-wider truncate max-w-[55%]"
                     >
-                        <Clock size={8 * fontScale} className="mr-0.5" />
-                        {plan.duration}분
-                    </div>
-                    {!isOverlay && (
-                        <div {...listeners} className="p-0.5 hover:bg-slate-100 rounded cursor-grab active:cursor-grabbing text-slate-400 group-hover:text-blue-500 transition-colors">
-                            <GripVertical size={isVerySmall ? 9 : 12} />
+                        {plan.customer || '미지정'}
+                    </span>
+                    <div className="flex items-center space-x-1 shrink-0">
+                        <div
+                            style={{ fontSize: `${8 * fontScale}px` }}
+                            className="flex items-center bg-slate-50 px-1.5 py-0.5 rounded font-bold text-slate-400"
+                        >
+                            <Clock size={8 * fontScale} className="mr-0.5" />
+                            {plan.duration}분
                         </div>
-                    )}
+                        {!isOverlay && (
+                            <div {...listeners} className="p-0.5 hover:bg-slate-100 rounded cursor-grab active:cursor-grabbing text-slate-400 group-hover:text-blue-500 transition-colors">
+                                <GripVertical size={isVerySmall ? 9 : 12} />
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
 
-            {/* Product Name: Essential */}
-            <div
-                style={{ fontSize: `${(isVerySmall ? 9 : 11) * fontScale}px` }}
-                className={`font-black text-slate-900 line-clamp-1 ${isVerySmall ? 'mb-0' : 'mb-0.5'}`}
-            >
-                {plan.outputProduct || '생산제품 없음'}
-            </div>
-
-            {/* Dimensions: Essential */}
-            {(plan.outputWidth || plan.outputLength) && (
+                {/* Product Name: Essential */}
                 <div
-                    style={{ fontSize: `${(isVerySmall ? 7 : 9) * fontScale}px` }}
-                    className="font-black text-blue-600 bg-blue-50/50 rounded-md self-start px-1.5 py-0.5"
+                    style={{ fontSize: `${(isVerySmall ? 9 : 11) * fontScale}px` }}
+                    className={`font-black text-slate-900 line-clamp-1 ${isVerySmall ? 'mb-0' : 'mb-0.5'}`}
                 >
-                    {Number(plan.outputWidth?.toString().replace(/,/g, '') || 0).toLocaleString()} * {Number(plan.outputLength?.toString().replace(/,/g, '') || 0).toLocaleString()}
+                    {plan.outputProduct || '생산제품 없음'}
                 </div>
-            )}
 
-            {/* Path: Only for large cards */}
-            {!isCompact && (
-                <div
-                    style={{ fontSize: `${9 * fontScale}px` }}
-                    className="text-slate-500 line-clamp-1 leading-relaxed font-medium mb-0.5"
-                >
-                    {plan.inputProduct} → {plan.outputProduct}
-                </div>
-            )}
-
-            {/* Important Notice: Essential */}
-            {plan.importantNotice && (
-                <div className={`${isVerySmall ? 'mt-0 px-1 py-0' : 'mt-0.5 px-2 py-0.5'} bg-red-50 rounded border border-red-100`}>
+                {/* Dimensions: Essential */}
+                {(plan.outputWidth || plan.outputLength) && (
                     <div
                         style={{ fontSize: `${(isVerySmall ? 7 : 9) * fontScale}px` }}
-                        className="font-black text-red-600 line-clamp-1 leading-tight"
+                        className="font-black text-blue-600 bg-blue-50/50 rounded-md self-start px-1.5 py-0.5"
                     >
-                        <span className={isVerySmall ? "mr-0.5" : "mr-1"}>📢</span>{plan.importantNotice}
+                        {Number(plan.outputWidth?.toString().replace(/,/g, '') || 0).toLocaleString()} * {Number(plan.outputLength?.toString().replace(/,/g, '') || 0).toLocaleString()}
                     </div>
-                </div>
-            )}
+                )}
+
+                {/* Path: Only for large cards */}
+                {!isCompact && (
+                    <div
+                        style={{ fontSize: `${9 * fontScale}px` }}
+                        className="text-slate-500 line-clamp-1 leading-relaxed font-medium mb-0.5"
+                    >
+                        {plan.inputProduct} → {plan.outputProduct}
+                    </div>
+                )}
+
+                {/* Important Notice: Essential */}
+                {plan.importantNotice && (
+                    <div className={`${isVerySmall ? 'mt-0 px-1 py-0' : 'mt-0.5 px-2 py-0.5'} bg-red-50 rounded border border-red-100`}>
+                        <div
+                            style={{ fontSize: `${(isVerySmall ? 7 : 9) * fontScale}px` }}
+                            className="font-black text-red-600 line-clamp-1 leading-tight"
+                        >
+                            <span className={isVerySmall ? "mr-0.5" : "mr-1"}>📢</span>{plan.importantNotice}
+                        </div>
+                    </div>
+                )}
+
+                {/* Note: Added as per user request */}
+                {plan.note && (
+                    <div className={`${isVerySmall ? 'mt-0' : 'mt-0.5'} px-1 py-0.5 flex items-start space-x-1 opacity-80`}>
+                        <span style={{ fontSize: `${(isVerySmall ? 7 : 9) * fontScale}px` }}>📝</span>
+                        <div
+                            style={{ fontSize: `${(isVerySmall ? 7 : 9) * fontScale}px` }}
+                            className="text-slate-500 line-clamp-1 border-b border-dotted border-slate-300 w-full font-medium"
+                        >
+                            {plan.note}
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 });
@@ -141,10 +156,10 @@ const SortablePlanCard = React.memo(({ plan, onClick, slotHeight }: { plan: Work
             ref={setNodeRef}
             style={style}
             {...attributes}
-            className={`cursor-pointer overflow-hidden relative`}
+            className={`cursor-pointer relative`}
             onClick={onClick}
         >
-            <PlanCardUI plan={plan} listeners={listeners} fontScale={Math.max(1, slotHeight / 72)} />
+            <PlanCardUI plan={plan} listeners={listeners} fontScale={1 + (Math.max(1, slotHeight / 72) - 1) * 0.45} />
         </div>
     );
 });
@@ -204,12 +219,13 @@ const WorkPlan = () => {
     const [timeRange, setTimeRange] = useState<'week' | 'month' | 'year' | 'all'>('week');
     const [searchQuery, setSearchQuery] = useState('');
     const [slotHeight, setSlotHeight] = useState(72);
+    const [showAll, setShowAll] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const plansRef = useRef<WorkPlanData[]>([]);
     const previousPlansRef = useRef<WorkPlanData[]>([]);
     const dateInputRef = useRef<HTMLInputElement>(null);
 
-    // Calculate slotHeight based on container height to fit 09:00 - 18:00 (9 hours)
+    // Calculate slotHeight based on container height to fit 09:00 - 18:00 (9 hours) or 09:00 - 13:30 (4.5 hours)
     useEffect(() => {
         if (!containerRef.current || viewMode !== 'calendar') return;
 
@@ -218,14 +234,17 @@ const WorkPlan = () => {
                 const height = entry.contentRect.height;
                 // Subtract the day header height (32px) and some padding
                 const usableHeight = height - 40;
-                const calculatedSlot = Math.max(60, usableHeight / 9.5); // Using 9.5 to leave a little breathing room at the bottom
+                // If showAll is false, fit 4.5 hours (09:00 - 13:30)
+                // If showAll is true, fit 9 hours (09:00 - 18:00)
+                const hoursToFit = showAll ? 9.5 : 4.5;
+                const calculatedSlot = Math.max(60, usableHeight / hoursToFit);
                 setSlotHeight(calculatedSlot);
             }
         });
 
         observer.observe(containerRef.current);
         return () => observer.disconnect();
-    }, [viewMode]);
+    }, [viewMode, showAll]);
 
     useEffect(() => {
         plansRef.current = plans;
@@ -656,6 +675,21 @@ const WorkPlan = () => {
                             </button>
                         </div>
 
+                        {viewMode === 'calendar' && (
+                            <button
+                                onClick={() => setShowAll(!showAll)}
+                                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg transition-all text-[11px] font-black border ${showAll
+                                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-100'
+                                    : 'bg-white text-slate-500 border-slate-200 hover:border-blue-300 hover:text-blue-600'
+                                    }`}
+                            >
+                                <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition-colors ${showAll ? 'bg-white border-white' : 'border-slate-300'}`}>
+                                    {showAll && <Check size={10} className="text-blue-600" />}
+                                </div>
+                                <span>한눈에보기</span>
+                            </button>
+                        )}
+
                         <div className="relative group">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={14} />
                             <input
@@ -714,7 +748,7 @@ const WorkPlan = () => {
                             {Array.from({ length: 15 }, (_, i) => 9 + i).map(hour => (
                                 <div
                                     key={hour}
-                                    style={{ height: `${slotHeight}px`, fontSize: `${9 * Math.max(1, slotHeight / 72)}px` }}
+                                    style={{ height: `${slotHeight}px`, fontSize: `${9 * (1 + (Math.max(1, slotHeight / 72) - 1) * 0.45)}px` }}
                                     className="font-bold text-slate-400 text-center border-b border-slate-100/50 flex flex-col justify-start pt-1"
                                 >
                                     {String(hour).padStart(2, '0')}:00
@@ -738,14 +772,14 @@ const WorkPlan = () => {
                                         <div key={dateKey} className="flex flex-col flex-1 min-w-[180px] border-r border-slate-200 last:border-r-0">
                                             <div className={`px-3 py-1 sticky top-0 bg-[#f8fafc] z-10 border-b h-[32px] flex items-center justify-between ${isSameDay(day, new Date()) ? 'border-b-blue-500' : 'border-b-slate-200'}`}>
                                                 <div
-                                                    style={{ fontSize: `${11 * Math.max(1, slotHeight / 72)}px` }}
+                                                    style={{ fontSize: `${11 * (1 + (Math.max(1, slotHeight / 72) - 1) * 0.45)}px` }}
                                                     className={`font-bold ${isSameDay(day, new Date()) ? 'text-blue-600' : 'text-slate-500'}`}
                                                 >
                                                     {format(day, 'MM/dd (E)', { locale: ko })}
                                                 </div>
                                                 {isSameDay(day, new Date()) && (
                                                     <div
-                                                        style={{ fontSize: `${9 * Math.max(1, slotHeight / 72)}px` }}
+                                                        style={{ fontSize: `${9 * (1 + (Math.max(1, slotHeight / 72) - 1) * 0.45)}px` }}
                                                         className="text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-black"
                                                     >TODAY</div>
                                                 )}
@@ -784,7 +818,7 @@ const WorkPlan = () => {
                                         <div className="w-[180px] h-fit">
                                             <PlanCardUI
                                                 plan={plans.find(p => p.id === activeId)!}
-                                                fontScale={Math.max(1, slotHeight / 72)}
+                                                fontScale={1 + (Math.max(1, slotHeight / 72) - 1) * 0.45}
                                                 isOverlay
                                             />
                                         </div>

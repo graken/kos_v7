@@ -8,6 +8,8 @@ export async function GET(req: Request) {
         const { searchParams } = new URL(req.url);
         const productId = searchParams.get('productId');
         const search = searchParams.get('search');
+        const startDate = searchParams.get('startDate');
+        const endDate = searchParams.get('endDate');
         const all = searchParams.get('all') === 'true';
         const page = parseInt(searchParams.get('page') || '1');
         const limit = parseInt(searchParams.get('limit') || '20');
@@ -15,14 +17,33 @@ export async function GET(req: Request) {
 
         const where: Prisma.CoatingRecordWhereInput = {};
         if (productId) where.productId = productId;
+
+        // 날짜 필터링 추가
+        if (startDate || endDate) {
+            where.createdAt = {};
+            if (startDate) {
+                where.createdAt.gte = new Date(`${startDate}T00:00:00.000Z`);
+            }
+            if (endDate) {
+                where.createdAt.lte = new Date(`${endDate}T23:59:59.999Z`);
+            }
+        }
+
         if (search) {
-            where.OR = [
-                { product: { name: { contains: search } } },
-                { note: { contains: search } },
-                { rawOcrText: { contains: search } },
-                { degree: { contains: search } },
-                { stage: { contains: search } },
+            where.AND = [
+                ...(where.createdAt ? [{ createdAt: where.createdAt }] : []),
+                {
+                    OR: [
+                        { product: { name: { contains: search } } },
+                        { note: { contains: search } },
+                        { rawOcrText: { contains: search } },
+                        { degree: { contains: search } },
+                        { stage: { contains: search } },
+                    ]
+                }
             ];
+            // where.createdAt은 AND 안에서 처리하므로 중복 방지를 위해 삭제
+            delete where.createdAt;
         }
 
         const records = await prisma.coatingRecord.findMany({
