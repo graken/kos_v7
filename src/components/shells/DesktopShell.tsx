@@ -8,9 +8,10 @@ import { AnimatePresence } from "framer-motion";
 
 import ContextMenu from "@/components/common/ContextMenu";
 
+import { useShallow } from 'zustand/react/shallow';
+
 export default function DesktopShell() {
-    const windows = useOSStore(state => state.windows);
-    const openWindows = Object.values(windows);
+    const windowIds = useOSStore(useShallow(state => Object.keys(state.windows)));
 
     return (
         <div
@@ -20,8 +21,8 @@ export default function DesktopShell() {
             <StatusBar />
             <HomeGrid />
             <AnimatePresence>
-                {openWindows.map((window) => (
-                    <Window key={window.id} window={window} />
+                {windowIds.map((id) => (
+                    <Window key={id} id={id} />
                 ))}
             </AnimatePresence>
             <ContextMenu />

@@ -7,14 +7,23 @@ import { useEffect, useRef, useState, memo, useMemo } from 'react';
 import { APP_REGISTRY } from '@/apps/registry';
 
 interface WindowProps {
-    window: WindowState;
+    id: string;
 }
 
 type ResizeDirection = 'n' | 's' | 'e' | 'w' | 'nw' | 'ne' | 'sw' | 'se';
 
-const Window = memo(function Window({ window: windowData }: WindowProps) {
-    const { closeApp, focusApp, minimizeApp, maximizeApp, updateWindowDimensions, focusedWindowId } = useOSStore();
-    const isFocused = focusedWindowId === windowData.id;
+const Window = memo(function Window({ id }: WindowProps) {
+    const closeApp = useOSStore(state => state.closeApp);
+    const focusApp = useOSStore(state => state.focusApp);
+    const minimizeApp = useOSStore(state => state.minimizeApp);
+    const maximizeApp = useOSStore(state => state.maximizeApp);
+    const updateWindowDimensions = useOSStore(state => state.updateWindowDimensions);
+    const focusedWindowId = useOSStore(state => state.focusedWindowId);
+
+    const windowData = useOSStore(state => state.windows[id]);
+    const isFocused = focusedWindowId === id;
+
+    if (!windowData) return null;
 
     const [isDragging, setIsDragging] = useState(false);
     const [resizeDir, setResizeDir] = useState<ResizeDirection | null>(null);
@@ -164,6 +173,12 @@ const Window = memo(function Window({ window: windowData }: WindowProps) {
       `}
         >
             <div className={`absolute inset-0 -z-10 ${(isDragging || resizeDir) ? 'bg-white shadow-xl' : 'glass ' + (isFocused ? 'bg-white' : 'bg-white/75')}`} />
+
+            {/* 드래그 중 앱 콘텐츠 영역을 덮는 투명 레이어 (성능 최적화 및 이벤트 간섭 방지) */}
+            {(isDragging || resizeDir) && (
+                <div className="absolute inset-0 z-[100] cursor-grabbing" />
+            )}
+
             {/* Resizing Handles (Hidden if maximized or fixed size) */}
             {!windowData.isMaximized && !isFixedSize && (
                 <>
@@ -226,14 +241,14 @@ const Window = memo(function Window({ window: windowData }: WindowProps) {
 
             {/* Content Area */}
             <div className="flex-1 overflow-auto pointer-events-auto">
-                {AppComponent ? (
-                    <AppComponent />
+                {useMemo(() => AppComponent ? (
+                    <AppComponent key={id} />
                 ) : (
                     <div className="h-full flex flex-col items-center justify-center text-black/20">
                         <p className="text-lg font-medium">KOS v7 Application</p>
                         <p className="text-sm italic">{windowData.title}</p>
                     </div>
-                )}
+                ), [id, AppComponent, windowData.title])}
             </div>
         </motion.div>
     );

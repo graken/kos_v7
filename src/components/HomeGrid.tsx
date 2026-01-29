@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import AppIcon from './AppIcon';
 import { useOSStore } from '@/store/useOSStore';
 import { useDevice } from '@/hooks/useDevice';
+import { useShallow } from 'zustand/react/shallow';
 import {
     Settings, Folder, Image as ImageIcon, MessageSquare, Globe, Mail, Calculator,
     Type, Link, Play, Info, Edit, Trash2, ArrowLeft, Activity, Droplets,
@@ -75,7 +76,14 @@ const ICON_MAP: Record<string, any> = {
 };
 
 export default function HomeGrid() {
-    const { apps, reorderApps, openApp, windows, desktopGridSettings, mobileGridSettings, hasHydrated } = useOSStore();
+    const apps = useOSStore(state => state.apps);
+    const reorderApps = useOSStore(state => state.reorderApps);
+    const openApp = useOSStore(state => state.openApp);
+    const openAppIds = useOSStore(useShallow(state => Object.keys(state.windows)));
+    const desktopGridSettings = useOSStore(state => state.desktopGridSettings);
+    const mobileGridSettings = useOSStore(state => state.mobileGridSettings);
+    const hasHydrated = useOSStore(state => state.hasHydrated);
+
     const { isMobile } = useDevice();
     const gridSettings = isMobile ? mobileGridSettings : desktopGridSettings;
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -129,7 +137,7 @@ export default function HomeGrid() {
                         name={app.name}
                         icon={ICON_MAP[app.iconName]}
                         isDragging={draggedIndex === index}
-                        isActive={!!windows[app.id]}
+                        isActive={openAppIds.includes(app.id)}
                         onDragStart={handleDragStart}
                         onDragEnter={handleDragEnter}
                         onDragEnd={handleDragEnd}
