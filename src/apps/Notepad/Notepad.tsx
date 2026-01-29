@@ -10,11 +10,13 @@ import { TableHeader } from '@tiptap/extension-table-header';
 import { Image } from '@tiptap/extension-image';
 import { Placeholder } from '@tiptap/extension-placeholder';
 import { Link } from '@tiptap/extension-link';
+import { TextAlign } from '@tiptap/extension-text-align';
 import {
     Plus, Search, Save, Trash2, FileText,
     Bold, Italic, List, ListOrdered, Table as TableIcon,
     Image as ImageIcon, Paperclip, ChevronLeft, MoreVertical,
-    Download, X, Loader2, Maximize
+    Download, X, Loader2, Maximize,
+    AlignLeft, AlignCenter, AlignRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useOSStore } from '@/store/useOSStore';
@@ -40,13 +42,18 @@ interface Memo {
 }
 
 export default function Notepad() {
-    const { currentUser } = useOSStore();
+    const { currentUser, checkPermission } = useOSStore();
+    const canCreate = checkPermission('notepad', 'create');
+    const canEdit = checkPermission('notepad', 'edit');
+    const canDelete = checkPermission('notepad', 'delete');
     const [memos, setMemos] = useState<Memo[]>([]);
     const [selectedMemoId, setSelectedMemoId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+    const [showTableSpec, setShowTableSpec] = useState(false);
+    const [tableSpec, setTableSpec] = useState({ rows: 3, cols: 3 });
 
     const ImageResizeComponent = useCallback((props: any) => {
         const { node, updateAttributes, selected } = props;
@@ -119,7 +126,9 @@ export default function Notepad() {
                 ...this.parent?.(),
                 width: {
                     default: '100%',
+                    parseHTML: element => element.style.width || element.getAttribute('width'),
                     renderHTML: attributes => ({
+                        width: attributes.width,
                         style: `width: ${attributes.width}; max-width: 100%; height: auto;`,
                     }),
                 },
@@ -154,6 +163,11 @@ export default function Notepad() {
             ResizableImage.configure({ inline: true, allowBase64: true }),
             Placeholder.configure({ placeholder: '내용을 입력하세요...' }),
             Link.configure({ openOnClick: false }),
+            TextAlign.configure({
+                types: ['heading', 'paragraph'],
+                alignments: ['left', 'center', 'right'],
+                defaultAlignment: 'left',
+            }),
         ],
         editorProps: {
             handlePaste: (view, event) => {
@@ -254,16 +268,29 @@ export default function Notepad() {
 
     // Sync editor content ONLY when selected memo ID changes
     useEffect(() => {
-        if (editor && selectedMemo) {
-            // Only force set content if it's different (e.g. initial load or switching)
-            // But we primarily depend on selectedMemoId for triggers
-            editor.commands.setContent(selectedMemo.content || '');
-        } else if (editor && !selectedMemoId) {
-            editor.commands.setContent('');
-        }
+        if (!editor) return;
+
+        // Use setTimeout to avoid 'flushSync called from inside a lifecycle' error
+        // especially when switching memos during a render cycle
+        const updateTimer = setTimeout(() => {
+            if (selectedMemo) {
+                // Only set content if it's different to avoid cursor reset
+                if (editor.getHTML() !== (selectedMemo.content || '')) {
+                    editor.commands.setContent(selectedMemo.content || '');
+                }
+            } else if (!selectedMemoId) {
+                editor.commands.setContent('');
+            }
+        }, 0);
+
+        return () => clearTimeout(updateTimer);
     }, [selectedMemoId, editor]); // Removed selectedMemo from dependencies
 
     const handleCreateMemo = async () => {
+        if (!canCreate) {
+            alert('메모 작성 권한이 없습니다.');
+            return;
+        }
         if (!currentUser?.id) return;
         try {
             const res = await fetch('/api/memos', {
@@ -285,6 +312,10 @@ export default function Notepad() {
     };
 
     const handleSaveMemo = async () => {
+        if (!canEdit) {
+            alert('메모 수정 권한이 없습니다.');
+            return;
+        }
         if (!selectedMemoId || !editor || !selectedMemo) return;
         setIsSaving(true);
         try {
@@ -309,6 +340,10 @@ export default function Notepad() {
     };
 
     const handleDeleteMemo = async (id: string) => {
+        if (!canDelete) {
+            alert('메모 삭제 권한이 없습니다.');
+            return;
+        }
         if (!confirm('메모를 삭제하시겠습니까?')) return;
         try {
             await fetch(`/api/memos/${id}`, { method: 'DELETE' });
@@ -487,11 +522,57 @@ export default function Notepad() {
                                     active={editor?.isActive('orderedList')}
                                 />
                                 <div className="h-4 w-[1px] bg-slate-200 mx-1" />
-                                <ToolbarButton
-                                    icon={TableIcon}
-                                    onClick={() => editor?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
-                                    active={editor?.isActive('table')}
-                                />
+                                <div className="relative">
+                                    <ToolbarButton
+                                        icon={TableIcon}
+                                        onClick={() => setShowTableSpec(!showTableSpec)}
+                                        active={editor?.isActive('table') || showTableSpec}
+                                    />
+                                    <AnimatePresence>
+                                        {showTableSpec && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: 10 }}
+                                                className="absolute top-full left-0 mt-2 p-4 bg-white rounded-2xl border border-slate-200 shadow-2xl z-50 min-w-[180px]"
+                                            >
+                                                <div className="space-y-3">
+                                                    <div className="flex items-center justify-between gap-4">
+                                                        <span className="text-xs font-bold text-slate-400">행(Rows)</span>
+                                                        <input
+                                                            type="number"
+                                                            min="1"
+                                                            max="20"
+                                                            value={tableSpec.rows}
+                                                            onChange={(e) => setTableSpec({ ...tableSpec, rows: parseInt(e.target.value) || 1 })}
+                                                            className="w-16 px-2 py-1 border border-slate-100 bg-slate-50 rounded-lg text-sm font-bold text-center focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                                                        />
+                                                    </div>
+                                                    <div className="flex items-center justify-between gap-4">
+                                                        <span className="text-xs font-bold text-slate-400">열(Cols)</span>
+                                                        <input
+                                                            type="number"
+                                                            min="1"
+                                                            max="20"
+                                                            value={tableSpec.cols}
+                                                            onChange={(e) => setTableSpec({ ...tableSpec, cols: parseInt(e.target.value) || 1 })}
+                                                            className="w-16 px-2 py-1 border border-slate-100 bg-slate-50 rounded-lg text-sm font-bold text-center focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                                                        />
+                                                    </div>
+                                                    <button
+                                                        onClick={() => {
+                                                            editor?.chain().focus().insertTable({ rows: tableSpec.rows, cols: tableSpec.cols, withHeaderRow: true }).run();
+                                                            setShowTableSpec(false);
+                                                        }}
+                                                        className="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-xs font-black shadow-lg shadow-blue-500/10 transition-all"
+                                                    >
+                                                        테이블 생성
+                                                    </button>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
                                 <div className="h-4 w-[1px] bg-slate-200 mx-1" />
 
                                 {editor?.isActive('image') && (
@@ -521,6 +602,24 @@ export default function Notepad() {
                                     <ImageIcon size={18} />
                                     <input type="file" className="hidden" accept="image/*" onChange={handleFileUpload} />
                                 </label>
+
+                                <div className="h-4 w-[1px] bg-slate-200 mx-1" />
+
+                                <ToolbarButton
+                                    icon={AlignLeft}
+                                    onClick={() => editor?.chain().focus().setTextAlign('left').run()}
+                                    active={editor?.isActive({ textAlign: 'left' })}
+                                />
+                                <ToolbarButton
+                                    icon={AlignCenter}
+                                    onClick={() => editor?.chain().focus().setTextAlign('center').run()}
+                                    active={editor?.isActive({ textAlign: 'center' })}
+                                />
+                                <ToolbarButton
+                                    icon={AlignRight}
+                                    onClick={() => editor?.chain().focus().setTextAlign('right').run()}
+                                    active={editor?.isActive({ textAlign: 'right' })}
+                                />
                             </div>
 
                             <button
@@ -622,6 +721,75 @@ export default function Notepad() {
                 )}
             </div>
 
+            {/* Table Specification Modal */}
+            <AnimatePresence>
+                {showTableSpec && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[10000] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4"
+                        onClick={() => setShowTableSpec(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            className="bg-white rounded-3xl shadow-2xl border border-slate-100 p-8 w-full max-w-sm"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                                    <TableIcon className="text-blue-500" size={24} />
+                                    테이블 삽입
+                                </h3>
+                                <button
+                                    onClick={() => setShowTableSpec(false)}
+                                    className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                                >
+                                    <X size={20} className="text-slate-400" />
+                                </button>
+                            </div>
+
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">행 개수 (Rows)</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max="50"
+                                        value={tableSpec.rows}
+                                        onChange={(e) => setTableSpec({ ...tableSpec, rows: parseInt(e.target.value) || 1 })}
+                                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-lg font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white transition-all"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">열 개수 (Cols)</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max="20"
+                                        value={tableSpec.cols}
+                                        onChange={(e) => setTableSpec({ ...tableSpec, cols: parseInt(e.target.value) || 1 })}
+                                        className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-lg font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:bg-white transition-all"
+                                    />
+                                </div>
+
+                                <button
+                                    onClick={() => {
+                                        editor?.chain().focus().insertTable({ rows: tableSpec.rows, cols: tableSpec.cols, withHeaderRow: true }).run();
+                                        setShowTableSpec(false);
+                                    }}
+                                    className="w-full py-5 bg-blue-500 hover:bg-blue-600 text-white rounded-2xl text-lg font-black shadow-xl shadow-blue-500/20 transition-all active:scale-95"
+                                >
+                                    테이블 생성하기
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Lightbox Modal */}
             <AnimatePresence>
                 {lightboxUrl && (
@@ -706,9 +874,23 @@ export default function Notepad() {
                     border-radius: 1rem;
                     margin: 1rem 0;
                 }
-                .editor-container .ProseMirror img.ProseMirror-selectednode {
-                    outline: 4px solid #3b82f6;
-                    outline-offset: 2px;
+                .editor-container .ProseMirror table td.selectedCell,
+                .editor-container .ProseMirror table th.selectedCell {
+                    background: rgba(59, 130, 246, 0.1);
+                    border: 2px solid #3b82f6 !important;
+                    z-index: 10;
+                }
+                .editor-container .ProseMirror .column-resize-handle {
+                    position: absolute;
+                    right: -2px;
+                    top: 0;
+                    bottom: -2px;
+                    width: 4px;
+                    background-color: #3b82f6;
+                    pointer-events: none;
+                }
+                .editor-container .ProseMirror p {
+                    margin: 0.5em 0;
                 }
             `}</style>
         </div>

@@ -145,11 +145,11 @@ export default function EquipmentMaintenance() {
 
     const isMobile = containerWidth > 0 && containerWidth < 1024;
 
-    const { currentUser } = useOSStore();
-    const canCreate = currentUser?.role === 'admin' || currentUser?.permissions?.['equipment-maintenance']?.create;
-    const canEdit = currentUser?.role === 'admin' || currentUser?.permissions?.['equipment-maintenance']?.edit;
-    const canDelete = currentUser?.role === 'admin' || currentUser?.permissions?.['equipment-maintenance']?.delete;
-    const canComplete = currentUser?.role === 'admin' || currentUser?.permissions?.['equipment-maintenance']?.complete;
+    const { currentUser, pushBackAction, popBackAction, checkPermission } = useOSStore();
+    const canCreate = checkPermission('equipment-maintenance', 'create');
+    const canEdit = checkPermission('equipment-maintenance', 'edit');
+    const canDelete = checkPermission('equipment-maintenance', 'delete');
+    const canComplete = checkPermission('equipment-maintenance', 'complete');
 
     const handleDelete = async (e: React.MouseEvent, id: number) => {
         e.stopPropagation();
@@ -171,7 +171,6 @@ export default function EquipmentMaintenance() {
     };
 
     // --- Back Button Support (Android/Mobile) ---
-    const { pushBackAction, popBackAction } = useOSStore();
 
     useEffect(() => {
         if (isModalOpen) pushBackAction('maintenance-register', () => setIsModalOpen(false));
@@ -647,6 +646,17 @@ function MaintenanceModal({ onClose, onSuccess, editData, isMobile, canComplete 
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Re-check permissions inside handler
+        const { checkPermission } = useOSStore.getState();
+        const isEditing = !!editData;
+        const permissionId = isEditing ? 'edit' : 'create';
+
+        if (!checkPermission('equipment-maintenance', permissionId)) {
+            alert('권한이 없습니다.');
+            return;
+        }
+
         if (!formData.equipmentName || !formData.part || !formData.detail) {
             alert('필수 항목을 입력해 주세요.');
             return;
@@ -1166,6 +1176,11 @@ function QuickCompleteModal({ record, onClose, onSuccess }: { record: Maintenanc
     const [submitting, setSubmitting] = useState(false);
 
     const handleSave = async () => {
+        const { checkPermission } = useOSStore.getState();
+        if (!checkPermission('equipment-maintenance', 'complete')) {
+            alert('완료 처리 권한이 없습니다.');
+            return;
+        }
         setSubmitting(true);
         try {
             const res = await fetch('/api/maintenance', {

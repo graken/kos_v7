@@ -1,126 +1,92 @@
 import { NextResponse } from 'next/server';
-import { ImageAnnotatorClient } from '@google-cloud/vision';
-import fs from 'fs';
-import path from 'path';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-function getVisionClient() {
-    try {
-        const keyPath = path.resolve(process.cwd(), process.env.GOOGLE_APPLICATION_CREDENTIALS || 'google-key.json');
-        if (!fs.existsSync(keyPath)) return null;
-        const keyFile = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
-        if (keyFile.private_key) keyFile.private_key = keyFile.private_key.replace(/\\n/g, '\n');
-        return new ImageAnnotatorClient({
-            credentials: { client_email: keyFile.client_email, private_key: keyFile.private_key },
-            projectId: keyFile.project_id
-        });
-    } catch (error) {
-        console.error('Vision client init failed:', error);
-        return null;
-    }
-}
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(req: Request) {
-    console.log('--- SHINSUNG OCR POST REQUEST RECEIVED ---');
+    console.log('--- SHINSUNG OCR POST REQUEST RECEIVED (GEMINI) ---');
     try {
         const { image } = await req.json();
         if (!image) return NextResponse.json({ error: 'image data is required' }, { status: 400 });
 
-        const client = getVisionClient();
-        if (!client) {
-            return NextResponse.json({
-                text: "인증 오류",
-                extractedValues: { "Error": "Vision Authentication Failed" },
-                isMock: true
-            });
-        }
+        // Gemini 2.0 Flash 모델 사용
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
-        const [result] = await client.textDetection({ image: { content: image } });
-        const fullText = result.fullTextAnnotation?.text || "";
+        const prompt = `
+            사용자가 업로드한 성적서 이미지에서 데이터를 추출하여 정해진 JSON 형식으로만 응답하세요.
+            이미지에는 측정 데이터 테이블이 있으며, No 1부터 No 10까지의 행과 마지막 AVR(평균) 행이 있습니다.
+            
+            ⚠️ 매우 중요: 테이블의 마지막 줄인 "AVR" 행을 "No 10"으로 오해하지 마세요. 
+            만약 실제 데이터가 No 5까지만 있다면 No 6 ~ No 10은 반드시 빈 문자열 ""로 채우세요.
 
-        console.log('--- Raw Vision Response (Shinsung) ---');
-        console.log(fullText);
-        console.log('--------------------------------------');
+            추출해야 할 항목:
+            1. 시험일시: "2026-01-27 14:53" 같은 형식으로 이미지 상단의 날짜와 시간을 찾아 결합하세요.
+            2. 비율: "7.8:2.2" 같은 형식의 비율 데이터를 찾으세요.
+            3. 두께: "두께 83" 또는 "83" 숫자를 찾으세요.
+            4. 테이블 상세: No 1 ~ No 10 각 행에 대해 20mm, 40mm, 60mm, 80mm, AVR 값을 추출하세요.
+            5. 요약 평균: 테이블 하단의 전체 AVR 행 데이터를 추출하세요.
 
-        const extractedValues: any = {};
-
-        // 1. Test Date & Time (시험일시)
-        let extractedTime = "";
-        const dateTimeMatch = fullText.match(/(\d{4})[-.년]\s*(\d{1,2})[-.월]\s*(\d{1,2})[-.일]?\s*(\d{1,2}:\d{1,2})/);
-        if (dateTimeMatch) {
-            extractedTime = dateTimeMatch[4];
-            extractedValues['시험일시'] = `${dateTimeMatch[1]}-${dateTimeMatch[2].padStart(2, '0')}-${dateTimeMatch[3].padStart(2, '0')} ${dateTimeMatch[4]}`;
-        }
-
-        // 2. Ratio (비율)
-        // Strategy: 
-        // A. Look for explicit labels "Ratio" or "비율"
-        // B. Look for generic pattern but exclude the extracted time
-        let ratioVal = "";
-        const explicitRatioMatch = fullText.match(/(?:Ratio|비율)\s*[:=]?\s*(\d+\.?\d*\s*:\s*\d+\.?\d*)/i);
-        if (explicitRatioMatch) {
-            ratioVal = explicitRatioMatch[1].replace(/\s+/g, '');
-        } else {
-            // Fallback: Find all x:y patterns
-            const allMatches = fullText.matchAll(/(\d+\.?\d*)\s*:\s*(\d+\.?\d*)/g);
-            for (const m of allMatches) {
-                const candidate = `${m[1]}:${m[2]}`;
-                // If this candidate acts exactly like the time we found, skip it
-                if (extractedTime && (candidate === extractedTime || candidate.replace(/^0+/, '') === extractedTime.replace(/^0+/, ''))) {
-                    continue;
-                }
-                // Also heuristic: Ratios usually have larger numbers (e.g. 100:30) or specific formats different from HH:MM
-                // But user might have 1:1. 
-                // Let's take the first non-time match.
-                ratioVal = candidate;
-                break;
+            응답 JSON 형식:
+            {
+              "시험일시": "YYYY-MM-DD HH:mm",
+              "비율": "x:y",
+              "두께": "숫자",
+              "No.1_20mm": "값", "No.1_40mm": "값", "No.1_60mm": "값", "No.1_80mm": "값", "No.1_AVR": "값",
+              ... (No.10까지 동일한 규칙)
+              "AVR_20mm": "값", "AVR_40mm": "값", "AVR_60mm": "값", "AVR_80mm": "값", "AVR_AVR": "값"
             }
-        }
-        if (ratioVal) {
-            extractedValues['비율'] = ratioVal;
-        }
 
-        // 3. Thickness (두께)
-        const thicknessMatch = fullText.match(/(?:Thickness|두께)\s*[:=]?\s*(\d+)/i);
-        if (thicknessMatch) {
-            extractedValues['두께'] = thicknessMatch[1];
-        }
+            데이터가 없는 칸은 반드시 빈 문자열 ""을 넣으세요. 오직 JSON 데이터만 반환하세요.
+        `;
 
-        // 4. Table Data
-        for (let i = 1; i <= 10; i++) {
-            const noRegex = new RegExp(`No\\.?\\s*${i}\\s+([\\s\\d\\.]+)`, 'i');
-            const match = fullText.match(noRegex);
-            if (match) {
-                const values = match[1].trim().split(/\s+/).filter(v => !isNaN(parseFloat(v)));
-                if (values.length >= 5) {
-                    extractedValues[`No.${i}_20mm`] = values[1];
-                    extractedValues[`No.${i}_40mm`] = values[2];
-                    extractedValues[`No.${i}_60mm`] = values[3];
-                    extractedValues[`No.${i}_80mm`] = values[4];
-                    extractedValues[`No.${i}_AVR`] = values[5];
+        const result = await model.generateContent([
+            prompt,
+            {
+                inlineData: {
+                    data: image,
+                    mimeType: "image/png"
                 }
             }
-        }
+        ]);
 
-        // 5. AVR row
-        const avrRowMatch = fullText.match(/AVR\s+([\d\.\s]+)/i);
-        if (avrRowMatch && !avrRowMatch[0].includes('Load')) {
-            const values = avrRowMatch[1].trim().split(/\s+/).filter(v => !isNaN(parseFloat(v)));
-            if (values.length >= 5) {
-                extractedValues[`AVR_20mm`] = values[1];
-                extractedValues[`AVR_40mm`] = values[2];
-                extractedValues[`AVR_60mm`] = values[3];
-                extractedValues[`AVR_80mm`] = values[4];
-                extractedValues[`AVR_AVR`] = values[5];
-            }
-        }
+        const response = await result.response;
+        const text = response.text();
+
+        // JSON 추출 (마크다운 코드 블록 제거)
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        const extractedValues = jsonMatch ? JSON.parse(jsonMatch[0]) : { "Error": "JSON 파싱 실패" };
 
         return NextResponse.json({
-            text: fullText,
-            extractedValues: Object.keys(extractedValues).length > 0 ? extractedValues : { "결과": "데이터를 찾을 수 없습니다." },
+            text: text, // Gemini의 전체 응답(디버깅용)
+            extractedValues: extractedValues,
             isMock: false
         });
     } catch (error: any) {
-        console.error('OCR failed:', error);
-        return NextResponse.json({ error: 'OCR failed', message: error.message }, { status: 500 });
+        console.error('Gemini OCR failed:', error);
+
+        let errorMessage = '사진 분석 중 오류가 발생했습니다.';
+        let errorType = 'UNKNOWN_ERROR';
+
+        const msg = error.message?.toLowerCase() || '';
+        if (msg.includes('api key') || msg.includes('403') || msg.includes('auth')) {
+            errorMessage = 'API 키 인증에 실패했습니다. (관리자 문의)';
+            errorType = 'API_KEY_ERROR';
+        } else if (msg.includes('quota') || msg.includes('429') || msg.includes('rate limit')) {
+            errorMessage = '분석 한도를 초과했습니다. 잠시 후 다시 시도해 주세요.';
+            errorType = 'QUOTA_ERROR';
+        } else if (msg.includes('safety') || msg.includes('blocked')) {
+            errorMessage = '안전 정책으로 인해 분석이 차단되었습니다.';
+            errorType = 'SAFETY_ERROR';
+        } else if (msg.includes('invalid') || msg.includes('bad request')) {
+            errorMessage = '올바르지 않은 이미지 데이터입니다.';
+            errorType = 'INVALID_IMAGE';
+        }
+
+        return NextResponse.json({
+            error: errorType,
+            message: errorMessage,
+            rawError: error.message,
+            isMock: true
+        }, { status: 500 });
     }
 }

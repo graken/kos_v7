@@ -110,6 +110,7 @@ interface OSState {
   pushBackAction: (id: string, action: () => void) => void;
   popBackAction: (id: string) => void;
   triggerBackAction: () => boolean; // Boolean indicates if an action was handled
+  checkPermission: (appId: string, permissionId: string) => boolean;
 }
 
 const INITIAL_APPS: AppData[] = [
@@ -453,6 +454,13 @@ export const useOSStore = create<OSState>()(
 
         // 4. 아무것도 처리할 게 없으면 false 반환
         return false;
+      },
+
+      checkPermission: (appId, permissionId) => {
+        const { currentUser } = get();
+        if (!currentUser) return false;
+        if (currentUser.role === 'admin') return true;
+        return !!currentUser.permissions?.[appId]?.[permissionId];
       },
     }),
     {

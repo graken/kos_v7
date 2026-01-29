@@ -9,7 +9,7 @@ import {
     Users, Plus, Search, Shield, User as UserIcon,
     Check, X, ChevronRight, Settings, Trash2, Loader2,
     Lock, Smartphone, Laptop, Globe, Folder, Image as ImageIcon,
-    MessageSquare, Mail, Calculator, Activity, Droplets, Users as UsersIcon, Calendar
+    MessageSquare, Mail, Calculator, Activity, Droplets, Users as UsersIcon, Calendar, Info
 } from 'lucide-react';
 
 const ICON_MAP: Record<string, any> = {
@@ -359,57 +359,74 @@ function UserEditModal({ user, onClose, onSave }: { user: User | null, onClose: 
                     )}
 
                     {activeTab === 'perms' && (
-                        <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6'}`}>
-                            {formData.apps.map((app) => (
-                                <div key={app.id} className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                                    <h3 className="text-sm font-black text-slate-900 mb-4 flex items-center gap-2">
-                                        <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                                            <Settings size={14} className="text-slate-400" />
-                                        </div>
-                                        {app.name} ({app.id})
-                                    </h3>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        {[
-                                            { id: 'create', name: '등록 권한' },
-                                            { id: 'edit', name: '수정 권한' },
-                                            { id: 'delete', name: '삭제 권한' },
-                                            // 앱별 특화 권한
-                                            ...(app.id === 'coating-control' ? [
-                                                { id: 'save', name: '저장 권한' },
-                                                { id: 'photo', name: '사진 입력 권한' }
-                                            ] : []),
-                                            ...(app.id === 'equipment-maintenance' ? [
-                                                { id: 'complete', name: '완료 처리 권한' }
-                                            ] : []),
-                                            ...(app.id === 'work-plan' ? [
-                                                { id: 'save', name: '저장 권한' },
-                                                { id: 'delete_record', name: '기록 삭제 권한' }
-                                            ] : [])
-                                        ].map((p) => {
-                                            const isChecked = formData.permissions[app.id]?.[p.id];
-                                            return (
-                                                <button
-                                                    key={p.id}
-                                                    onClick={() => {
-                                                        const cur = formData.permissions[app.id] || {};
-                                                        setFormData({
-                                                            ...formData,
-                                                            permissions: {
-                                                                ...formData.permissions,
-                                                                [app.id]: { ...cur, [p.id]: !isChecked }
-                                                            }
-                                                        });
-                                                    }}
-                                                    className={`p-4 rounded-2xl border-2 font-bold text-sm flex items-center justify-between transition-all ${isChecked ? 'bg-white border-blue-600 text-blue-600 shadow-lg shadow-blue-100' : 'bg-slate-100/50 border-transparent text-slate-400'}`}
-                                                >
-                                                    {p.name}
-                                                    {isChecked ? <Check size={16} /> : <div className="w-4 h-4 rounded-full border border-slate-300" />}
-                                                </button>
-                                            );
-                                        })}
+                        <div className="space-y-6">
+                            {formData.role === 'admin' && (
+                                <div className="p-6 bg-blue-50 border-2 border-blue-100 rounded-[32px] flex items-center gap-4 animate-pulse-subtle">
+                                    <div className="w-12 h-12 bg-blue-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-100">
+                                        <Shield size={24} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-black text-blue-900">관리자 전권 활성화 상태</h3>
+                                        <p className="text-sm font-bold text-blue-600">관리자(admin) 등급은 아래 체크박스 설정과 관계없이 모든 앱의 기능을 자유롭게 사용할 수 있습니다.</p>
                                     </div>
                                 </div>
-                            ))}
+                            )}
+                            <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6'}`}>
+                                {formData.apps.map((app) => {
+                                    const registryApp = APP_REGISTRY[app.id];
+                                    const appPermissions = registryApp?.permissions || [
+                                        { id: 'create', name: '등록 권한' },
+                                        { id: 'edit', name: '수정 권한' },
+                                        { id: 'delete', name: '삭제 권한' }
+                                    ];
+
+                                    return (
+                                        <div key={app.id} className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                                            <h3 className="text-sm font-black text-slate-900 mb-4 flex items-center gap-2">
+                                                <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                                                    <Settings size={14} className="text-slate-400" />
+                                                </div>
+                                                {app.name} ({app.id})
+                                            </h3>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                {appPermissions.map((p) => {
+                                                    const isChecked = formData.permissions[app.id]?.[p.id];
+                                                    return (
+                                                        <button
+                                                            key={p.id}
+                                                            onClick={() => {
+                                                                const cur = formData.permissions[app.id] || {};
+                                                                setFormData({
+                                                                    ...formData,
+                                                                    permissions: {
+                                                                        ...formData.permissions,
+                                                                        [app.id]: { ...cur, [p.id]: !isChecked }
+                                                                    }
+                                                                });
+                                                            }}
+                                                            className={`p-4 rounded-2xl border-2 font-bold text-sm flex items-center justify-between transition-all group/btn ${isChecked || formData.role === 'admin' ? 'bg-white border-blue-600 text-blue-600 shadow-lg shadow-blue-100' : 'bg-slate-100/50 border-transparent text-slate-400 font-bold'} ${formData.role === 'admin' ? 'cursor-default opacity-80' : ''}`}
+                                                        >
+                                                            <div className="flex items-center gap-2">
+                                                                {p.name}
+                                                                {p.description && (
+                                                                    <div className="relative group/tooltip">
+                                                                        <Info size={14} className="text-slate-300 group-hover/btn:text-blue-400 transition-colors" />
+                                                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2.5 bg-slate-800 text-white text-[10px] leading-relaxed rounded-xl opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none z-50 shadow-2xl font-medium">
+                                                                            {p.description}
+                                                                            <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-800" />
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            {(isChecked || formData.role === 'admin') ? <Check size={16} /> : <div className="w-4 h-4 rounded-full border border-slate-300" />}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                             {formData.apps.length === 0 && (
                                 <div className="py-20 text-center">
                                     <p className="text-slate-400 font-bold">설치된 앱이 없습니다.<br />'바탕화면 앱' 탭에서 앱을 먼저 추가해주세요.</p>

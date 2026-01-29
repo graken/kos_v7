@@ -22,6 +22,7 @@ import {
 import { format, addDays, startOfWeek, endOfWeek, isSameDay, addWeeks, subWeeks, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useOSStore } from '@/store/useOSStore';
 import {
     DndContext,
     closestCorners,
@@ -220,6 +221,13 @@ const WorkPlan = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [slotHeight, setSlotHeight] = useState(72);
     const [showAll, setShowAll] = useState(false);
+    const { currentUser, pushBackAction, popBackAction, checkPermission } = useOSStore();
+    const canCreate = checkPermission('work-plan', 'create');
+    const canEdit = checkPermission('work-plan', 'edit');
+    const canDelete = checkPermission('work-plan', 'delete');
+    const canSave = checkPermission('work-plan', 'save');
+    const canDeleteRecord = checkPermission('work-plan', 'delete_record');
+
     const containerRef = useRef<HTMLDivElement>(null);
     const plansRef = useRef<WorkPlanData[]>([]);
     const previousPlansRef = useRef<WorkPlanData[]>([]);
@@ -377,6 +385,16 @@ const WorkPlan = () => {
     };
 
     const handleSave = async () => {
+        const isEditing = !!formData.id;
+        if (isEditing && !canEdit) {
+            alert('수정 권한이 없습니다.');
+            return;
+        }
+        if (!isEditing && !canCreate) {
+            alert('작업 추가 권한이 없습니다.');
+            return;
+        }
+
         if (!formData.planDate) {
             alert('날짜를 선택해주세요.');
             return;
@@ -429,6 +447,10 @@ const WorkPlan = () => {
     };
 
     const handleDelete = async (id: string) => {
+        if (!canDeleteRecord) {
+            alert('삭제 권한이 없습니다.');
+            return;
+        }
         if (!confirm('정말 삭제하시겠습니까?')) return;
         try {
             const res = await fetch(`/api/work-plans/${id}`, { method: 'DELETE' });
@@ -497,6 +519,12 @@ const WorkPlan = () => {
 
     const handleDragEnd = React.useCallback(async (event: DragEndEvent) => {
         const { active, over } = event;
+        if (!canEdit) {
+            alert('일정 변경 권한이 없습니다.');
+            fetchPlans();
+            return;
+        }
+
         setActiveId(null);
 
         if (!over) {
@@ -703,22 +731,24 @@ const WorkPlan = () => {
                     </div>
 
                     <div className="flex items-center space-x-4">
-                        {isSyncing && (
+                        {canSave && isSyncing && (
                             <div className="flex items-center space-x-2 text-blue-500 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100 animate-pulse">
                                 <Clock size={14} className="animate-spin" />
                                 <span className="text-xs font-bold">저장 중...</span>
                             </div>
                         )}
-                        <button
-                            onClick={() => {
-                                setFormData(INITIAL_FORM);
-                                setIsModalOpen(true);
-                            }}
-                            className="flex items-center space-x-1.5 bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-all font-bold shadow-md shadow-blue-100 text-xs"
-                        >
-                            <Plus size={16} />
-                            <span>작업 추가</span>
-                        </button>
+                        {canCreate && (
+                            <button
+                                onClick={() => {
+                                    setFormData(INITIAL_FORM);
+                                    setIsModalOpen(true);
+                                }}
+                                className="flex items-center space-x-1.5 bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-all font-bold shadow-md shadow-blue-100 text-xs"
+                            >
+                                <Plus size={16} />
+                                <span>작업 추가</span>
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -1001,6 +1031,7 @@ const DayDroppableContainer = ({ id, children, slotHeight }: { id: string, child
 // React.memo used above locally for SortablePlanCard and PlanCardUI
 
 const WorkPlanDetailCard = ({ plan, onClose, onEdit, onDelete }: { plan: WorkPlanData, onClose: () => void, onEdit: () => void, onDelete: (id: string) => void }) => {
+    const { checkPermission } = useOSStore();
     const ratio = JSON.parse(plan.mixingRatio || '{ }');
 
     return (
@@ -1102,10 +1133,14 @@ const WorkPlanDetailCard = ({ plan, onClose, onEdit, onDelete }: { plan: WorkPla
             )}
 
             <div className="flex items-center space-x-3">
-                <button onClick={onEdit} className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-2xl font-bold hover:bg-slate-200 transition-colors">수정</button>
-                <button onClick={() => onDelete(plan.id)} className="p-3 text-red-400 hover:bg-red-50 rounded-2xl transition-colors">
-                    <Trash2 size={20} />
-                </button>
+                {checkPermission('work-plan', 'edit') && (
+                    <button onClick={onEdit} className="flex-1 bg-slate-100 text-slate-600 py-3 rounded-2xl font-bold hover:bg-slate-200 transition-colors">수정</button>
+                )}
+                {checkPermission('work-plan', 'delete_record') && (
+                    <button onClick={() => onDelete(plan.id)} className="p-3 text-red-400 hover:bg-red-50 rounded-2xl transition-colors">
+                        <Trash2 size={20} />
+                    </button>
+                )}
             </div>
         </div>
     );

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, History, FileText, Layers, Percent, Save, Search, Download, Trash2, Calendar, Edit2, Loader2, ImageIcon, Maximize2, X, Check, Clock, Plus } from 'lucide-react';
+import { Upload, History, FileText, Layers, Percent, Save, Search, Download, Trash2, Calendar, Edit2, Loader2, ImageIcon, Maximize2, X, Check, Clock, Plus, AlertCircle } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useOSStore } from '@/store/useOSStore';
 
@@ -52,7 +52,7 @@ export default function ShinsungData() {
 
     const [image, setImage] = useState<string | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [ocrResult, setOcrResult] = useState<{ text: string; extractedValues: any; isMock?: boolean } | null>(null);
+    const [ocrResult, setOcrResult] = useState<{ text: string; extractedValues: any; isMock?: boolean; message?: string } | null>(null);
     const [editData, setEditData] = useState<any>({});
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
@@ -70,7 +70,10 @@ export default function ShinsungData() {
     const observerRef = useRef<ResizeObserver | null>(null);
     const loadMoreRef = useRef<HTMLDivElement>(null);
 
-    const { currentUser, pushBackAction, popBackAction } = useOSStore();
+    const { currentUser, pushBackAction, popBackAction, checkPermission } = useOSStore();
+    const canCreate = checkPermission('shinsung-data', 'create');
+    const canEdit = checkPermission('shinsung-data', 'edit');
+    const canDelete = checkPermission('shinsung-data', 'delete');
 
     useEffect(() => {
         if (selectedImage) {
@@ -139,6 +142,13 @@ export default function ShinsungData() {
             console.error('Failed to fetch parts', error);
         }
     };
+
+    // 권한에 따른 초기 탭 설정 및 변경 감지
+    useEffect(() => {
+        if (!canCreate && activeTab === 'upload') {
+            setActiveTab('history');
+        }
+    }, [canCreate, activeTab]);
 
     const fetchRecords = async (pageNum = 1, currentSearch = searchTerm) => {
         setIsLoadingRecords(true);
@@ -315,6 +325,10 @@ export default function ShinsungData() {
     };
 
     const handleSaveRecord = async () => {
+        if (!canCreate) {
+            alert('등록 권한이 없습니다.');
+            return;
+        }
         const trimmedProduct = productSearchTerm.trim();
         const trimmedPart = partSearchTerm.trim();
 
@@ -367,7 +381,13 @@ export default function ShinsungData() {
                     testDate,
                     thickness,
                     imageUrl: image,
-                    extractedData: editData,
+                    extractedData: (() => {
+                        const cleanData = { ...editData };
+                        delete cleanData['비율'];
+                        delete cleanData['시험일시'];
+                        delete cleanData['두께'];
+                        return cleanData;
+                    })(),
                     rawOcrText: ocrResult?.text,
                     note
                 }),
@@ -390,6 +410,10 @@ export default function ShinsungData() {
     };
 
     const handleUpdateRecord = async () => {
+        if (!canEdit) {
+            alert('수정 권한이 없습니다.');
+            return;
+        }
         if (!selectedRecordId) return;
         const trimmedProduct = productSearchTerm.trim();
         const trimmedPart = partSearchTerm.trim();
@@ -420,7 +444,13 @@ export default function ShinsungData() {
                     progress,
                     testDate,
                     thickness,
-                    extractedData: editData,
+                    extractedData: (() => {
+                        const cleanData = { ...editData };
+                        delete cleanData['비율'];
+                        delete cleanData['시험일시'];
+                        delete cleanData['두께'];
+                        return cleanData;
+                    })(),
                     note
                 }),
             });
@@ -453,7 +483,7 @@ export default function ShinsungData() {
                     initial={{ scale: 0.9, opacity: 0, y: 20 }}
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                    className="bg-white w-full max-w-4xl rounded-[40px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+                    className="bg-white w-[95%] max-w-6xl rounded-[40px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
@@ -471,13 +501,15 @@ export default function ShinsungData() {
                         </div>
                         <div className="flex items-center gap-3">
                             {!isEditingRecord ? (
-                                <button
-                                    onClick={() => setIsEditingRecord(true)}
-                                    className="px-6 py-3 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center gap-2 font-black text-sm hover:bg-indigo-100 transition-all active:scale-95"
-                                >
-                                    <Edit2 size={18} />
-                                    <span>수정</span>
-                                </button>
+                                canEdit && (
+                                    <button
+                                        onClick={() => setIsEditingRecord(true)}
+                                        className="px-6 py-3 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center gap-2 font-black text-sm hover:bg-indigo-100 transition-all active:scale-95"
+                                    >
+                                        <Edit2 size={18} />
+                                        <span>수정</span>
+                                    </button>
+                                )
                             ) : (
                                 <button
                                     onClick={handleUpdateRecord}
@@ -549,17 +581,19 @@ export default function ShinsungData() {
                                         상세 추출 데이터
                                     </h4>
                                     <div className="grid grid-cols-5 gap-4">
-                                        {Object.entries(editData).map(([key, value]) => (
-                                            <div key={key} className="space-y-2">
-                                                <label className="text-[10px] font-black text-slate-400 uppercase ml-1 truncate block" title={key}>{key}</label>
-                                                <input
-                                                    type="text"
-                                                    value={String(value)}
-                                                    onChange={(e) => setEditData({ ...editData, [key]: e.target.value })}
-                                                    className="w-full h-10 px-3 rounded-xl border border-slate-200 focus:border-indigo-500 text-xs font-bold"
-                                                />
-                                            </div>
-                                        ))}
+                                        {Object.entries(editData)
+                                            .filter(([_, value]) => value !== undefined && value !== null && String(value).trim() !== '')
+                                            .map(([key, value]) => (
+                                                <div key={key} className="space-y-2">
+                                                    <label className="text-[10px] font-black text-slate-400 uppercase ml-1 truncate block" title={key}>{key}</label>
+                                                    <input
+                                                        type="text"
+                                                        value={String(value)}
+                                                        onChange={(e) => setEditData({ ...editData, [key]: e.target.value })}
+                                                        className="w-full h-10 px-3 rounded-xl border border-slate-200 focus:border-indigo-500 text-xs font-bold"
+                                                    />
+                                                </div>
+                                            ))}
                                     </div>
                                 </div>
 
@@ -607,15 +641,17 @@ export default function ShinsungData() {
                                             <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
                                             데이터 그리드 상세
                                         </h4>
-                                        <div className="bg-slate-50 rounded-[32px] p-6 border border-slate-100 flex items-center justify-center min-h-[300px]">
+                                        <div className="bg-slate-50/50 rounded-[32px] p-5 border border-slate-100 flex items-center justify-center min-h-[300px]">
                                             <div className="w-full space-y-4">
-                                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                                    {Object.entries(JSON.parse(record.extractedData || '{}')).map(([key, value]) => (
-                                                        <div key={key} className="bg-white p-3 rounded-2xl border border-slate-200/50 shadow-sm">
-                                                            <p className="text-[9px] font-black text-slate-400 uppercase mb-1 truncate">{key}</p>
-                                                            <p className="text-sm font-bold text-slate-700">{String(value)}</p>
-                                                        </div>
-                                                    ))}
+                                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
+                                                    {Object.entries(JSON.parse(record.extractedData || '{}'))
+                                                        .filter(([_, value]) => value !== undefined && value !== null && String(value).trim() !== '')
+                                                        .map(([key, value]) => (
+                                                            <div key={key} className="bg-white p-2.5 rounded-xl border border-slate-200/50 shadow-sm flex flex-col justify-center min-h-[70px]">
+                                                                <p className="text-[8px] font-black text-slate-400 uppercase mb-0.5 truncate text-center" title={key}>{key}</p>
+                                                                <p className="text-sm font-black text-slate-700 text-center">{String(value)}</p>
+                                                            </div>
+                                                        ))}
                                                 </div>
                                             </div>
                                         </div>
@@ -635,6 +671,10 @@ export default function ShinsungData() {
     };
 
     const handleDeleteRecord = async (id: string) => {
+        if (!canDelete) {
+            alert('삭제 권한이 없습니다.');
+            return;
+        }
         if (!confirm('삭제하시겠습니까?')) return;
         try {
             await fetch(`/api/shinsung/records?id=${id}`, { method: 'DELETE' });
@@ -718,11 +758,19 @@ export default function ShinsungData() {
                                 type="text"
                                 value={productSearchTerm}
                                 onChange={(e) => { setProductSearchTerm(e.target.value); setSelectedProductId(''); }}
-                                className="w-full h-11 pl-4 pr-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-sm font-medium"
+                                className="w-full h-11 pl-4 pr-10 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-sm font-medium"
                                 placeholder="완제품명을 입력하세요..."
                             />
+                            {productSearchTerm && (
+                                <button
+                                    onClick={() => { setProductSearchTerm(''); setSelectedProductId(''); }}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500 transition-colors p-1"
+                                >
+                                    <X size={14} />
+                                </button>
+                            )}
                             <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 shadow-xl rounded-2xl p-2 z-50 hidden group-focus-within:block max-h-48 overflow-y-auto">
-                                {products.filter(p => p.name.includes(productSearchTerm)).map(p => (
+                                {products.filter(p => !productSearchTerm || p.name.toLowerCase().includes(productSearchTerm.toLowerCase())).map(p => (
                                     <button key={p.id} onMouseDown={(e) => { e.preventDefault(); setSelectedProductId(p.id); setProductSearchTerm(p.name); }} className="w-full text-left px-4 py-2 hover:bg-indigo-50 rounded-lg text-sm font-medium transition-colors">
                                         {p.name}
                                     </button>
@@ -739,11 +787,19 @@ export default function ShinsungData() {
                                 type="text"
                                 value={partSearchTerm}
                                 onChange={(e) => { setPartSearchTerm(e.target.value); setSelectedPartId(''); }}
-                                className="w-full h-11 pl-4 pr-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-sm font-medium"
+                                className="w-full h-11 pl-4 pr-10 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-sm font-medium"
                                 placeholder="부위명을 입력하세요..."
                             />
+                            {partSearchTerm && (
+                                <button
+                                    onClick={() => { setPartSearchTerm(''); setSelectedPartId(''); }}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500 transition-colors p-1"
+                                >
+                                    <X size={14} />
+                                </button>
+                            )}
                             <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 shadow-xl rounded-2xl p-2 z-50 hidden group-focus-within:block max-h-48 overflow-y-auto">
-                                {parts.filter(p => p.name.includes(partSearchTerm)).map(p => (
+                                {parts.filter(p => !partSearchTerm || p.name.toLowerCase().includes(partSearchTerm.toLowerCase())).map(p => (
                                     <button key={p.id} onMouseDown={(e) => { e.preventDefault(); setSelectedPartId(p.id); setPartSearchTerm(p.name); }} className="w-full text-left px-4 py-2 hover:bg-indigo-50 rounded-lg text-sm font-medium transition-colors">
                                         {p.name}
                                     </button>
@@ -821,6 +877,12 @@ export default function ShinsungData() {
                                 <h3 className="font-bold text-xl text-slate-800 flex items-center gap-2">
                                     <Check size={20} className="text-emerald-500" />
                                     분석 데이터 확인
+                                    {ocrResult.isMock && (
+                                        <span className="text-[10px] bg-orange-500/10 text-orange-600 px-2 py-1 rounded-full font-bold flex items-center gap-1 ml-2">
+                                            <AlertCircle size={10} />
+                                            {ocrResult.message || '사진 분석 실패'}
+                                        </span>
+                                    )}
                                 </h3>
                                 <div className="flex flex-wrap gap-3 justify-end">
                                     {thickness && (
@@ -845,12 +907,14 @@ export default function ShinsungData() {
                             </div>
 
                             <div className="grid grid-cols-2 md:grid-cols-5 gap-3 bg-slate-50/50 p-4 rounded-3xl border border-slate-100">
-                                {Object.entries(editData).map(([key, value]) => (
-                                    <div key={key} className="space-y-1">
-                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-tight ml-1 truncate block" title={key}>{key}</label>
-                                        <input type="text" value={String(value)} onChange={(e) => setEditData({ ...editData, [key]: e.target.value })} className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 focus:border-indigo-500 transition-all text-xs font-bold text-slate-700 shadow-sm" />
-                                    </div>
-                                ))}
+                                {Object.entries(editData)
+                                    .filter(([_, value]) => value !== undefined && value !== null && String(value).trim() !== '')
+                                    .map(([key, value]) => (
+                                        <div key={key} className="space-y-1">
+                                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-tight ml-1 truncate block" title={key}>{key}</label>
+                                            <input type="text" value={String(value)} onChange={(e) => setEditData({ ...editData, [key]: e.target.value })} className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 focus:border-indigo-500 transition-all text-xs font-bold text-slate-700 shadow-sm" />
+                                        </div>
+                                    ))}
                             </div>
                             <button disabled={isSaving} onClick={handleSaveRecord} className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black text-lg shadow-xl shadow-indigo-100 hover:bg-indigo-700 hover:translate-y-[-2px] transition-all active:scale-[0.98] active:translate-y-0 flex items-center justify-center gap-2">
                                 {isSaving ? <Loader2 size={24} className="animate-spin" /> : <Save size={24} />}
@@ -952,16 +1016,25 @@ export default function ShinsungData() {
                             });
 
                             // Sort Rows: No.1 -> No.5 -> AVR
-                            const sortedRowKeys = Object.keys(rows).sort((a, b) => {
-                                if (a.startsWith('NO.') && b.startsWith('NO.')) {
-                                    const numA = parseInt(a.match(/\d+/)?.[0] || '0');
-                                    const numB = parseInt(b.match(/\d+/)?.[0] || '0');
-                                    return numA - numB;
-                                }
-                                if (a.startsWith('NO.')) return -1;
-                                if (b.startsWith('NO.')) return 1;
-                                return 0; // AVR vs AVR or others
-                            });
+                            const sortedRowKeys = Object.keys(rows)
+                                .filter(rowLabel => {
+                                    // AVR 행이거나 적어도 하나의 유효한 값이 있는 행만 표시
+                                    if (rowLabel === 'AVR') return true;
+                                    return columns.some(col => {
+                                        const v = rows[rowLabel][col];
+                                        return v !== undefined && v !== null && String(v).trim() !== '';
+                                    });
+                                })
+                                .sort((a, b) => {
+                                    if (a.startsWith('NO.') && b.startsWith('NO.')) {
+                                        const numA = parseInt(a.match(/\d+/)?.[0] || '0');
+                                        const numB = parseInt(b.match(/\d+/)?.[0] || '0');
+                                        return numA - numB;
+                                    }
+                                    if (a.startsWith('NO.')) return -1;
+                                    if (b.startsWith('NO.')) return 1;
+                                    return 0; // AVR vs AVR or others
+                                });
 
                             // Calculate Min/Max for Non-AVR data
                             let gridMin = Infinity;
@@ -1032,9 +1105,11 @@ export default function ShinsungData() {
                                                 >
                                                     <Maximize2 size={18} />
                                                 </button>
-                                                <button onClick={() => handleDeleteRecord(record.id)} className="text-slate-300 hover:text-rose-500 transition-colors p-2">
-                                                    <Trash2 size={18} />
-                                                </button>
+                                                {canDelete && (
+                                                    <button onClick={() => handleDeleteRecord(record.id)} className="text-slate-300 hover:text-rose-500 transition-colors p-2">
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
 
@@ -1114,19 +1189,19 @@ export default function ShinsungData() {
                                 </div>
                             );
                         })}
-                                    <div ref={loadMoreRef} className="py-10 flex justify-center">
-                                        {isLoadingRecords && records.length > 0 && (
-                                            <div className="flex flex-col items-center gap-2 text-indigo-400/40">
-                                                <Loader2 size={24} className="animate-spin" />
-                                                <p className="text-[10px] font-black uppercase tracking-[0.2em]">
-                                                    {page === 1 ? '검색 결과 불러오는 중...' : '더 많은 기록 불러오는 중...'}
-                                                </p>
-                                            </div>
-                                        )}
-                                        {!hasMore && filteredRecords.length > 0 && !isLoadingRecords && (
-                                            <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">모든 기록을 불러왔습니다</p>
-                                        )}
-                                    </div>
+                        <div ref={loadMoreRef} className="py-10 flex justify-center">
+                            {isLoadingRecords && records.length > 0 && (
+                                <div className="flex flex-col items-center gap-2 text-indigo-400/40">
+                                    <Loader2 size={24} className="animate-spin" />
+                                    <p className="text-[10px] font-black uppercase tracking-[0.2em]">
+                                        {page === 1 ? '검색 결과 불러오는 중...' : '더 많은 기록 불러오는 중...'}
+                                    </p>
+                                </div>
+                            )}
+                            {!hasMore && filteredRecords.length > 0 && !isLoadingRecords && (
+                                <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">모든 기록을 불러왔습니다</p>
+                            )}
+                        </div>
                     </>
                 )}
             </div>
@@ -1138,16 +1213,18 @@ export default function ShinsungData() {
             {/* Header Tabs - Mobile Only */}
             {!isDesktop && (
                 <div className="flex border-b border-slate-200 bg-white flex-shrink-0">
-                    <button
-                        onClick={() => setActiveTab('upload')}
-                        className={`flex-1 py-4 flex items-center justify-center gap-2 transition-all ${activeTab === 'upload' ? 'bg-indigo-50 font-bold text-indigo-700 border-b-2 border-indigo-600' : 'text-slate-500 hover:bg-slate-50'}`}
-                    >
-                        <Upload size={18} />
-                        <span>기록 등록</span>
-                    </button>
+                    {canCreate && (
+                        <button
+                            onClick={() => setActiveTab('upload')}
+                            className={`flex-1 py-4 flex items-center justify-center gap-2 transition-all ${activeTab === 'upload' ? 'bg-indigo-50 font-bold text-indigo-700 border-b-2 border-indigo-600' : 'text-slate-500 hover:bg-slate-50'}`}
+                        >
+                            <Upload size={18} />
+                            <span>기록 등록</span>
+                        </button>
+                    )}
                     <button
                         onClick={() => setActiveTab('history')}
-                        className={`flex-1 py-4 flex items-center justify-center gap-2 transition-all ${activeTab === 'history' ? 'bg-indigo-50 font-bold text-indigo-700 border-b-2 border-indigo-600' : 'text-slate-500 hover:bg-slate-50'}`}
+                        className={`flex-1 py-4 flex items-center justify-center gap-2 transition-all ${activeTab === 'history' || !canCreate ? 'bg-indigo-50 font-bold text-indigo-700 border-b-2 border-indigo-600' : 'text-slate-500 hover:bg-slate-50'}`}
                     >
                         <History size={18} />
                         <span>이력 조회</span>
@@ -1174,15 +1251,17 @@ export default function ShinsungData() {
                 {isDesktop ? (
                     <div className="flex h-full divide-x divide-slate-100">
                         {/* Left: Registration */}
-                        <div className="w-[600px] overflow-y-auto p-8 bg-indigo-50/10">
-                            <div className="mb-8">
-                                <h2 className="text-xs font-black text-indigo-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                                    <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
-                                    기록 등록
-                                </h2>
+                        {canCreate && (
+                            <div className="w-[600px] overflow-y-auto p-8 bg-indigo-50/10">
+                                <div className="mb-8">
+                                    <h2 className="text-xs font-black text-indigo-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
+                                        기록 등록
+                                    </h2>
+                                </div>
+                                {renderUpload()}
                             </div>
-                            {renderUpload()}
-                        </div>
+                        )}
                         {/* Right: History */}
                         <div className="flex-1 overflow-y-auto p-8">
                             <div className="mb-8">

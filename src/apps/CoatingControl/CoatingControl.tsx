@@ -37,14 +37,14 @@ export default function CoatingControl() {
 
     const [image, setImage] = useState<string | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [ocrResult, setOcrResult] = useState<{ text: string; extractedValues: any; isMock?: boolean } | null>(null);
+    const [ocrResult, setOcrResult] = useState<{ text: string; extractedValues: any; isMock?: boolean; message?: string } | null>(null);
     const [editData, setEditData] = useState<any>({});
 
     const [records, setRecords] = useState<CoatingRecord[]>([]);
     const {
         apps, reorderApps, openApp, windows,
         desktopGridSettings, mobileGridSettings, hasHydrated,
-        pushBackAction, popBackAction
+        pushBackAction, popBackAction, currentUser, checkPermission
     } = useOSStore();
     const [isLoadingRecords, setIsLoadingRecords] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -87,12 +87,11 @@ export default function CoatingControl() {
     const [stage, setStage] = useState('시작');
     const [note, setNote] = useState('');
 
-    const { currentUser } = useOSStore();
-    const canCreate = currentUser?.role === 'admin' || currentUser?.permissions?.['coating-control']?.create;
-    const canSave = currentUser?.role === 'admin' || currentUser?.permissions?.['coating-control']?.save;
-    const canEdit = currentUser?.role === 'admin' || currentUser?.permissions?.['coating-control']?.edit;
-    const canDelete = currentUser?.role === 'admin' || currentUser?.permissions?.['coating-control']?.delete;
-    const canPhoto = currentUser?.role === 'admin' || currentUser?.permissions?.['coating-control']?.photo;
+    const canCreate = checkPermission('coating-control', 'create');
+    const canSave = checkPermission('coating-control', 'save');
+    const canEdit = checkPermission('coating-control', 'edit');
+    const canDelete = checkPermission('coating-control', 'delete');
+    const canPhoto = checkPermission('coating-control', 'photo');
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -132,6 +131,13 @@ export default function CoatingControl() {
             console.error('Failed to fetch products', error);
         }
     };
+
+    // 권한에 따른 초기 탭 설정 및 변경 감지
+    useEffect(() => {
+        if (!canCreate && activeTab === 'upload') {
+            setActiveTab('history');
+        }
+    }, [canCreate, activeTab]);
 
     const fetchRecords = async (pageNum = 1, currentSearch = searchTerm, sDate = startDate, eDate = endDate) => {
         setIsLoadingRecords(true);
@@ -314,7 +320,7 @@ export default function CoatingControl() {
             alert('삭제 권한이 없습니다.');
             return;
         }
-        if (!confirm('자료를 정말 삭제하시등겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
+        if (!confirm('자료를 정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
 
         try {
             const res = await fetch(`/api/coating/records?id=${id}`, {
@@ -600,14 +606,16 @@ export default function CoatingControl() {
                                 products.filter(p => p.name.toLowerCase().includes(productSearchTerm.toLowerCase())).map(p => (
                                     <button
                                         key={p.id}
-                                        type="button"
                                         onMouseDown={(e) => {
-                                            // Use onMouseDown to trigger before blur
                                             e.preventDefault();
                                             setSelectedProductId(p.id);
                                             setProductSearchTerm(p.name);
+                                            // Focus out to close the CSS focus-within dropdown
+                                            if (document.activeElement instanceof HTMLElement) {
+                                                document.activeElement.blur();
+                                            }
                                         }}
-                                        className={`w-full text-left px-4 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-between group/item ${selectedProductId === p.id ? 'bg-black text-white' : 'text-black/60 hover:bg-black/5'}`}
+                                        className={`w-full flex items-center justify-between px-4 py-3 hover:bg-black/[0.03] rounded-xl text-sm font-bold text-black/70 transition-colors group/item ${selectedProductId === p.id ? 'bg-black text-white' : 'text-black/60 hover:bg-black/5'}`}
                                     >
                                         <span>{p.name}</span>
                                         <div className="flex items-center gap-2">
@@ -753,23 +761,27 @@ export default function CoatingControl() {
                                 {ocrResult.isMock && (
                                     <span className="text-[10px] bg-orange-500/10 text-orange-600 px-2 py-1 rounded-full font-bold flex items-center gap-1">
                                         <AlertCircle size={10} />
-                                        데모 모드
+                                        {ocrResult.message || '사진 분석 실패'}
                                     </span>
                                 )}
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                {Object.entries(editData).map(([key, value]) => (
-                                    <div key={key} className="space-y-1">
-                                        <label className="text-xs font-bold text-black/40 px-1">{key}</label>
-                                        <input
-                                            type="text"
-                                            value={String(value)}
-                                            onChange={(e) => setEditData({ ...editData, [key]: e.target.value })}
-                                            className="w-full px-3 py-2 rounded-xl bg-white border border-black/5 focus:outline-none focus:border-black/20"
-                                        />
-                                    </div>
-                                ))}
+                                {Object.entries(editData)
+                                    .filter(([_, value]) => value && String(value).trim() !== '')
+                                    .map(([key, value]) => (
+                                        <div key={key} className="space-y-1">
+                                            <label className="text-xs font-bold text-black/40 px-1">{key}</label>
+                                            <input
+                                                type="text"
+                                                value={String(value)}
+                                                onChange={(e) => setEditData({ ...editData, [key]: e.target.value })}
+                                                className="w-full px-3 py-2 rounded-xl bg-white border border-black/5 focus:outline-none focus:border-black/20"
+                                            />
+                                        </div>
+                                    ))}
+                            </div>
+                            <div className="mt-4">
                                 <button
                                     type="button"
                                     onClick={() => {
@@ -826,329 +838,332 @@ export default function CoatingControl() {
                     />
                 </div>
 
-                {/* 기간 검색 UI (슬림하게 통합) */}
+                {/* 기간 검색 UI (지우기 버튼 포함) */}
                 <div className="flex items-center gap-2 bg-black/[0.02] p-1.5 rounded-xl border border-black/5">
-                    <div className="flex items-center gap-2 px-2 py-1 bg-white rounded-lg border border-black/5">
-                        <span className="text-[10px] font-bold text-black/30">시작</span>
+                    <div className="relative group/date">
                         <input
                             type="date"
                             value={startDate}
                             onChange={(e) => setStartDate(e.target.value)}
-                            className="text-xs font-bold bg-transparent focus:outline-none text-black/60 w-[110px]"
+                            className="bg-white border-none rounded-lg px-2.5 py-1.5 text-xs font-bold text-black/60 focus:ring-1 focus:ring-black/10 pr-7 shadow-sm"
                         />
+                        {startDate && (
+                            <button
+                                onClick={() => setStartDate('')}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-black/20 hover:text-black/40 p-0.5"
+                            >
+                                <X size={12} />
+                            </button>
+                        )}
                     </div>
-                    <span className="text-black/20 text-xs">~</span>
-                    <div className="flex items-center gap-2 px-2 py-1 bg-white rounded-lg border border-black/5">
-                        <span className="text-[10px] font-bold text-black/30">종료</span>
+                    <span className="text-black/20 text-xs font-bold">~</span>
+                    <div className="relative group/date">
                         <input
                             type="date"
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
-                            className="text-xs font-bold bg-transparent focus:outline-none text-black/60 w-[110px]"
+                            className="bg-white border-none rounded-lg px-2.5 py-1.5 text-xs font-bold text-black/60 focus:ring-1 focus:ring-black/10 pr-7 shadow-sm"
                         />
+                        {endDate && (
+                            <button
+                                onClick={() => setEndDate('')}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-black/20 hover:text-black/40 p-0.5"
+                            >
+                                <X size={12} />
+                            </button>
+                        )}
                     </div>
-                    {(startDate || endDate) && (
-                        <button
-                            onClick={() => {
-                                setStartDate('');
-                                setEndDate('');
-                            }}
-                            className="p-1.5 hover:bg-black/5 rounded-lg text-black/20 hover:text-black/50 transition-colors"
-                            title="날짜 초기화"
-                        >
-                            <X size={14} />
-                        </button>
-                    )}
                 </div>
 
-                {/* 엑셀 내보내기 버튼 (축소) */}
+                {/* 엑셀 내보내기 버튼 */}
                 <button
                     onClick={handleExportExcel}
                     className="p-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl transition-all shadow-sm flex items-center gap-2 shrink-0 group"
                     title="Excel 내보내기"
                 >
                     <Download size={16} />
-                    <span className="text-xs font-bold sm:hidden lg:inline group-hover:block">EXCEL</span>
+                    <span className="text-xs font-bold">EXCEL</span>
                 </button>
             </div>
 
             {/* Records List */}
-            {isLoadingRecords && records.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-black/20">
-                    <Loader2 size={40} className="animate-spin mb-2" />
-                    <p className="font-bold">기록 불러오는 중...</p>
-                </div>
-            ) : filteredRecords.length === 0 && !isLoadingRecords ? (
-                <div className="flex flex-col items-center justify-center py-20 text-black/20 text-center">
-                    <History size={60} className="mb-4 opacity-50" />
-                    <p className="font-bold">저장된 기록이 없습니다.</p>
-                    <p className="text-sm">먼저 기록을 등록해 보세요.</p>
-                </div>
-            ) : (
-                <div className="w-full">
-                    <div className="space-y-4 w-full">
-                        {(() => {
-                            const maxMeasurements = filteredRecords.reduce((max, record) => {
-                                try {
-                                    const data = JSON.parse(record.extractedData || '{}');
-                                    let count = 0;
-                                    for (let i = 1; i <= 10; i++) {
-                                        if (data[`측정_${i}`]) count = i;
-                                    }
-                                    return Math.max(max, count);
-                                } catch (e) { return max; }
-                            }, 0);
-
-                            return containerWidth >= 768 ? (
-                                /* Table View for Wide Screens */
-                                <div className="bg-white rounded-[24px] border border-black/5 overflow-hidden shadow-sm">
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-left border-collapse min-w-[1200px]">
-                                            <thead>
-                                                <tr className="bg-black/[0.02] border-b border-black/5 text-[11px] font-bold text-black/40 uppercase tracking-wider">
-                                                    <th className="p-4 pl-6 w-20">사진</th>
-                                                    <th className="p-4 w-32">
-                                                        <div>측정날짜</div>
-                                                        <div className="text-[9px] opacity-50">측정시간</div>
-                                                    </th>
-                                                    <th className="p-4 w-48">
-                                                        <div>품명</div>
-                                                        <div className="text-[9px] opacity-50">차수 & 시작,끝</div>
-                                                    </th>
-                                                    <th className="p-4 w-48">비고</th>
-                                                    <th className="p-4 w-24 text-center">최소값</th>
-                                                    <th className="p-4 w-24 text-center">최대값</th>
-                                                    <th className="p-4 w-24 text-center">평균값</th>
-                                                    {[...Array(maxMeasurements)].map((_, i) => (
-                                                        <th key={i} className="p-4 w-16 text-center border-l border-black/5">{i + 1}</th>
-                                                    ))}
-                                                    <th className="p-4 w-12"></th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="text-sm divide-y divide-black/5">
-                                                {filteredRecords.map(record => {
-                                                    let data: any = {};
-                                                    try { data = JSON.parse(record.extractedData || '{}'); } catch (e) { }
-
-                                                    return (
-                                                        <tr
-                                                            key={record.id}
-                                                            onClick={() => setSelectedRecordId(record.id)}
-                                                            className="hover:bg-blue-50/20 transition-colors cursor-pointer group"
-                                                        >
-                                                            <td className="p-3 pl-6">
-                                                                {record.imageUrl ? (
-                                                                    <div
-                                                                        className="w-10 h-10 rounded-lg overflow-hidden bg-black/5 border border-black/5 hover:scale-150 hover:shadow-lg transition-transform origin-left relative z-10"
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            setSelectedImage(record.imageUrl!);
-                                                                        }}
-                                                                    >
-                                                                        <img src={record.thumbnailUrl || record.imageUrl} className="w-full h-full object-cover" />
-                                                                    </div>
-                                                                ) : <div className="w-10 h-10 rounded-lg bg-black/5" />}
-                                                            </td>
-                                                            <td className="p-3">
-                                                                <div className="flex flex-col gap-0.5">
-                                                                    <span className="font-bold text-blue-600">{data['측정날짜'] || '-'}</span>
-                                                                    <span className="text-[11px] text-black/30 font-medium">{data['측정시간'] || '-'}</span>
-                                                                </div>
-                                                            </td>
-                                                            <td className="p-3">
-                                                                <div className="flex flex-col gap-1.5 items-start">
-                                                                    <span className="font-bold text-black/80 truncate max-w-[160px]" title={record.product.name}>{record.product.name}</span>
-                                                                    <div className="flex items-center gap-1">
-                                                                        <span className="text-[9px] bg-blue-50 text-blue-500 px-1.5 py-0.5 rounded font-bold">
-                                                                            {record.degree || '1번째'}
-                                                                        </span>
-                                                                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${record.stage === '시작' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-                                                                            {record.stage || '시작'}
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                            </td>
-                                                            <td className="p-3">
-                                                                <div className="text-[11px] text-black/60 max-w-[180px] line-clamp-2" title={record.note}>
-                                                                    {record.note || '-'}
-                                                                </div>
-                                                            </td>
-                                                            <td className="p-3 text-center font-bold text-black/60">{data['최소(MIN)'] || '-'}</td>
-                                                            <td className="p-3 text-center font-bold text-black/60">{data['최대(MAX)'] || '-'}</td>
-                                                            <td className="p-3 text-center font-bold text-blue-600 bg-blue-50/30">{data['평균(avg)'] || '-'}</td>
-
-                                                            {
-                                                                [...Array(maxMeasurements)].map((_, i) => {
-                                                                    const val = data[`측정_${i + 1}`];
-                                                                    return (
-                                                                        <td key={i} className={`p-3 text-center border-l border-black/[0.02] ${val ? 'text-black/70 font-medium' : 'text-black/5'}`}>
-                                                                            {val || '-'}
-                                                                        </td>
-                                                                    );
-                                                                })
-                                                            }
-
-                                                            <td className="p-3 text-right pr-6">
-                                                                <ChevronRight size={16} className="ml-auto text-black/10 group-hover:text-black/30" />
-                                                            </td>
-                                                        </tr>
-                                                    );
-                                                })}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            ) : (
-                                /* Card View for Narrow Screens */
-                                <div className="space-y-4">
-                                    {filteredRecords.map(record => {
-                                        let data: any = {};
-                                        try {
-                                            data = JSON.parse(record.extractedData || '{}');
-                                        } catch (e) {
-                                            console.error('Failed to parse record data:', e);
+            {
+                isLoadingRecords && records.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-black/20">
+                        <Loader2 size={40} className="animate-spin mb-2" />
+                        <p className="font-bold">기록 불러오는 중...</p>
+                    </div>
+                ) : filteredRecords.length === 0 && !isLoadingRecords ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-black/20 text-center">
+                        <History size={60} className="mb-4 opacity-50" />
+                        <p className="font-bold">저장된 기록이 없습니다.</p>
+                        <p className="text-sm">먼저 기록을 등록해 보세요.</p>
+                    </div>
+                ) : (
+                    <div className="w-full">
+                        <div className="space-y-4 w-full">
+                            {(() => {
+                                const maxMeasurements = filteredRecords.reduce((max, record) => {
+                                    try {
+                                        const data = JSON.parse(record.extractedData || '{}');
+                                        let count = 0;
+                                        for (let i = 1; i <= 10; i++) {
+                                            if (data[`측정_${i}`]) count = i;
                                         }
-                                        const measureDate = data['측정날짜'] || '정보 없음';
-                                        const measureTime = data['측정시간'] || '-';
+                                        return Math.max(max, count);
+                                    } catch (e) { return max; }
+                                }, 0);
 
-                                        // 요약 정보만 필터링 (최소 - 최대 - 평균 순으로 조정)
-                                        const summaryData = [
-                                            { key: '최소(MIN)', value: data['최소(MIN)'], label: 'MIN' },
-                                            { key: '최대(MAX)', value: data['최대(MAX)'], label: 'MAX' },
-                                            { key: '평균(avg)', value: data['평균(avg)'], label: 'AVG', isAvg: true }
-                                        ].filter(item => item.value);
+                                return containerWidth >= 768 ? (
+                                    /* Table View for Wide Screens */
+                                    <div className="bg-white rounded-[24px] border border-black/5 overflow-hidden shadow-sm">
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left border-collapse min-w-[1200px]">
+                                                <thead>
+                                                    <tr className="bg-black/[0.02] border-b border-black/5 text-[11px] font-bold text-black/40 uppercase tracking-wider">
+                                                        <th className="p-4 pl-6 w-20">사진</th>
+                                                        <th className="p-4 w-32">
+                                                            <div>측정날짜</div>
+                                                            <div className="text-[9px] opacity-50">측정시간</div>
+                                                        </th>
+                                                        <th className="p-4 w-48">
+                                                            <div>품명</div>
+                                                            <div className="text-[9px] opacity-50">차수 & 시작,끝</div>
+                                                        </th>
+                                                        <th className="p-4 w-48">비고</th>
+                                                        <th className="p-4 w-24 text-center">최소값</th>
+                                                        <th className="p-4 w-24 text-center">최대값</th>
+                                                        <th className="p-4 w-24 text-center">평균값</th>
+                                                        {[...Array(maxMeasurements)].map((_, i) => (
+                                                            <th key={i} className="p-4 w-16 text-center border-l border-black/5">{i + 1}</th>
+                                                        ))}
+                                                        <th className="p-4 w-12"></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="text-sm divide-y divide-black/5">
+                                                    {filteredRecords.map(record => {
+                                                        let data: any = {};
+                                                        try { data = JSON.parse(record.extractedData || '{}'); } catch (e) { }
 
-                                        return (
-                                            <div
-                                                key={record.id}
-                                                className="bg-white border border-black/5 rounded-[32px] p-5 hover:shadow-xl transition-all cursor-pointer group active:scale-[0.98] relative overflow-hidden"
-                                                onClick={() => setSelectedRecordId(record.id)}
-                                            >
-                                                {/* Header: Product Name (Full Width Priority) */}
-                                                <div className="mb-4">
-                                                    <h3 className="font-extrabold text-[17px] text-black/90 leading-snug line-clamp-2">
-                                                        {record.product?.name || '품명 정보 없음'}
-                                                    </h3>
-                                                </div>
+                                                        return (
+                                                            <tr
+                                                                key={record.id}
+                                                                onClick={() => setSelectedRecordId(record.id)}
+                                                                className="hover:bg-blue-50/20 transition-colors cursor-pointer group"
+                                                            >
+                                                                <td className="p-3 pl-6">
+                                                                    {record.imageUrl ? (
+                                                                        <div
+                                                                            className="w-10 h-10 rounded-lg overflow-hidden bg-black/5 border border-black/5 hover:scale-150 hover:shadow-lg transition-transform origin-left relative z-10"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setSelectedImage(record.imageUrl!);
+                                                                            }}
+                                                                        >
+                                                                            <img src={record.thumbnailUrl || record.imageUrl} className="w-full h-full object-cover" />
+                                                                        </div>
+                                                                    ) : <div className="w-10 h-10 rounded-lg bg-black/5" />}
+                                                                </td>
+                                                                <td className="p-3">
+                                                                    <div className="flex flex-col gap-0.5">
+                                                                        <span className="font-bold text-blue-600">{data['측정날짜'] || '-'}</span>
+                                                                        <span className="text-[11px] text-black/30 font-medium">{data['측정시간'] || '-'}</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="p-3">
+                                                                    <div className="flex flex-col gap-1.5 items-start">
+                                                                        <span className="font-bold text-black/80 truncate max-w-[160px]" title={record.product.name}>{record.product.name}</span>
+                                                                        <div className="flex items-center gap-1">
+                                                                            <span className="text-[9px] bg-blue-50 text-blue-500 px-1.5 py-0.5 rounded font-bold">
+                                                                                {record.degree || '1번째'}
+                                                                            </span>
+                                                                            <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${record.stage === '시작' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                                                                                {record.stage || '시작'}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="p-3">
+                                                                    <div className="text-[11px] text-black/60 max-w-[180px] line-clamp-2" title={record.note}>
+                                                                        {record.note || '-'}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="p-3 text-center font-bold text-black/60">{data['최소(MIN)'] || '-'}</td>
+                                                                <td className="p-3 text-center font-bold text-black/60">{data['최대(MAX)'] || '-'}</td>
+                                                                <td className="p-3 text-center font-bold text-blue-600 bg-blue-50/30">{data['평균(avg)'] || '-'}</td>
 
-                                                <div className="flex gap-4 items-start">
-                                                    {/* Side: Image */}
-                                                    {record.imageUrl && (
-                                                        <div
-                                                            className="w-[88px] h-[88px] rounded-2xl overflow-hidden flex-shrink-0 bg-black/5 border border-black/5 cursor-pointer hover:ring-2 hover:ring-black/10 transition-all shadow-sm"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                if (record.imageUrl) setSelectedImage(record.imageUrl);
-                                                            }}
-                                                        >
-                                                            <img src={record.thumbnailUrl || record.imageUrl} alt="Record" className="w-full h-full object-cover" />
+                                                                {
+                                                                    [...Array(maxMeasurements)].map((_, i) => {
+                                                                        const val = data[`측정_${i + 1}`];
+                                                                        return (
+                                                                            <td key={i} className={`p-3 text-center border-l border-black/[0.02] ${val ? 'text-black/70 font-medium' : 'text-black/5'}`}>
+                                                                                {val || '-'}
+                                                                            </td>
+                                                                        );
+                                                                    })
+                                                                }
+
+                                                                <td className="p-3 text-right pr-6">
+                                                                    <ChevronRight size={16} className="ml-auto text-black/10 group-hover:text-black/30" />
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    /* Card View for Narrow Screens */
+                                    <div className="space-y-4">
+                                        {filteredRecords.map(record => {
+                                            let data: any = {};
+                                            try {
+                                                data = JSON.parse(record.extractedData || '{}');
+                                            } catch (e) {
+                                                console.error('Failed to parse record data:', e);
+                                            }
+                                            const measureDate = data['측정날짜'] || '정보 없음';
+                                            const measureTime = data['측정시간'] || '-';
+
+                                            // 요약 정보만 필터링 (최소 - 최대 - 평균 순으로 조정)
+                                            const summaryData = [
+                                                { key: '최소(MIN)', value: data['최소(MIN)'], label: 'MIN' },
+                                                { key: '최대(MAX)', value: data['최대(MAX)'], label: 'MAX' },
+                                                { key: '평균(avg)', value: data['평균(avg)'], label: 'AVG', isAvg: true }
+                                            ].filter(item => item.value);
+
+                                            return (
+                                                <div
+                                                    key={record.id}
+                                                    className="bg-white border border-black/5 rounded-[32px] p-5 hover:shadow-xl transition-all cursor-pointer group active:scale-[0.98] relative overflow-hidden"
+                                                    onClick={() => setSelectedRecordId(record.id)}
+                                                >
+                                                    {/* Header: Product Name (Full Width Priority) */}
+                                                    <div className="mb-4">
+                                                        <h3 className="font-extrabold text-[17px] text-black/90 leading-snug line-clamp-2">
+                                                            {record.product?.name || '품명 정보 없음'}
+                                                        </h3>
+                                                    </div>
+
+                                                    <div className="flex gap-4 items-start">
+                                                        {/* Side: Image */}
+                                                        {record.imageUrl && (
+                                                            <div
+                                                                className="w-[88px] h-[88px] rounded-2xl overflow-hidden flex-shrink-0 bg-black/5 border border-black/5 cursor-pointer hover:ring-2 hover:ring-black/10 transition-all shadow-sm"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    if (record.imageUrl) setSelectedImage(record.imageUrl);
+                                                                }}
+                                                            >
+                                                                <img src={record.thumbnailUrl || record.imageUrl} alt="Record" className="w-full h-full object-cover" />
+                                                            </div>
+                                                        )}
+
+                                                        {/* Center: Statistics Grid */}
+                                                        <div className="flex-1 flex flex-col gap-2">
+                                                            <div className="grid grid-cols-2 gap-2">
+                                                                {/* MIN */}
+                                                                <div className="bg-blue-50/40 p-2.5 rounded-2xl border border-blue-100/30">
+                                                                    <p className="text-[9px] font-bold text-blue-400 uppercase tracking-wider mb-0.5">MIN</p>
+                                                                    <p className="text-xs font-black text-blue-900">{data['최소(MIN)'] || '-'}</p>
+                                                                </div>
+                                                                {/* MAX */}
+                                                                <div className="bg-blue-50/40 p-2.5 rounded-2xl border border-blue-100/30">
+                                                                    <p className="text-[9px] font-bold text-blue-400 uppercase tracking-wider mb-0.5">MAX</p>
+                                                                    <p className="text-xs font-black text-blue-900">{data['최대(MAX)'] || '-'}</p>
+                                                                </div>
+                                                            </div>
+                                                            {/* AVG (Highlight) */}
+                                                            <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-2.5 rounded-2xl shadow-[0_4px_12px_rgba(37,99,235,0.2)]">
+                                                                <p className="text-[9px] font-bold text-white/60 uppercase tracking-wider mb-0.5">Average Value (AVG)</p>
+                                                                <p className="text-sm font-black text-white">{data['평균(avg)'] || '-'}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Note (If exists) */}
+                                                    {record.note && (
+                                                        <div className="mt-4 p-3 bg-black/[0.02] rounded-2xl border border-dashed border-black/5">
+                                                            <p className="text-[11px] text-black/40 leading-relaxed italic">
+                                                                <span className="font-bold opacity-60 not-italic mr-1.5 inline-flex items-center gap-1">
+                                                                    <FileText size={10} /> 비고:
+                                                                </span>
+                                                                {record.note}
+                                                            </p>
                                                         </div>
                                                     )}
 
-                                                    {/* Center: Statistics Grid */}
-                                                    <div className="flex-1 flex flex-col gap-2">
-                                                        <div className="grid grid-cols-2 gap-2">
-                                                            {/* MIN */}
-                                                            <div className="bg-blue-50/40 p-2.5 rounded-2xl border border-blue-100/30">
-                                                                <p className="text-[9px] font-bold text-blue-400 uppercase tracking-wider mb-0.5">MIN</p>
-                                                                <p className="text-xs font-black text-blue-900">{data['최소(MIN)'] || '-'}</p>
-                                                            </div>
-                                                            {/* MAX */}
-                                                            <div className="bg-blue-50/40 p-2.5 rounded-2xl border border-blue-100/30">
-                                                                <p className="text-[9px] font-bold text-blue-400 uppercase tracking-wider mb-0.5">MAX</p>
-                                                                <p className="text-xs font-black text-blue-900">{data['최대(MAX)'] || '-'}</p>
-                                                            </div>
-                                                        </div>
-                                                        {/* AVG (Highlight) */}
-                                                        <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-2.5 rounded-2xl shadow-[0_4px_12px_rgba(37,99,235,0.2)]">
-                                                            <p className="text-[9px] font-bold text-white/60 uppercase tracking-wider mb-0.5">Average Value (AVG)</p>
-                                                            <p className="text-sm font-black text-white">{data['평균(avg)'] || '-'}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Note (If exists) */}
-                                                {record.note && (
-                                                    <div className="mt-4 p-3 bg-black/[0.02] rounded-2xl border border-dashed border-black/5">
-                                                        <p className="text-[11px] text-black/40 leading-relaxed italic">
-                                                            <span className="font-bold opacity-60 not-italic mr-1.5 inline-flex items-center gap-1">
-                                                                <FileText size={10} /> 비고:
-                                                            </span>
-                                                            {record.note}
-                                                        </p>
-                                                    </div>
-                                                )}
-
-                                                {/* Footer: Metadata & Status Badges */}
-                                                <div className="mt-4 pt-4 border-t border-black/[0.03] flex justify-between items-end gap-2">
-                                                    <div className="flex flex-col gap-0.5">
-                                                        {(measureDate || measureTime) && (
-                                                            <p className="text-[11px] font-extrabold text-blue-600 flex items-center gap-1">
-                                                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                                                                {measureDate} {measureTime}
+                                                    {/* Footer: Metadata & Status Badges */}
+                                                    <div className="mt-4 pt-4 border-t border-black/[0.03] flex justify-between items-end gap-2">
+                                                        <div className="flex flex-col gap-0.5">
+                                                            {(measureDate || measureTime) && (
+                                                                <p className="text-[11px] font-extrabold text-blue-600 flex items-center gap-1">
+                                                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                                                                    {measureDate} {measureTime}
+                                                                </p>
+                                                            )}
+                                                            <p className="text-[9px] text-black/20 font-medium">
+                                                                등록 {new Date(record.createdAt).toLocaleString('ko-KR', {
+                                                                    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                                                                })}
                                                             </p>
-                                                        )}
-                                                        <p className="text-[9px] text-black/20 font-medium">
-                                                            등록 {new Date(record.createdAt).toLocaleString('ko-KR', {
-                                                                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                                                            })}
-                                                        </p>
+                                                        </div>
+
+                                                        <div className="flex items-center gap-1.5">
+                                                            <span className="text-[10px] bg-blue-50 text-blue-700 px-2.5 py-1 rounded-xl font-black border border-blue-100/50 shadow-sm">
+                                                                {record.degree || '1번째'}
+                                                            </span>
+                                                            <span className={`text-[10px] px-2.5 py-1 rounded-xl font-black border shadow-sm ${record.stage === '시작'
+                                                                ? 'bg-green-50 text-green-700 border-green-100/50'
+                                                                : 'bg-red-50 text-red-700 border-red-100/50'
+                                                                }`}>
+                                                                {record.stage || '시작'}
+                                                            </span>
+                                                        </div>
                                                     </div>
 
-                                                    <div className="flex items-center gap-1.5">
-                                                        <span className="text-[10px] bg-blue-50 text-blue-700 px-2.5 py-1 rounded-xl font-black border border-blue-100/50 shadow-sm">
-                                                            {record.degree || '1번째'}
-                                                        </span>
-                                                        <span className={`text-[10px] px-2.5 py-1 rounded-xl font-black border shadow-sm ${record.stage === '시작'
-                                                            ? 'bg-green-50 text-green-700 border-green-100/50'
-                                                            : 'bg-red-50 text-red-700 border-red-100/50'
-                                                            }`}>
-                                                            {record.stage || '시작'}
-                                                        </span>
+                                                    {/* Menu Indicator */}
+                                                    <div className="absolute right-3 top-3 opacity-20 group-hover:opacity-100 transition-opacity">
+                                                        <ChevronRight size={16} />
                                                     </div>
                                                 </div>
+                                            );
+                                        })}
+                                    </div>
+                                );
+                            })()}
 
-                                                {/* Menu Indicator */}
-                                                <div className="absolute right-3 top-3 opacity-20 group-hover:opacity-100 transition-opacity">
-                                                    <ChevronRight size={16} />
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            );
-                        })()}
+                            {/* Infinite Scroll Sentinel & Loading Indicator */}
+                            <div ref={loadMoreRef} className="py-20 flex flex-col items-center gap-6">
+                                {isLoadingRecords && records.length > 0 && (
+                                    <div className="flex flex-col items-center gap-2 text-black/20">
+                                        <Loader2 size={24} className="animate-spin" />
+                                        <p className="text-xs font-bold uppercase tracking-widest">
+                                            {page === 1 ? '검색 결과 불러오는 중...' : '더 많은 기록 불러오는 중...'}
+                                        </p>
+                                    </div>
+                                )}
 
-                        {/* Infinite Scroll Sentinel & Loading Indicator */}
-                        <div ref={loadMoreRef} className="py-20 flex flex-col items-center gap-6">
-                            {isLoadingRecords && records.length > 0 && (
-                                <div className="flex flex-col items-center gap-2 text-black/20">
-                                    <Loader2 size={24} className="animate-spin" />
-                                    <p className="text-xs font-bold uppercase tracking-widest">
-                                        {page === 1 ? '검색 결과 불러오는 중...' : '더 많은 기록 불러오는 중...'}
-                                    </p>
-                                </div>
-                            )}
+                                {!isLoadingRecords && hasMore && records.length > 0 && (
+                                    <button
+                                        onClick={() => fetchRecords(page + 1)}
+                                        className="px-8 py-3 bg-white border border-black/10 rounded-2xl text-black/40 font-bold text-sm hover:bg-black/5 hover:text-black/60 transition-all flex items-center gap-2 shadow-sm active:scale-95"
+                                    >
+                                        <Plus size={16} />
+                                        기록 더보기
+                                    </button>
+                                )}
 
-                            {!isLoadingRecords && hasMore && records.length > 0 && (
-                                <button
-                                    onClick={() => fetchRecords(page + 1)}
-                                    className="px-8 py-3 bg-white border border-black/10 rounded-2xl text-black/40 font-bold text-sm hover:bg-black/5 hover:text-black/60 transition-all flex items-center gap-2 shadow-sm active:scale-95"
-                                >
-                                    <Plus size={16} />
-                                    기록 더보기
-                                </button>
-                            )}
-
-                            {!hasMore && filteredRecords.length > 0 && !isLoadingRecords && (
-                                <p className="text-xs font-bold text-black/10 uppercase tracking-widest">모든 기록을 불러왔습니다</p>
-                            )}
+                                {!hasMore && filteredRecords.length > 0 && !isLoadingRecords && (
+                                    <p className="text-xs font-bold text-black/10 uppercase tracking-widest">모든 기록을 불러왔습니다</p>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
-            )
+                )
             }
-        </motion.div>
+        </motion.div >
     );
 
     return (
@@ -1156,16 +1171,18 @@ export default function CoatingControl() {
             {/* Header Tabs - Only show on mobile */}
             {!isDesktop && (
                 <div className="flex border-b border-black/5 flex-shrink-0">
-                    <button
-                        onClick={() => setActiveTab('upload')}
-                        className={`flex-1 py-4 flex items-center justify-center gap-2 transition-colors ${activeTab === 'upload' ? 'bg-white font-bold text-black border-b-2 border-black/80' : 'bg-black/[0.03] text-black/50 hover:bg-black/[0.05]'}`}
-                    >
-                        <Upload size={18} />
-                        <span>기록 등록</span>
-                    </button>
+                    {canCreate && (
+                        <button
+                            onClick={() => setActiveTab('upload')}
+                            className={`flex-1 py-4 flex items-center justify-center gap-2 transition-colors ${activeTab === 'upload' ? 'bg-white font-bold text-black border-b-2 border-black/80' : 'bg-black/[0.03] text-black/50 hover:bg-black/[0.05]'}`}
+                        >
+                            <Upload size={18} />
+                            <span>기록 등록</span>
+                        </button>
+                    )}
                     <button
                         onClick={() => setActiveTab('history')}
-                        className={`flex-1 py-4 flex items-center justify-center gap-2 transition-colors ${activeTab === 'history' ? 'bg-white font-bold text-black border-b-2 border-black/80' : 'bg-black/[0.03] text-black/50 hover:bg-black/[0.05]'}`}
+                        className={`flex-1 py-4 flex items-center justify-center gap-2 transition-colors ${activeTab === 'history' || !canCreate ? 'bg-white font-bold text-black border-b-2 border-black/80' : 'bg-black/[0.03] text-black/50 hover:bg-black/[0.05]'}`}
                     >
                         <History size={18} />
                         <span>이력 조회</span>
@@ -1192,15 +1209,17 @@ export default function CoatingControl() {
                 {isDesktop ? (
                     <div className="flex h-full divide-x divide-black/5">
                         {/* Left: Registration */}
-                        <div className="w-[600px] overflow-y-auto p-8 custom-scrollbar bg-black/[0.01]">
-                            <div className="mb-8">
-                                <h2 className="text-sm font-bold text-black/40 uppercase tracking-widest flex items-center gap-2">
-                                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                                    기록 등록
-                                </h2>
+                        {canCreate && (
+                            <div className="w-[600px] overflow-y-auto p-8 custom-scrollbar bg-black/[0.01]">
+                                <div className="mb-8">
+                                    <h2 className="text-sm font-bold text-black/40 uppercase tracking-widest flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                                        기록 등록
+                                    </h2>
+                                </div>
+                                {renderUpload()}
                             </div>
-                            {renderUpload()}
-                        </div>
+                        )}
                         {/* Right: History */}
                         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
                             <div className="mb-8">
@@ -1319,12 +1338,14 @@ export default function CoatingControl() {
                                                     <span>수정</span>
                                                 </button>
                                             )}
-                                            <button
-                                                onClick={() => selectedRecordId && handleDeleteRecord(selectedRecordId)}
-                                                className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors"
-                                            >
-                                                <Trash2 size={20} />
-                                            </button>
+                                            {canDelete && (
+                                                <button
+                                                    onClick={() => selectedRecordId && handleDeleteRecord(selectedRecordId)}
+                                                    className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                                                >
+                                                    <Trash2 size={20} />
+                                                </button>
+                                            )}
                                         </>
                                     ) : (
                                         <button
