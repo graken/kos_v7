@@ -136,8 +136,8 @@ const Window = memo(function Window({ id }: WindowProps) {
                 y: windowData.isMinimized ? (typeof window !== 'undefined' ? window.innerHeight : 1000) : windowData.y,
                 width: windowData.width,
                 height: windowData.height,
-                boxShadow: isDragging || resizeDir
-                    ? "0 30px 60px -12px rgba(0, 0, 0, 0.4)"
+                boxShadow: (isDragging || resizeDir)
+                    ? "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)" // Simple shadow during drag
                     : isFocused ? "0 20px 40px -12px rgba(0, 0, 0, 0.25)" : "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
             }}
             exit={{ opacity: 0, scale: 0.9, y: 100 }}
@@ -172,7 +172,7 @@ const Window = memo(function Window({ id }: WindowProps) {
         ${isFocused ? 'ring-1 ring-blue-500/30 shadow-2xl' : 'ring-1 ring-black/5 shadow-lg'}
       `}
         >
-            <div className={`absolute inset-0 -z-10 ${(isDragging || resizeDir) ? 'bg-white shadow-xl' : 'glass ' + (isFocused ? 'bg-white' : 'bg-white/75')}`} />
+            <div className={`absolute inset-0 -z-10 ${(isDragging || resizeDir) ? 'bg-white shadow-sm' : 'glass ' + (isFocused ? 'bg-white' : 'bg-white/75')}`} />
 
             {/* 드래그 중 앱 콘텐츠 영역을 덮는 투명 레이어 (성능 최적화 및 이벤트 간섭 방지) */}
             {(isDragging || resizeDir) && (
