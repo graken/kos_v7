@@ -44,7 +44,7 @@ export default function CoatingControl() {
     const {
         apps, reorderApps, openApp, windows,
         desktopGridSettings, mobileGridSettings, hasHydrated,
-        pushBackAction, popBackAction, currentUser, checkPermission
+        pushBackAction, popBackAction, currentUser, checkPermission, logActivity
     } = useOSStore();
     const [isLoadingRecords, setIsLoadingRecords] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -92,6 +92,7 @@ export default function CoatingControl() {
     const canEdit = checkPermission('coating-control', 'edit');
     const canDelete = checkPermission('coating-control', 'delete');
     const canPhoto = checkPermission('coating-control', 'photo');
+    const canExport = checkPermission('coating-control', 'export');
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const loadMoreRef = useRef<HTMLDivElement>(null);
@@ -303,6 +304,7 @@ export default function CoatingControl() {
             });
             const updatedRecord = await res.json();
             if (updatedRecord.id) {
+                logActivity('UPDATE_RECORD', 'coating-control', '박막도포관리', updatedRecord.id, { productId });
                 setRecords(records.map(r => r.id === updatedRecord.id ? updatedRecord : r));
                 alert('수정되었습니다.');
                 resetForm();
@@ -328,6 +330,7 @@ export default function CoatingControl() {
             });
             const data = await res.json();
             if (data.success) {
+                logActivity('DELETE_RECORD', 'coating-control', '박막도포관리', id);
                 setRecords(records.filter(r => r.id !== id));
                 setSelectedRecordId(null);
                 alert('삭제되었습니다.');
@@ -414,6 +417,7 @@ export default function CoatingControl() {
             });
             const data = await res.json();
             if (data.id) {
+                logActivity('CREATE_RECORD', 'coating-control', '박막도포관리', data.id, { productId });
                 alert('기록이 저장되었습니다.');
                 resetForm();
                 if (isDesktop) {
@@ -876,14 +880,16 @@ export default function CoatingControl() {
                 </div>
 
                 {/* 엑셀 내보내기 버튼 */}
-                <button
-                    onClick={handleExportExcel}
-                    className="p-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl transition-all shadow-sm flex items-center gap-2 shrink-0 group"
-                    title="Excel 내보내기"
-                >
-                    <Download size={16} />
-                    <span className="text-xs font-bold">EXCEL</span>
-                </button>
+                {canExport && (
+                    <button
+                        onClick={handleExportExcel}
+                        className="p-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl transition-all shadow-sm flex items-center gap-2 shrink-0 group"
+                        title="Excel 내보내기"
+                    >
+                        <Download size={16} />
+                        <span className="text-xs font-bold">EXCEL</span>
+                    </button>
+                )}
             </div>
 
             {/* Records List */}

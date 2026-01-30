@@ -6,7 +6,7 @@ WORKDIR /app
 FROM base AS deps
 
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm install
 
 # 2. 빌드 단계
 FROM base AS builder

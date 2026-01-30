@@ -23,10 +23,25 @@ const Window = memo(function Window({ id }: WindowProps) {
     const windowData = useOSStore(state => state.windows[id]);
     const isFocused = focusedWindowId === id;
 
-    if (!windowData) return null;
+    const AppComponent = useMemo(() => {
+        if (!id) return null;
+        return APP_REGISTRY[id]?.component;
+    }, [id]);
+
+    const renderedContent = useMemo(() => {
+        if (!windowData) return null;
+        if (AppComponent) return <AppComponent key={id} />;
+        return (
+            <div className="h-full flex flex-col items-center justify-center text-black/20">
+                <p className="text-lg font-medium">KOS v7 Application</p>
+                <p className="text-sm italic">{windowData.title}</p>
+            </div>
+        );
+    }, [id, AppComponent, windowData]);
 
     const [isDragging, setIsDragging] = useState(false);
     const [resizeDir, setResizeDir] = useState<ResizeDirection | null>(null);
+    const [isTransitioning, setIsTransitioning] = useState(false);
 
     const startMousePos = useRef({ x: 0, y: 0 });
     const startWindowDim = useRef({ x: 0, y: 0, width: 0, height: 0 });
@@ -34,22 +49,22 @@ const Window = memo(function Window({ id }: WindowProps) {
     const MIN_WIDTH = 300;
     const MIN_HEIGHT = 200;
 
-    const isFixedSize = !windowData.config?.resizable;
-    const hideMaximize = !windowData.config?.maximizable;
+    const isFixedSize = !windowData?.config?.resizable;
+    const hideMaximize = !windowData?.config?.maximizable;
 
     const handleDragStart = (e: React.MouseEvent) => {
-        if (windowData.isMaximized) return; // 최대화 상태에선 드래그 불가
+        if (!windowData || windowData.isMaximized) return;
         setIsDragging(true);
-        focusApp(windowData.id);
+        focusApp(id);
         startMousePos.current = { x: e.clientX, y: e.clientY };
         startWindowDim.current = { x: windowData.x, y: windowData.y, width: windowData.width, height: windowData.height };
         e.preventDefault();
     };
 
     const handleResizeStart = (e: React.MouseEvent, direction: ResizeDirection) => {
-        if (windowData.isMaximized || isFixedSize) return; // 최대화 또는 고정 크기 상태에선 리사이징 불가
+        if (!windowData || windowData.isMaximized || isFixedSize) return;
         setResizeDir(direction);
-        focusApp(windowData.id);
+        focusApp(id);
         startMousePos.current = { x: e.clientX, y: e.clientY };
         startWindowDim.current = { x: windowData.x, y: windowData.y, width: windowData.width, height: windowData.height };
         e.stopPropagation();
@@ -58,7 +73,16 @@ const Window = memo(function Window({ id }: WindowProps) {
 
     const STATUS_BAR_HEIGHT = 32;
 
+    // 최대화/복원 시 애니메이션 부하를 줄이기 위해 콘텐츠 일시 숨김
     useEffect(() => {
+        if (!windowData) return;
+        setIsTransitioning(true);
+        const timer = setTimeout(() => setIsTransitioning(false), 300);
+        return () => clearTimeout(timer);
+    }, [windowData?.isMaximized]);
+
+    useEffect(() => {
+        if (!windowData) return;
         const handleMouseMove = (e: MouseEvent) => {
             if (!isDragging && !resizeDir) return;
 
@@ -66,9 +90,9 @@ const Window = memo(function Window({ id }: WindowProps) {
             const deltaY = e.clientY - startMousePos.current.y;
 
             if (isDragging) {
-                updateWindowDimensions(windowData.id, {
+                updateWindowDimensions(id, {
                     x: startWindowDim.current.x + deltaX,
-                    y: Math.max(STATUS_BAR_HEIGHT, startWindowDim.current.y + deltaY) // 상단바 침범 방지
+                    y: Math.max(STATUS_BAR_HEIGHT, startWindowDim.current.y + deltaY)
                 });
             } else if (resizeDir && !isFixedSize) {
                 let { x, y, width, height } = startWindowDim.current;
@@ -89,7 +113,7 @@ const Window = memo(function Window({ id }: WindowProps) {
 
                 if (resizeDir.includes('n')) {
                     const requestedY = startWindowDim.current.y + deltaY;
-                    const clampedY = Math.max(STATUS_BAR_HEIGHT, requestedY); // 상단바 침범 방지
+                    const clampedY = Math.max(STATUS_BAR_HEIGHT, requestedY);
                     const actualDeltaY = clampedY - startWindowDim.current.y;
                     const newHeight = startWindowDim.current.height - actualDeltaY;
 
@@ -102,7 +126,7 @@ const Window = memo(function Window({ id }: WindowProps) {
                     }
                 }
 
-                updateWindowDimensions(windowData.id, { x, y, width, height });
+                updateWindowDimensions(id, { x, y, width, height });
             }
         };
 
@@ -120,24 +144,22 @@ const Window = memo(function Window({ id }: WindowProps) {
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
         };
-    }, [isDragging, resizeDir, windowData.id, updateWindowDimensions, isFixedSize]);
+    }, [isDragging, resizeDir, id, updateWindowDimensions, isFixedSize, windowData]);
 
-    // if (windowData.isMinimized) return null; // 삭제: 애니메이션을 위해 렌더링 유지
-
-    const AppComponent = useMemo(() => APP_REGISTRY[windowData.id]?.component, [windowData.id]);
+    if (!windowData) return null;
 
     return (
         <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 100 }}
             animate={{
                 opacity: windowData.isMinimized ? 0 : 1,
-                scale: windowData.isMinimized ? 0.8 : (isDragging ? 1.01 : 1), // Slightly reduced scale for better perf
+                scale: windowData.isMinimized ? 0.8 : (isDragging ? 1.01 : 1),
                 x: windowData.x,
                 y: windowData.isMinimized ? (typeof window !== 'undefined' ? window.innerHeight : 1000) : windowData.y,
                 width: windowData.width,
                 height: windowData.height,
                 boxShadow: (isDragging || resizeDir)
-                    ? "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)" // Simple shadow during drag
+                    ? "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
                     : isFocused ? "0 20px 40px -12px rgba(0, 0, 0, 0.25)" : "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
             }}
             exit={{ opacity: 0, scale: 0.9, y: 100 }}
@@ -163,7 +185,7 @@ const Window = memo(function Window({ id }: WindowProps) {
                 pointerEvents: windowData.isMinimized ? 'none' : 'auto',
                 willChange: (isDragging || resizeDir) ? 'transform, width, height' : 'auto',
             }}
-            onMouseDown={() => focusApp(windowData.id)}
+            onMouseDown={() => focusApp(id)}
             onContextMenu={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -174,12 +196,10 @@ const Window = memo(function Window({ id }: WindowProps) {
         >
             <div className={`absolute inset-0 -z-10 ${(isDragging || resizeDir) ? 'bg-white shadow-sm' : 'glass ' + (isFocused ? 'bg-white' : 'bg-white/75')}`} />
 
-            {/* 드래그 중 앱 콘텐츠 영역을 덮는 투명 레이어 (성능 최적화 및 이벤트 간섭 방지) */}
             {(isDragging || resizeDir) && (
-                <div className="absolute inset-0 z-[100] cursor-grabbing" />
+                <div className="absolute top-9 inset-x-0 bottom-0 z-[100] cursor-grabbing" />
             )}
 
-            {/* Resizing Handles (Hidden if maximized or fixed size) */}
             {!windowData.isMaximized && !isFixedSize && (
                 <>
                     <div onMouseDown={(e) => handleResizeStart(e, 'n')} className="absolute top-0 left-0 right-0 h-1 cursor-ns-resize z-50" />
@@ -193,10 +213,9 @@ const Window = memo(function Window({ id }: WindowProps) {
                 </>
             )}
 
-            {/* Title Bar - Drag Handle */}
             <div
                 onMouseDown={handleDragStart}
-                onDoubleClick={() => !hideMaximize && maximizeApp(windowData.id)} // 최대화 토글 (고정 크기가 아닐 때만)
+                onDoubleClick={() => !hideMaximize && maximizeApp(id)}
                 className="h-9 flex items-center justify-between bg-black/[0.02] border-b border-black/5 select-none cursor-default active:cursor-grabbing shrink-0"
             >
                 <div className="flex items-center gap-2 px-3 pointer-events-none">
@@ -211,7 +230,7 @@ const Window = memo(function Window({ id }: WindowProps) {
                         className="flex items-center justify-center w-11 h-full hover:bg-black/10 transition-colors group"
                         onClick={(e) => {
                             e.stopPropagation();
-                            minimizeApp(windowData.id);
+                            minimizeApp(id);
                         }}
                     >
                         <Minus size={14} className="text-black/70" />
@@ -221,7 +240,7 @@ const Window = memo(function Window({ id }: WindowProps) {
                             className="flex items-center justify-center w-11 h-full hover:bg-black/10 transition-colors group"
                             onClick={(e) => {
                                 e.stopPropagation();
-                                maximizeApp(windowData.id);
+                                maximizeApp(id);
                             }}
                         >
                             {windowData.isMaximized ? <Copy size={11} className="text-black/70 -rotate-90" /> : <Square size={12} className="text-black/70" />}
@@ -231,7 +250,7 @@ const Window = memo(function Window({ id }: WindowProps) {
                         className="flex items-center justify-center w-11 h-full hover:bg-red-500 transition-colors group"
                         onClick={(e) => {
                             e.stopPropagation();
-                            closeApp(windowData.id);
+                            closeApp(id);
                         }}
                     >
                         <X size={16} className="text-black/70 group-hover:text-white" />
@@ -239,16 +258,21 @@ const Window = memo(function Window({ id }: WindowProps) {
                 </div>
             </div>
 
-            {/* Content Area */}
-            <div className="flex-1 overflow-auto pointer-events-auto">
-                {useMemo(() => AppComponent ? (
-                    <AppComponent key={id} />
-                ) : (
-                    <div className="h-full flex flex-col items-center justify-center text-black/20">
-                        <p className="text-lg font-medium">KOS v7 Application</p>
-                        <p className="text-sm italic">{windowData.title}</p>
+            <div className="flex-1 overflow-auto pointer-events-auto bg-white relative">
+                {/* 콘텐츠 본체: 스크롤 유지를 위해 항상 렌더링하되 조작 중에는 숨김 처리 */}
+                <div className={`h-full ${(isDragging || resizeDir || isTransitioning) ? 'opacity-0' : 'opacity-100'}`}>
+                    {renderedContent}
+                </div>
+
+                {/* 가림막: 조작 중에는 불투명한 배경으로 덮어 렌더링 부하 최소화 */}
+                {(isDragging || resizeDir || isTransitioning) && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white">
+                        <div className="flex flex-col items-center gap-2 text-black/10 select-none">
+                            <div className="w-8 h-8 rounded-full border-2 border-current border-t-transparent animate-spin opacity-20" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">{windowData.title}</span>
+                        </div>
                     </div>
-                ), [id, AppComponent, windowData.title])}
+                )}
             </div>
         </motion.div>
     );

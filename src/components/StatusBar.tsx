@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useOSStore } from '@/store/useOSStore';
 
 export default function StatusBar() {
-    const { currentTime, setCurrentTime, showContextMenu, openApp, currentUser, setCurrentUser } = useOSStore();
+    const { currentTime, setCurrentTime, showContextMenu, openApp, currentUser, setCurrentUser, desktopTextColor } = useOSStore();
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -16,6 +16,10 @@ export default function StatusBar() {
     }, [setCurrentTime]);
 
     if (!mounted) return null;
+
+    const isWhite = desktopTextColor === 'white';
+    const textColorClass = isWhite ? 'text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]' : 'text-black/80';
+    const hoverClass = isWhite ? 'hover:bg-white/10' : 'hover:bg-black/5';
 
     const handleClickUser = (e: React.MouseEvent) => {
         const { addApp, apps } = useOSStore.getState();
@@ -54,16 +58,16 @@ export default function StatusBar() {
     };
 
     return (
-        <div className="fixed top-0 left-0 right-0 h-8 flex items-center justify-between px-4 z-50 text-black/80 font-bold text-sm drop-shadow-sm pointer-events-none">
+        <div className={`fixed top-0 left-0 right-0 h-8 flex items-center justify-between px-4 z-50 font-bold text-sm pointer-events-none transition-colors duration-500 ${textColorClass}`}>
             <div
-                className="flex items-center gap-2 hover:bg-black/5 px-2 py-1 rounded-md transition-colors cursor-pointer pointer-events-auto active:scale-95"
+                className={`flex items-center gap-2 px-2 py-1 rounded-md transition-colors cursor-pointer pointer-events-auto active:scale-95 ${hoverClass}`}
                 onClick={handleClickUser}
             >
-                <div className="w-5 h-5 rounded-full bg-black/10 flex items-center justify-center">
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center ${isWhite ? 'bg-white/20' : 'bg-black/10'}`}>
                     {currentUser?.avatar ? (
                         <img src={currentUser.avatar} alt="" className="w-full h-full rounded-full object-cover" />
                     ) : (
-                        <div className="w-2.5 h-2.5 bg-black/40 rounded-full" />
+                        <div className={`w-2.5 h-2.5 rounded-full ${isWhite ? 'bg-white/60' : 'bg-black/40'}`} />
                     )}
                 </div>
                 <span>{currentUser?.displayName || 'Administrator'}</span>

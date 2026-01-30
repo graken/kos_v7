@@ -39,17 +39,22 @@ model User {
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
   avatar      String?
+  password    String?
   memos       Memo[]
   preferences UserPreference?
 }
 
 model UserPreference {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  apps        String
-  permissions String   @default("{}")
-  updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  apps             String
+  permissions      String   @default("{}")
+  wallpaper        String?  @default("radial-gradient(circle_at_top,_#f3f4f6_0%,_#d1d5db_100%)")
+  desktopTextColor String?  @default("black")
+  iconBgColor      String?  @default("white")
+  iconGlyphColor   String?  @default("blue-600")
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Memo {
@@ -134,25 +139,36 @@ model ShinsungRecord {
 }
 
 model WorkPlan {
-  id            String   @id @default(cuid())
-  planDate      DateTime
-  duration      Int      @default(60) // 작업 시간 (분)
-  order         Int      @default(0)  // 정렬 순서
-  customer      String?  @default("")
-  inputProduct  String?  @default("")
-  outputProduct String?  @default("")
-  outputSize    String?  @default("")
-  outputWidth   String?  @default("")
-  outputLength  String?  @default("")
-  machineName   String?  @default("")
-  processType   String?  @default("")
-  adhesive      String?  @default("")
-  mixingRatio   String?  @default("{}") // JSON string for mixing ratio
-  mesh          String?  @default("")
-  speed         String?  @default("")
-  note          String?  @default("")
-  importantNotice String? @default("")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              String   @id @default(cuid())
+  planDate        DateTime
+  duration        Int      @default(60)
+  order           Int      @default(0)
+  customer        String?  @default("")
+  inputProduct    String?  @default("")
+  outputProduct   String?  @default("")
+  outputSize      String?  @default("")
+  outputWidth     String?  @default("")
+  outputLength    String?  @default("")
+  machineName     String?  @default("")
+  processType     String?  @default("")
+  adhesive        String?  @default("")
+  mixingRatio     String?  @default("{}")
+  mesh            String?  @default("")
+  speed           String?  @default("")
+  note            String?  @default("")
+  importantNotice String?  @default("")
+  createdAt       DateTime @default(now())
 }
 
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String
+  username  String
+  action    String
+  appId     String?
+  appName   String?
+  targetId  String?
+  details   String?
+  ip        String?
+  createdAt DateTime @default(now())
+}

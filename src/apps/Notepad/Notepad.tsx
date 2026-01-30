@@ -42,7 +42,7 @@ interface Memo {
 }
 
 export default function Notepad() {
-    const { currentUser, checkPermission } = useOSStore();
+    const { currentUser, checkPermission, logActivity } = useOSStore();
     const canCreate = checkPermission('notepad', 'create');
     const canEdit = checkPermission('notepad', 'edit');
     const canDelete = checkPermission('notepad', 'delete');
@@ -304,6 +304,7 @@ export default function Notepad() {
                 })
             });
             const newMemo = await res.json();
+            logActivity('CREATE_RECORD', 'notepad', '메모장', newMemo.id, { title: newMemo.title });
             setMemos([newMemo, ...memos]);
             setSelectedMemoId(newMemo.id);
         } catch (error) {
@@ -329,6 +330,7 @@ export default function Notepad() {
                 })
             });
             const updated = await res.json();
+            logActivity('UPDATE_RECORD', 'notepad', '메모장', updated.id, { title: updated.title });
 
             // Update local state without losing focus
             setMemos(prev => prev.map(m => m.id === updated.id ? updated : m));
@@ -347,6 +349,7 @@ export default function Notepad() {
         if (!confirm('메모를 삭제하시겠습니까?')) return;
         try {
             await fetch(`/api/memos/${id}`, { method: 'DELETE' });
+            logActivity('DELETE_RECORD', 'notepad', '메모장', id);
             setMemos(memos.filter(m => m.id !== id));
             if (selectedMemoId === id) setSelectedMemoId(null);
         } catch (error) {

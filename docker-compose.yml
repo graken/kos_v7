@@ -1,14 +1,13 @@
-# version: 1.0.2
 services:
-  kos_app:
+  kos-v7:
     build: .
-    container_name: kos_app
+    container_name: kos-v7
     ports:
       - "3000:3000"
     volumes:
-      - ./prisma:/app/prisma
+      - ./prisma/dev.db:/app/prisma/dev.db
       - ./public/uploads:/app/public/uploads
     environment:
-      - DATABASE_URL=file:/app/prisma/dev.db
-      - NODE_ENV=production
+      - DATABASE_URL=file:./dev.db
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     restart: always

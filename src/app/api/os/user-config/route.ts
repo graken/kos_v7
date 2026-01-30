@@ -12,13 +12,20 @@ export async function GET(request: Request) {
     try {
         const preference = await prisma.userPreference.findUnique({
             where: { userId }
-        });
+        }) as any;
 
         if (!preference) {
             return NextResponse.json({ apps: null });
         }
 
-        return NextResponse.json({ apps: JSON.parse(preference.apps) });
+        return NextResponse.json({
+            apps: JSON.parse(preference.apps),
+            permissions: JSON.parse(preference.permissions || '{}'),
+            wallpaper: preference.wallpaper,
+            desktopTextColor: preference.desktopTextColor,
+            iconBgColor: preference.iconBgColor,
+            iconGlyphColor: preference.iconGlyphColor,
+        });
     } catch (error: any) {
         console.error('Failed to fetch user config:', error.message);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -27,14 +34,14 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
     try {
-        const { userId, apps } = await request.json();
+        const { userId, apps, wallpaper, desktopTextColor, iconBgColor, iconGlyphColor } = await request.json();
 
         if (!userId) {
             return NextResponse.json({ error: 'UserId is required' }, { status: 400 });
         }
 
         // 사용자가 존재하는지 먼저 확인하거나 없으면 생성 (데모 환경 고려)
-        await prisma.user.upsert({
+        await (prisma.user.upsert as any)({
             where: { id: userId },
             update: {},
             create: {
@@ -45,10 +52,23 @@ export async function POST(request: Request) {
             }
         });
 
-        await prisma.userPreference.upsert({
+        await (prisma.userPreference.upsert as any)({
             where: { userId },
-            update: { apps: JSON.stringify(apps) },
-            create: { userId, apps: JSON.stringify(apps) }
+            update: {
+                apps: JSON.stringify(apps),
+                wallpaper,
+                desktopTextColor,
+                iconBgColor,
+                iconGlyphColor
+            },
+            create: {
+                userId,
+                apps: JSON.stringify(apps),
+                wallpaper,
+                desktopTextColor,
+                iconBgColor,
+                iconGlyphColor
+            }
         });
 
         return NextResponse.json({ success: true });

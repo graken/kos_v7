@@ -221,7 +221,7 @@ const WorkPlan = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [slotHeight, setSlotHeight] = useState(72);
     const [showAll, setShowAll] = useState(false);
-    const { currentUser, pushBackAction, popBackAction, checkPermission } = useOSStore();
+    const { currentUser, pushBackAction, popBackAction, checkPermission, logActivity } = useOSStore();
     const canCreate = checkPermission('work-plan', 'create');
     const canEdit = checkPermission('work-plan', 'edit');
     const canDelete = checkPermission('work-plan', 'delete');
@@ -429,6 +429,10 @@ const WorkPlan = () => {
             });
 
             if (res.ok) {
+                const data = await res.json();
+                const logAction = formData.id ? 'UPDATE_RECORD' : 'CREATE_RECORD';
+                logActivity(logAction, 'work-plan', '작업계획서', data.id || formData.id, { outputProduct: formData.outputProduct });
+
                 console.log('Save successful');
                 setIsModalOpen(false);
                 setFormData(INITIAL_FORM);
@@ -455,6 +459,7 @@ const WorkPlan = () => {
         try {
             const res = await fetch(`/api/work-plans/${id}`, { method: 'DELETE' });
             if (res.ok) {
+                logActivity('DELETE_RECORD', 'work-plan', '작업계획서', id);
                 setIsDetailOpen(false);
                 fetchPlans();
             }
@@ -581,6 +586,9 @@ const WorkPlan = () => {
             );
             const results = await Promise.all(updates);
             if (results.some(r => !r.ok)) throw new Error('Some updates failed');
+
+            logActivity('UPDATE_RECORD_ORDER', 'work-plan', '작업계획서', activeId, { description: 'Drag and drop reorder' });
+
             console.log('Drag and drop sync successful');
         } catch (error) {
             console.error('Drag sync failed', error);

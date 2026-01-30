@@ -37,6 +37,20 @@ export interface GridSettings {
   gapY: number;
 }
 
+export interface ThemeSettings {
+  wallpaper: string;
+  desktopTextColor: string;
+  iconBgColor: string;
+  iconGlyphColor: string;
+}
+
+const DEFAULT_THEME_SETTINGS: ThemeSettings = {
+  wallpaper: "radial-gradient(circle at top, #f3f4f6 0%, #d1d5db 100%)",
+  desktopTextColor: "black",
+  iconBgColor: "white",
+  iconGlyphColor: "blue-600",
+};
+
 const DEFAULT_DESKTOP_GRID_SETTINGS: GridSettings = {
   iconSize: 120,
   gapX: 64,
@@ -82,6 +96,10 @@ interface OSState {
     items: ContextMenuItem[];
   };
   currentUser: User | null;
+  wallpaper: string;
+  desktopTextColor: string;
+  iconBgColor: string;
+  iconGlyphColor: string;
   editingAppId: string | null;
   hasHydrated: boolean;
   backStack: { id: string; action: () => void }[];
@@ -111,6 +129,8 @@ interface OSState {
   popBackAction: (id: string) => void;
   triggerBackAction: () => boolean; // Boolean indicates if an action was handled
   checkPermission: (appId: string, permissionId: string) => boolean;
+  logActivity: (action: string, appId?: string, appName?: string, targetId?: string, details?: any) => Promise<void>;
+  updateTheme: (theme: Partial<ThemeSettings>) => void;
 }
 
 const INITIAL_APPS: AppData[] = [
@@ -139,14 +159,14 @@ const INITIAL_APPS: AppData[] = [
   { id: 'work-plan', name: '작업계획서', iconName: 'Calendar' },
 ];
 
-export const INSTALLED_APP_IDS = ['browser', 'files', 'photos', 'messages', 'mail', 'settings', 'calculator', 'coating-control', 'gravure-coating', 'roll-calculator', 'equipment-maintenance', 'user-manager', 'notepad', 'shinsung-data', 'work-plan'];
+export const INSTALLED_APP_IDS = ['browser', 'files', 'photos', 'messages', 'mail', 'settings', 'calculator', 'coating-control', 'gravure-coating', 'roll-calculator', 'equipment-maintenance', 'user-manager', 'notepad', 'shinsung-data', 'work-plan', 'system-logs'];
 
 const ADMIN_USER: User = {
   id: 'admin-1',
   username: 'admin',
   displayName: 'Administrator',
   role: 'admin',
-  apps: INITIAL_APPS,
+  apps: [...INITIAL_APPS, { id: 'system-logs', name: '시스템 로그', iconName: 'Terminal' }],
   permissions: {
     'equipment-maintenance': { delete: true, complete: true }
   }
@@ -154,15 +174,15 @@ const ADMIN_USER: User = {
 
 const STATUS_BAR_HEIGHT = 32;
 
-const syncUserAppsToServer = async (userId: string, apps: AppData[]) => {
+const syncUserAppsToServer = async (userId: string, apps: AppData[], theme?: Partial<ThemeSettings>) => {
   try {
     await fetch('/api/os/user-config', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, apps }),
+      body: JSON.stringify({ userId, apps, ...theme }),
     });
   } catch (error) {
-    console.error('Failed to sync user apps to server:', error);
+    console.error('Failed to sync user apps/theme to server:', error);
   }
 };
 
@@ -182,7 +202,11 @@ export const useOSStore = create<OSState>()(
         y: 0,
         items: [],
       },
-      currentUser: ADMIN_USER,
+      currentUser: null,
+      wallpaper: DEFAULT_THEME_SETTINGS.wallpaper,
+      desktopTextColor: DEFAULT_THEME_SETTINGS.desktopTextColor,
+      iconBgColor: DEFAULT_THEME_SETTINGS.iconBgColor,
+      iconGlyphColor: DEFAULT_THEME_SETTINGS.iconGlyphColor,
       editingAppId: null,
       hasHydrated: false,
       backStack: [],
@@ -216,69 +240,80 @@ export const useOSStore = create<OSState>()(
         return { apps: newApps };
       }),
 
-      openApp: (appId) => set((state) => {
-        const app = state.apps.find(a => a.id === appId);
-        const registryApp = APP_REGISTRY[appId];
+      openApp: (appId) => {
+        const { currentUser, logActivity } = get();
+        const appName = APP_REGISTRY[appId]?.name || appId;
+        logActivity('OPEN_APP', appId, appName);
 
-        if (!app && !registryApp) return state;
+        set((state) => {
+          const app = state.apps.find(a => a.id === appId);
+          const registryApp = APP_REGISTRY[appId];
 
-        if (state.windows[appId]) {
+          if (!app && !registryApp) return state;
+
+          if (state.windows[appId]) {
+            const newZIndex = state.maxZIndex + 1;
+            return {
+              windows: {
+                ...state.windows,
+                [appId]: { ...state.windows[appId], isMinimized: false, zIndex: newZIndex }
+              },
+              focusedWindowId: appId,
+              maxZIndex: newZIndex,
+              contextMenu: { ...state.contextMenu, isOpen: false }
+            };
+          }
+
           const newZIndex = state.maxZIndex + 1;
+          const offset = Object.keys(state.windows).length * 30;
+
+          // 창이 처음 열릴 때 브라우저 히스토리에 상태 추가 (백버튼으로 닫기 위해)
+          if (typeof window !== 'undefined') {
+            window.history.pushState({ isWindowAction: true, appId }, '');
+          }
+
+          // 레지스트리에 정의된 설정을 우선적으로 사용 (localStorage의 오래된 데이터 방지)
+          const config: WindowConfig = registryApp?.config || app?.windowConfig || DEFAULT_WINDOW_CONFIG;
+          const title = app?.name || registryApp?.name || appId;
+
           return {
             windows: {
               ...state.windows,
-              [appId]: { ...state.windows[appId], isMinimized: false, zIndex: newZIndex }
+              [appId]: {
+                id: appId,
+                title: title,
+                isOpen: true,
+                isMinimized: false,
+                isMaximized: false,
+                zIndex: newZIndex,
+                x: 100 + offset,
+                y: 100 + offset + STATUS_BAR_HEIGHT,
+                width: config.defaultWidth,
+                height: config.defaultHeight,
+                config: config
+              }
             },
             focusedWindowId: appId,
             maxZIndex: newZIndex,
             contextMenu: { ...state.contextMenu, isOpen: false }
           };
-        }
+        });
+      },
 
-        const newZIndex = state.maxZIndex + 1;
-        const offset = Object.keys(state.windows).length * 30;
+      closeApp: (appId) => {
+        const { logActivity } = get();
+        logActivity('CLOSE_APP', appId);
 
-        // 창이 처음 열릴 때 브라우저 히스토리에 상태 추가 (백버튼으로 닫기 위해)
-        if (typeof window !== 'undefined') {
-          window.history.pushState({ isWindowAction: true, appId }, '');
-        }
-
-        // 레지스트리에 정의된 설정을 우선적으로 사용 (localStorage의 오래된 데이터 방지)
-        const config: WindowConfig = registryApp?.config || app?.windowConfig || DEFAULT_WINDOW_CONFIG;
-        const title = app?.name || registryApp?.name || appId;
-
-        return {
-          windows: {
-            ...state.windows,
-            [appId]: {
-              id: appId,
-              title: title,
-              isOpen: true,
-              isMinimized: false,
-              isMaximized: false,
-              zIndex: newZIndex,
-              x: 100 + offset,
-              y: 100 + offset + STATUS_BAR_HEIGHT,
-              width: config.defaultWidth,
-              height: config.defaultHeight,
-              config: config
-            }
-          },
-          focusedWindowId: appId,
-          maxZIndex: newZIndex,
-          contextMenu: { ...state.contextMenu, isOpen: false }
-        };
-      }),
-
-      closeApp: (appId) => set((state) => {
-        const newWindows = { ...state.windows };
-        delete newWindows[appId];
-        return {
-          windows: newWindows,
-          focusedWindowId: state.focusedWindowId === appId ? null : state.focusedWindowId,
-          contextMenu: { ...state.contextMenu, isOpen: false }
-        };
-      }),
+        set((state) => {
+          const newWindows = { ...state.windows };
+          delete newWindows[appId];
+          return {
+            windows: newWindows,
+            focusedWindowId: state.focusedWindowId === appId ? null : state.focusedWindowId,
+            contextMenu: { ...state.contextMenu, isOpen: false }
+          };
+        });
+      },
 
       focusApp: (appId) => set((state) => {
         const win = state.windows[appId];
@@ -379,16 +414,35 @@ export const useOSStore = create<OSState>()(
       })),
 
       setCurrentUser: (user) => set({ currentUser: user }),
-      switchUser: async (user) => {
-        set({ currentUser: user, windows: {}, focusedWindowId: null });
+      switchUser: async (user: any) => {
+        set({
+          currentUser: user,
+          windows: {},
+          focusedWindowId: null,
+          apps: user.apps || INITIAL_APPS,
+          wallpaper: user.wallpaper || DEFAULT_THEME_SETTINGS.wallpaper,
+          desktopTextColor: user.desktopTextColor || DEFAULT_THEME_SETTINGS.desktopTextColor,
+          iconBgColor: user.iconBgColor || DEFAULT_THEME_SETTINGS.iconBgColor,
+          iconGlyphColor: user.iconGlyphColor || DEFAULT_THEME_SETTINGS.iconGlyphColor,
+        });
+
         try {
+          // 상세 설정을 서버에서 한 번 더 가져와서 정합성 확인 (필요한 경우)
           const response = await fetch(`/api/os/user-config?userId=${user.id}`);
           const data = await response.json();
-          if (data.apps && Array.isArray(data.apps)) {
-            set({ apps: data.apps });
+
+          const updates: any = {};
+          if (data.apps && Array.isArray(data.apps)) updates.apps = data.apps;
+          if (data.wallpaper) updates.wallpaper = data.wallpaper;
+          if (data.desktopTextColor) updates.desktopTextColor = data.desktopTextColor;
+          if (data.iconBgColor) updates.iconBgColor = data.iconBgColor;
+          if (data.iconGlyphColor) updates.iconGlyphColor = data.iconGlyphColor;
+
+          if (Object.keys(updates).length > 0) {
+            set(updates);
           }
         } catch (err) {
-          console.error('Failed to switch user config:', err);
+          console.error('Failed to sync user config during switch:', err);
         }
       },
       setEditingAppId: (appId) => set({ editingAppId: appId }),
@@ -462,16 +516,56 @@ export const useOSStore = create<OSState>()(
         if (currentUser.role === 'admin') return true;
         return !!currentUser.permissions?.[appId]?.[permissionId];
       },
+
+      logActivity: async (action, appId, appName, targetId, details) => {
+        const { currentUser } = get();
+        if (!currentUser) return;
+
+        try {
+          fetch('/api/logs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: currentUser.id,
+              username: currentUser.username,
+              action,
+              appId,
+              appName,
+              targetId,
+              details,
+            }),
+          });
+        } catch (error) {
+          console.error('Failed to send activity log:', error);
+        }
+      },
+
+      updateTheme: (theme) => set((state) => {
+        const newState = { ...state, ...theme };
+        if (state.currentUser) {
+          syncUserAppsToServer(state.currentUser.id, state.apps, {
+            wallpaper: newState.wallpaper,
+            desktopTextColor: newState.desktopTextColor,
+            iconBgColor: newState.iconBgColor,
+            iconGlyphColor: newState.iconGlyphColor,
+          });
+        }
+        return theme;
+      }),
     }),
     {
       name: 'kos-v7-storage',
-      version: 1, // 버전업을 통한 저장소 초기화 및 동기화 무결성 확보
+      version: 2, // 버전 상향을 통해 기존 로컬스토리지 강제 초기화 (로그인 화면 강제 노출)
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         apps: state.apps,
         desktopGridSettings: state.desktopGridSettings,
         mobileGridSettings: state.mobileGridSettings,
         currentUser: state.currentUser,
+        wallpaper: state.wallpaper,
+        desktopTextColor: state.desktopTextColor,
+        iconBgColor: state.iconBgColor,
+        iconGlyphColor: state.iconGlyphColor,
       }),
       onRehydrateStorage: (state) => {
         return async (rehydratedState, error) => {
@@ -487,12 +581,23 @@ export const useOSStore = create<OSState>()(
               const response = await fetch(`/api/os/user-config?userId=${currentUser.id}`);
               const data = await response.json();
 
+              const updates: any = {};
               if (data.apps && Array.isArray(data.apps) && data.apps.length > 0) {
-                // 서버 설정이 있으면 서버 데이터를 우선 적용
-                useOSStore.setState({ apps: data.apps });
-              } else if (rehydratedState.apps && rehydratedState.apps.length > 0) {
-                // 서버에 설정이 없으면 현재 상태를 서버에 시딩(Seeding)
-                await syncUserAppsToServer(currentUser.id, rehydratedState.apps);
+                updates.apps = data.apps;
+              }
+              if (data.permissions) {
+                updates.currentUser = {
+                  ...currentUser,
+                  permissions: data.permissions
+                };
+              }
+              if (data.wallpaper) updates.wallpaper = data.wallpaper;
+              if (data.desktopTextColor) updates.desktopTextColor = data.desktopTextColor;
+              if (data.iconBgColor) updates.iconBgColor = data.iconBgColor;
+              if (data.iconGlyphColor) updates.iconGlyphColor = data.iconGlyphColor;
+
+              if (Object.keys(updates).length > 0) {
+                useOSStore.setState(updates);
               }
             } catch (err) {
               console.error('Failed to sync user config during hydration:', err);

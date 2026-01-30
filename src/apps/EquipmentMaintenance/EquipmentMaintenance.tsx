@@ -145,11 +145,12 @@ export default function EquipmentMaintenance() {
 
     const isMobile = containerWidth > 0 && containerWidth < 1024;
 
-    const { currentUser, pushBackAction, popBackAction, checkPermission } = useOSStore();
+    const { currentUser, pushBackAction, popBackAction, checkPermission, logActivity } = useOSStore();
     const canCreate = checkPermission('equipment-maintenance', 'create');
     const canEdit = checkPermission('equipment-maintenance', 'edit');
     const canDelete = checkPermission('equipment-maintenance', 'delete');
     const canComplete = checkPermission('equipment-maintenance', 'complete');
+    const canExport = checkPermission('equipment-maintenance', 'export');
 
     const handleDelete = async (e: React.MouseEvent, id: number) => {
         e.stopPropagation();
@@ -160,6 +161,7 @@ export default function EquipmentMaintenance() {
         if (!confirm('정말로 삭제하시겠습니까?')) return;
         try {
             await fetch(`/api/maintenance?id=${id}`, { method: 'DELETE' });
+            logActivity('DELETE_RECORD', 'equipment-maintenance', '설비점검이력', id.toString());
             fetchRecords();
         } catch (err) {
             console.error('Delete error:', err);
@@ -241,13 +243,15 @@ export default function EquipmentMaintenance() {
                         <span>미완료만 보기</span>
                     </div>
 
-                    <button
-                        onClick={handleExportExcel}
-                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition-all shadow-lg shadow-emerald-200"
-                    >
-                        <Download size={18} />
-                        Excel 전송
-                    </button>
+                    {canExport && (
+                        <button
+                            onClick={handleExportExcel}
+                            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center gap-2 font-bold text-sm transition-all shadow-lg shadow-emerald-200"
+                        >
+                            <Download size={18} />
+                            Excel 전송
+                        </button>
+                    )}
 
                     <div className="relative">
                         <input
@@ -674,6 +678,12 @@ function MaintenanceModal({ onClose, onSuccess, editData, isMobile, canComplete 
                 const errorData = await res.json();
                 throw new Error(errorData.details || errorData.error || 'Failed to register');
             }
+
+            const data = await res.json();
+            const action = editData ? 'UPDATE_RECORD' : 'CREATE_RECORD';
+            const logId = data.id || editData?.id;
+            const { logActivity } = useOSStore.getState();
+            logActivity(action, 'equipment-maintenance', '설비점검이력', logId?.toString(), { equipmentName: formData.equipmentName });
 
             onSuccess();
         } catch (err) {

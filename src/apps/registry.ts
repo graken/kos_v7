@@ -58,7 +58,8 @@ export const APP_REGISTRY: Record<string, AppDefinition> = {
             { id: 'edit', name: '기록 수정 권한', description: '이미 저장된 측정 기록의 수치를 변경할 수 있습니다.' },
             { id: 'delete', name: '기록 삭제 권한', description: '저장된 측정 기록을 삭제할 수 있습니다.' },
             { id: 'save', name: '데이터 확정 권한', description: '수정된 데이터를 최종적으로 확정 저장합니다.' },
-            { id: 'photo', name: '사진 촬영 권한', description: '측정표 사진을 직접 업로드하거나 붙여넣을 수 있습니다.' }
+            { id: 'photo', name: '사진 촬영 권한', description: '측정표 사진을 직접 업로드하거나 붙여넣을 수 있습니다.' },
+            { id: 'export', name: '엑셀 내보내기', description: '데이터를 엑셀 파일(.xlsx)로 추출하여 PC로 저장할 수 있습니다.' }
         ]
     },
     'gravure-coating': {
@@ -99,7 +100,8 @@ export const APP_REGISTRY: Record<string, AppDefinition> = {
             { id: 'create', name: '점검 이력 작성', description: '새로운 설비 점검 일지를 작성하고 등록할 수 있습니다.' },
             { id: 'edit', name: '점검 기록 수정', description: '작성된 점검 기록의 내용을 변경할 수 있습니다.' },
             { id: 'delete', name: '점검 기록 삭제', description: '점검 기록을 영구적으로 삭제할 수 있습니다.' },
-            { id: 'complete', name: '점검 완료 처리', description: '점검 상태를 "완료"로 변경할 수 있는 권한입니다.' }
+            { id: 'complete', name: '점검 완료 처리', description: '점검 상태를 "완료"로 변경할 수 있는 권한입니다.' },
+            { id: 'export', name: '엑셀 내보내기', description: '데이터를 엑셀 파일(.xlsx)로 추출하여 PC로 저장할 수 있습니다.' }
         ]
     },
     'user-manager': {
@@ -139,7 +141,8 @@ export const APP_REGISTRY: Record<string, AppDefinition> = {
         permissions: [
             { id: 'create', name: '데이터 등록 권한', description: 'OCR 분석 결과를 최종 데이터로 등록할 수 있습니다.' },
             { id: 'edit', name: '데이터 수정 권한', description: '등록된 데이터의 상세 수치를 수정할 수 있습니다.' },
-            { id: 'delete', name: '데이터 삭제 권한', description: '저장된 신성데이터 기록을 삭제할 수 있습니다.' }
+            { id: 'delete', name: '데이터 삭제 권한', description: '저장된 신성데이터 기록을 삭제할 수 있습니다.' },
+            { id: 'export', name: '엑셀 내보내기', description: '데이터를 엑셀 파일(.xlsx)로 추출하여 PC로 저장할 수 있습니다.' }
         ]
     },
     'work-plan': {
@@ -158,6 +161,16 @@ export const APP_REGISTRY: Record<string, AppDefinition> = {
             { id: 'save', name: '전체 일정 저장', description: '변경된 순서나 일정을 서버와 최종 동기화합니다.' },
             { id: 'delete_record', name: '일정 영구 삭제', description: '휴지통 이동 대신 기록을 영구적으로 제거할 수 있습니다.' }
         ]
+    },
+    'system-logs': {
+        component: dynamic(() => import('@/apps/SystemLogs/SystemLogs')),
+        config: {
+            defaultWidth: 1200,
+            defaultHeight: 800,
+            resizable: true,
+            maximizable: true
+        },
+        name: '시스템 로그'
     }
 };
 

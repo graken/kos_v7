@@ -30,7 +30,19 @@ export default function AppIcon({
     onDragEnd,
     onClick
 }: AppIconProps) {
-    const { desktopGridSettings, mobileGridSettings, showContextMenu, openApp, removeApp, updateApp, setEditingAppId, apps } = useOSStore();
+    const {
+        desktopGridSettings,
+        mobileGridSettings,
+        showContextMenu,
+        openApp,
+        removeApp,
+        updateApp,
+        setEditingAppId,
+        apps,
+        desktopTextColor,
+        iconBgColor,
+        iconGlyphColor
+    } = useOSStore();
     const { isMobile } = useDevice();
     const gridSettings = isMobile ? mobileGridSettings : desktopGridSettings;
 
@@ -56,6 +68,35 @@ export default function AppIcon({
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'move';
+    };
+
+    // 테마 컬러 매핑 (Tailwind 클래스 대응)
+    const getTextColorClass = () => {
+        if (desktopTextColor === 'white') return 'text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.5)]';
+        return 'text-black/80';
+    };
+
+    const getIconBgStyle = () => {
+        const isHex = iconBgColor?.startsWith('#') || iconBgColor?.startsWith('rgb');
+        // Tailwind 색상명인 경우 인라인 스타일로 처리하지 않음 (클래스로 처리)
+        if (!isHex && iconBgColor && !iconBgColor.includes('-')) {
+            return { backgroundColor: iconBgColor }; // 'white', 'black' 등 처리
+        }
+        if (isHex) return { backgroundColor: iconBgColor };
+        return {};
+    };
+
+    const getIconGlyphStyle = () => {
+        const isHex = iconGlyphColor?.startsWith('#') || iconGlyphColor?.startsWith('rgb');
+        if (isHex) return { color: iconGlyphColor };
+        return {};
+    };
+
+    const getIconGlyphClass = () => {
+        const isHex = iconGlyphColor?.startsWith('#') || iconGlyphColor?.startsWith('rgb');
+        if (isHex) return '';
+        if (iconGlyphColor?.startsWith('text-')) return iconGlyphColor;
+        return `text-${iconGlyphColor || 'blue-600'}`;
     };
 
     return (
@@ -84,14 +125,24 @@ export default function AppIcon({
             className={`flex flex-col items-center cursor-grab active:cursor-grabbing group transition-colors relative focus:outline-none ${isDragging ? 'bg-black/5' : ''}`}
             style={{
                 width: `${gridSettings.iconSize + 8}px`,
-                height: `${gridSettings.iconSize + 8}px` // 아이콘 상자 크기에 맞춰 고정
+                height: `${gridSettings.iconSize + 8}px`
             }}
         >
             <div
-                className="relative glass rounded-2xl flex items-center justify-center text-black/70 shadow-lg pointer-events-none transition-shadow group-hover:shadow-black/10 mt-1"
-                style={{ width: `${gridSettings.iconSize}px`, height: `${gridSettings.iconSize}px` }}
+                className={`relative rounded-2xl flex items-center justify-center shadow-lg pointer-events-none transition-all group-hover:shadow-black/10 mt-1 backdrop-blur-md ${iconBgColor?.startsWith('#') ? '' : `bg-${iconBgColor || 'white'}/80`}`}
+                style={{
+                    width: `${gridSettings.iconSize}px`,
+                    height: `${gridSettings.iconSize}px`,
+                    ...getIconBgStyle()
+                }}
             >
-                <div style={{ transform: `scale(${gridSettings.iconSize / 80})` }} className="flex items-center justify-center">
+                <div
+                    style={{
+                        transform: `scale(${gridSettings.iconSize / 80})`,
+                        ...getIconGlyphStyle()
+                    }}
+                    className={`flex items-center justify-center transition-colors ${getIconGlyphClass()}`}
+                >
                     {icon}
                 </div>
                 {isActive && (
@@ -99,8 +150,7 @@ export default function AppIcon({
                 )}
             </div>
 
-            {/* 라벨을 절대 위치로 배치하여 그리드 정렬에 영향을 주지 않게 함 */}
-            <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 text-black/80 text-xs md:text-sm font-bold drop-shadow-sm text-center pointer-events-none whitespace-nowrap">
+            <span className={`absolute top-full mt-2 left-1/2 -translate-x-1/2 text-xs md:text-sm font-bold text-center pointer-events-none whitespace-nowrap transition-colors ${getTextColorClass()}`}>
                 {name}
             </span>
         </motion.div>

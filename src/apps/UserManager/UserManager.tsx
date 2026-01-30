@@ -9,7 +9,7 @@ import {
     Users, Plus, Search, Shield, User as UserIcon,
     Check, X, ChevronRight, Settings, Trash2, Loader2,
     Lock, Smartphone, Laptop, Globe, Folder, Image as ImageIcon,
-    MessageSquare, Mail, Calculator, Activity, Droplets, Users as UsersIcon, Calendar, Info
+    MessageSquare, Mail, Calculator, Activity, Droplets, Users as UsersIcon, Calendar, Info, Terminal
 } from 'lucide-react';
 
 const ICON_MAP: Record<string, any> = {
@@ -24,6 +24,7 @@ const ICON_MAP: Record<string, any> = {
     Droplets: <Droplets size={20} />,
     Users: <UsersIcon size={20} />,
     Calendar: <Calendar size={20} />,
+    Terminal: <Terminal size={20} />,
 };
 
 export default function UserManager() {
@@ -99,6 +100,31 @@ export default function UserManager() {
             }
         } catch (err) {
             console.error('Delete failed:', err);
+            alert('오류가 발생했습니다.');
+        }
+    };
+
+    const handleResetPassword = async (targetUserId: string, displayName: string) => {
+        if (!currentUser) return;
+        if (!confirm(`${displayName} 사용자의 비밀번호를 '1234'로 초기화하시겠습니까?`)) return;
+
+        try {
+            const res = await fetch('/api/users/reset-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    targetUserId,
+                    adminUserId: currentUser.id
+                })
+            });
+            if (res.ok) {
+                alert('비밀번호가 1234로 초기화되었습니다.');
+            } else {
+                const data = await res.json();
+                alert(data.error || '초기화에 실패했습니다.');
+            }
+        } catch (err) {
+            console.error('Reset failed:', err);
             alert('오류가 발생했습니다.');
         }
     };
@@ -204,6 +230,13 @@ export default function UserManager() {
                                 >
                                     설정 변경
                                 </button>
+                                <button
+                                    onClick={() => handleResetPassword(user.id, user.displayName)}
+                                    className="px-4 py-3 bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-blue-500 rounded-2xl transition-all"
+                                    title="비밀번호 초기화"
+                                >
+                                    <Lock size={18} />
+                                </button>
                                 {user.username !== 'admin' && user.role !== 'admin' && (
                                     <button
                                         onClick={() => handleDeleteUser(user.id, user.username)}
@@ -260,8 +293,8 @@ function UserEditModal({ user, onClose, onSave }: { user: User | null, onClose: 
                 animate={{ y: 0, opacity: 1, scale: 1 }}
                 exit={isMobile ? { y: '100%', opacity: 0, scale: 1 } : { scale: 0.95, opacity: 0, y: 20 }}
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className={`relative bg-white w-full ${isMobile ? 'h-full rounded-none' : 'max-w-6xl rounded-[40px] h-[85vh] min-h-[500px] min-w-[700px]'} shadow-2xl flex flex-col`}
-                style={!isMobile ? { resize: 'both', overflow: 'hidden' } : {}}
+                className={`relative bg-white w-full ${isMobile ? 'h-full rounded-none' : 'max-w-[98%] max-h-[98%] rounded-[40px] shadow-2xl flex flex-col'}`}
+                style={!isMobile ? { resize: 'both', overflow: 'hidden', width: 'min(1000px, 95%)', height: 'min(800px, 90%)' } : {}}
             >
                 <div className={`${isMobile ? 'px-6 py-4' : 'px-8 py-6'} border-b border-slate-100 flex items-center justify-between shrink-0`}>
                     <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-black text-slate-900`}>{user ? (isMobile ? '기본 정보' : '사용자 정보 수정') : '신규 사용자 추가'}</h2>
@@ -287,7 +320,7 @@ function UserEditModal({ user, onClose, onSave }: { user: User | null, onClose: 
                     ))}
                 </div>
 
-                <div className={`flex-1 overflow-y-auto ${isMobile ? 'p-6' : 'p-8'} custom-scrollbar`}>
+                <div className={`flex-1 overflow-y-auto ${isMobile ? 'p-6' : 'p-4 md:p-8'} custom-scrollbar`}>
                     {activeTab === 'info' && (
                         <div className="space-y-6">
                             <div className="grid grid-cols-2 gap-6">
@@ -329,7 +362,7 @@ function UserEditModal({ user, onClose, onSave }: { user: User | null, onClose: 
                     )}
 
                     {activeTab === 'apps' && (
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {Object.entries(APP_REGISTRY).map(([id, app]) => {
                                 const isInstalled = formData.apps.some(a => a.id === id);
                                 return (
@@ -371,7 +404,7 @@ function UserEditModal({ user, onClose, onSave }: { user: User | null, onClose: 
                                     </div>
                                 </div>
                             )}
-                            <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-6'}`}>
+                            <div className={`grid ${isMobile ? 'grid-cols-1 gap-4' : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6'}`}>
                                 {formData.apps.map((app) => {
                                     const registryApp = APP_REGISTRY[app.id];
                                     const appPermissions = registryApp?.permissions || [

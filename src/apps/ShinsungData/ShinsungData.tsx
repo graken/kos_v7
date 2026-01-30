@@ -70,10 +70,11 @@ export default function ShinsungData() {
     const observerRef = useRef<ResizeObserver | null>(null);
     const loadMoreRef = useRef<HTMLDivElement>(null);
 
-    const { currentUser, pushBackAction, popBackAction, checkPermission } = useOSStore();
+    const { currentUser, pushBackAction, popBackAction, checkPermission, logActivity } = useOSStore();
     const canCreate = checkPermission('shinsung-data', 'create');
     const canEdit = checkPermission('shinsung-data', 'edit');
     const canDelete = checkPermission('shinsung-data', 'delete');
+    const canExport = checkPermission('shinsung-data', 'export');
 
     useEffect(() => {
         if (selectedImage) {
@@ -394,6 +395,7 @@ export default function ShinsungData() {
             });
             const data = await res.json();
             if (data.id) {
+                logActivity('CREATE_RECORD', 'shinsung-data', '신성데이터', data.id, { productId: finalProductId });
                 alert('저장되었습니다.');
                 resetForm();
                 if (isDesktop) {
@@ -456,6 +458,7 @@ export default function ShinsungData() {
             });
             const data = await res.json();
             if (data.id) {
+                logActivity('UPDATE_RECORD', 'shinsung-data', '신성데이터', data.id, { productId: finalProductId });
                 alert('수정되었습니다.');
                 setRecords(prev => prev.map(r => r.id === data.id ? data : r));
                 resetForm();
@@ -678,6 +681,7 @@ export default function ShinsungData() {
         if (!confirm('삭제하시겠습니까?')) return;
         try {
             await fetch(`/api/shinsung/records?id=${id}`, { method: 'DELETE' });
+            logActivity('DELETE_RECORD', 'shinsung-data', '신성데이터', id);
             setRecords(records.filter(r => r.id !== id));
         } catch (error) {
             alert('삭제 실패');
@@ -934,10 +938,12 @@ export default function ShinsungData() {
                     <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input type="text" placeholder="완제품명, 부위명, 비율, 시험일시 등으로 검색..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-11 pr-4 py-3 bg-slate-50 rounded-2xl border border-transparent focus:bg-white focus:border-indigo-300 transition-all outline-none text-sm" />
                 </div>
-                <button onClick={handleExportExcel} className="w-full sm:w-auto px-6 py-3 bg-emerald-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-emerald-700 shadow-lg shadow-emerald-100 transition-all">
-                    <Download size={20} />
-                    <span>Excel 전송</span>
-                </button>
+                {canExport && (
+                    <button onClick={handleExportExcel} className="w-full sm:w-auto px-6 py-3 bg-emerald-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-emerald-700 shadow-lg shadow-emerald-100 transition-all">
+                        <Download size={20} />
+                        <span>Excel 전송</span>
+                    </button>
+                )}
             </div>
 
             <div className="space-y-4">
