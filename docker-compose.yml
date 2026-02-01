@@ -7,6 +7,9 @@ services:
     volumes:
       - ./prisma:/app/prisma
       - ./public/uploads:/app/public/uploads
+      - ./public/shinsung/uploads:/app/public/shinsung/uploads
+      - ./public/coating/uploads:/app/public/coating/uploads
+      - ./public/notepad/uploads:/app/public/notepad/uploads
     environment:
       - DATABASE_URL=file:./dev.db
       - GEMINI_API_KEY=${GEMINI_API_KEY}

@@ -46,3 +46,11 @@ google-key.json
 next-env.d.ts
 
 /src/generated/prisma
+
+# Uploads and User Data
+/public/uploads/
+/public/shinsung/uploads/
+/public/coating/uploads/
+/public/notepad/uploads/
+*.zip
+*.log
