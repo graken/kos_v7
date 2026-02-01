@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "국제라텍OS",
-  description: "국제라텍 통합 관리 시스템 (KOS OS v7)",
+  title: "(주)국제라텍OS",
+  description: "(주)국제라텍 통합 관리 시스템",
 };
 
 export default function RootLayout({

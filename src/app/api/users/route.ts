@@ -42,6 +42,8 @@ export async function GET() {
                 displayName: u.displayName,
                 avatar: u.avatar,
                 role: u.role,
+                isBlocked: u.isBlocked,
+                loginAttempts: u.loginAttempts,
                 apps: JSON.parse(u.preferences?.apps || '[]'),
                 permissions: JSON.parse(u.preferences?.permissions || '{}')
             };
@@ -68,6 +70,8 @@ export async function POST(req: Request) {
                     displayName,
                     role,
                     avatar,
+                    isBlocked: body.isBlocked,
+                    loginAttempts: body.loginAttempts !== undefined ? body.loginAttempts : undefined,
                     preferences: {
                         upsert: {
                             create: {

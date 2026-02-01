@@ -8,10 +8,13 @@ import BackButtonManager from "@/components/common/BackButtonManager";
 
 import LoginScreen from "@/components/LoginScreen";
 import { useOSStore } from "@/store/useOSStore";
+import { useAutoLogout } from "@/hooks/useAutoLogout";
 
 export default function Home() {
   const { isMobile } = useDevice();
   const { currentUser, hasHydrated } = useOSStore();
+
+  useAutoLogout();
 
   if (!hasHydrated) return null;
 

@@ -129,6 +129,32 @@ export default function UserManager() {
         }
     };
 
+    const handleUnblockUser = async (targetUserId: string, displayName: string) => {
+        if (!confirm(`${displayName} 사용자의 차단을 해제하시겠습니까?`)) return;
+
+        try {
+            const res = await fetch('/api/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: targetUserId,
+                    isBlocked: false,
+                    loginAttempts: 0
+                })
+            });
+            if (res.ok) {
+                alert('차단이 해제되었습니다.');
+                fetchUsers();
+            } else {
+                const data = await res.json();
+                alert(data.error || '해제에 실패했습니다.');
+            }
+        } catch (err) {
+            console.error('Unblock failed:', err);
+            alert('오류가 발생했습니다.');
+        }
+    };
+
     const filteredUsers = users.filter(u =>
         u.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.username.toLowerCase().includes(searchTerm.toLowerCase())
@@ -214,6 +240,12 @@ export default function UserManager() {
                                         <span className="text-[10px] font-black uppercase">Admin</span>
                                     </div>
                                 )}
+                                {user.isBlocked && (
+                                    <div className="px-2 py-1 bg-red-50 text-red-500 rounded-lg flex items-center gap-1">
+                                        <Lock size={12} />
+                                        <span className="text-[10px] font-black uppercase">Blocked</span>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="space-y-3 mb-8 text-sm font-bold text-slate-600">
@@ -230,6 +262,14 @@ export default function UserManager() {
                                 >
                                     설정 변경
                                 </button>
+                                {user.isBlocked && (
+                                    <button
+                                        onClick={() => handleUnblockUser(user.id, user.displayName)}
+                                        className="flex-1 py-3 bg-rose-50 hover:bg-rose-100 text-rose-500 rounded-2xl font-black text-sm transition-all animate-pulse-subtle"
+                                    >
+                                        차단 해제
+                                    </button>
+                                )}
                                 <button
                                     onClick={() => handleResetPassword(user.id, user.displayName)}
                                     className="px-4 py-3 bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-blue-500 rounded-2xl transition-all"

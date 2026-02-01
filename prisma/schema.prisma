@@ -38,9 +38,11 @@ model User {
   role        String          @default("user")
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
-  avatar      String?
-  password    String?
-  memos       Memo[]
+  avatar         String?
+  password       String?
+  loginAttempts  Int?            @default(0)
+  isBlocked      Boolean?        @default(false)
+  memos          Memo[]
   preferences UserPreference?
 }
 

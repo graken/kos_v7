@@ -69,6 +69,8 @@ export interface User {
   displayName: string;
   avatar?: string;
   role: 'admin' | 'user';
+  isBlocked?: boolean;
+  loginAttempts?: number;
   apps: AppData[];
   permissions: Record<string, any>; // 앱별 권한 (JSON)
 }
@@ -556,7 +558,7 @@ export const useOSStore = create<OSState>()(
     {
       name: 'kos-v7-storage',
       version: 2, // 버전 상향을 통해 기존 로컬스토리지 강제 초기화 (로그인 화면 강제 노출)
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({
         apps: state.apps,
         desktopGridSettings: state.desktopGridSettings,

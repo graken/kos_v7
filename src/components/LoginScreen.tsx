@@ -6,44 +6,15 @@ import { useOSStore, User } from '@/store/useOSStore';
 import { User as UserIcon, Shield, ChevronRight, Loader2 } from 'lucide-react';
 
 export default function LoginScreen() {
-    const [users, setUsers] = useState<User[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [isLoggingIn, setIsLoggingIn] = useState(false);
     const { switchUser } = useOSStore();
 
-    useEffect(() => {
-        const fetchUsers = async () => {
-            try {
-                const res = await fetch('/api/users');
-                const data = await res.json();
-                if (Array.isArray(data)) {
-                    setUsers(data);
-                } else {
-                    console.error('Invalid users data format:', data);
-                    setUsers([]);
-                }
-            } catch (err) {
-                console.error('Failed to fetch users:', err);
-                setUsers([]);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchUsers();
-    }, []);
-
-    const handleUserSelect = (user: User) => {
-        setSelectedUser(user);
-        setError(null);
-        setPassword('');
-    };
-
     const handleLogin = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
-        if (!selectedUser || !password || isLoggingIn) return;
+        if (!username || !password || isLoggingIn) return;
 
         setIsLoggingIn(true);
         setError(null);
@@ -52,7 +23,7 @@ export default function LoginScreen() {
             const res = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: selectedUser.id, password })
+                body: JSON.stringify({ username, password })
             });
 
             const data = await res.json();
@@ -70,140 +41,138 @@ export default function LoginScreen() {
     };
 
     return (
-        <div className="fixed inset-0 z-[500] bg-slate-900 flex items-center justify-center p-6">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(59,130,246,0.2),transparent)] pointer-events-none" />
+        <div className="fixed inset-0 z-[500] bg-[#e2e8f0] flex items-center justify-center p-6 overflow-hidden">
+            {/* Metallic Background Texture */}
+            <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
+                style={{ backgroundImage: 'repeating-linear-gradient(45deg, #000 0, #000 1px, transparent 0, transparent 50%)', backgroundSize: '10px 10px' }} />
+
+            {/* Dynamic Light Reflections */}
+            <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-white/40 blur-[130px] rounded-full animate-pulse" />
+            <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-slate-400/20 blur-[130px] rounded-full animate-pulse" style={{ animationDelay: '1.5s' }} />
 
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="w-full max-w-md"
+                transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+                className="w-full max-w-lg relative z-10"
             >
-                <div className="text-center mb-10">
+                <div className="text-center mb-12">
                     <motion.div
-                        layoutId="logo"
-                        className="w-20 h-20 bg-blue-600 rounded-3xl shadow-2xl shadow-blue-500/20 flex items-center justify-center mx-auto mb-6"
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                        className="w-24 h-24 bg-gradient-to-br from-slate-400 via-slate-200 to-slate-400 rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.1),inset_0_2px_4px_rgba(255,255,255,0.8)] flex items-center justify-center mx-auto mb-8 relative border border-slate-300"
                     >
-                        <Shield className="text-white" size={40} />
+                        <Shield className="text-slate-700 relative z-10 drop-shadow-md" size={44} />
+                        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-white/20 rounded-b-3xl" />
                     </motion.div>
-                    <h1 className="text-3xl font-black text-white tracking-tight mb-2">KOS OS v7</h1>
-                    <p className="text-slate-400 font-bold">
-                        {selectedUser ? '비밀번호를 입력하세요' : '사용자를 선택하여 시작하세요'}
-                    </p>
+
+                    <motion.h1
+                        initial={{ y: -10, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.3 }}
+                        className="text-4xl font-black text-slate-800 tracking-tighter mb-3 drop-shadow-sm"
+                    >
+                        (주)국제라텍OS
+                    </motion.h1>
+                    <motion.div
+                        initial={{ scaleX: 0 }}
+                        animate={{ scaleX: 1 }}
+                        transition={{ delay: 0.5, duration: 0.8 }}
+                        className="h-[2px] w-24 bg-gradient-to-r from-transparent via-blue-500 to-transparent mx-auto mb-4"
+                    />
+                    <motion.p
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.4 }}
+                        className="text-slate-500 font-bold tracking-[0.3em] text-[10px] uppercase"
+                    >
+                        Precision Industrial Operation System
+                    </motion.p>
                 </div>
 
-                <div className="relative overflow-hidden min-h-[300px]">
-                    <AnimatePresence mode="wait">
-                        {!selectedUser ? (
-                            <motion.div
-                                key="user-list"
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -20 }}
-                                className="space-y-3"
-                            >
-                                {loading ? (
-                                    <div className="flex justify-center py-10">
-                                        <Loader2 className="animate-spin text-blue-500" size={32} />
-                                    </div>
-                                ) : (
-                                    users.map((user) => (
-                                        <motion.button
-                                            key={user.id}
-                                            whileHover={{ scale: 1.02 }}
-                                            whileTap={{ scale: 0.98 }}
-                                            onClick={() => handleUserSelect(user)}
-                                            className="w-full p-5 bg-white/10 hover:bg-white/15 backdrop-blur-md rounded-[24px] border border-white/10 flex items-center gap-4 transition-all group"
-                                        >
-                                            <div className="w-14 h-14 bg-gradient-to-br from-slate-700 to-slate-800 rounded-2xl flex items-center justify-center text-slate-300 shadow-inner group-hover:from-blue-600 group-hover:to-blue-700 group-hover:text-white transition-all overflow-hidden">
-                                                {user.avatar ? (
-                                                    <img src={user.avatar} className="w-full h-full object-cover" alt={user.displayName} />
-                                                ) : (
-                                                    <UserIcon size={28} />
-                                                )}
-                                            </div>
-                                            <div className="flex-1 text-left">
-                                                <div className="text-white font-black text-lg leading-tight">{user.displayName}</div>
-                                                <div className="text-slate-400 text-sm font-bold mt-0.5">@{user.username}</div>
-                                            </div>
-                                            <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/20 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                                                <ChevronRight size={20} />
-                                            </div>
-                                        </motion.button>
-                                    ))
-                                )}
-                            </motion.div>
-                        ) : (
-                            <motion.div
-                                key="password-input"
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: 20 }}
-                                className="flex flex-col items-center"
-                            >
-                                <div className="w-24 h-24 bg-white/10 rounded-[32px] border border-white/10 flex items-center justify-center mb-6 overflow-hidden">
-                                    {selectedUser.avatar ? (
-                                        <img src={selectedUser.avatar} className="w-full h-full object-cover" alt={selectedUser.displayName} />
-                                    ) : (
-                                        <UserIcon className="text-white/40" size={40} />
-                                    )}
+                <motion.div
+                    initial={{ y: 30, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                    className="bg-gradient-to-b from-slate-100 to-slate-200 rounded-[40px] border border-slate-300 p-1 bg-clip-padding shadow-[0_30px_60px_rgba(0,0,0,0.12),inset_0_1px_1px_rgba(255,255,255,0.8)]"
+                >
+                    <div className="bg-slate-50/80 backdrop-blur-xl rounded-[36px] p-10 space-y-8 border border-white/40">
+                        <form onSubmit={handleLogin} className="space-y-6">
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-slate-400 uppercase ml-3 tracking-[0.2em]">User Identification</label>
+                                <div className="relative group">
+                                    <input
+                                        autoFocus
+                                        type="text"
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value)}
+                                        placeholder="Username"
+                                        className="w-full h-16 bg-slate-200/50 border border-slate-300 rounded-[22px] px-14 font-bold text-slate-800 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 transition-all shadow-inner"
+                                    />
+                                    <UserIcon className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-500 transition-colors" size={22} />
                                 </div>
-                                <h2 className="text-xl font-black text-white mb-8">{selectedUser.displayName}</h2>
+                            </div>
 
-                                <form onSubmit={handleLogin} className="w-full space-y-4">
-                                    <div className="relative">
-                                        <input
-                                            autoFocus
-                                            type="password"
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                            placeholder="Password"
-                                            className={`w-full bg-white/10 border ${error ? 'border-red-500/50' : 'border-white/10'} rounded-2xl px-6 py-4 text-white text-center text-xl tracking-[0.2em] outline-none focus:ring-2 focus:ring-blue-500/50 transition-all placeholder:tracking-normal placeholder:text-sm placeholder:text-slate-500`}
-                                        />
-                                        {error && (
-                                            <motion.p
-                                                initial={{ opacity: 0, y: -10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                className="text-red-400 text-xs font-bold mt-2 text-center"
-                                            >
-                                                {error}
-                                            </motion.p>
-                                        )}
-                                    </div>
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-slate-400 uppercase ml-3 tracking-[0.2em]">Security Access Key</label>
+                                <div className="relative group">
+                                    <input
+                                        type="password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="Password"
+                                        className="w-full h-16 bg-slate-200/50 border border-slate-300 rounded-[22px] px-14 font-bold text-slate-800 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 transition-all tracking-widest shadow-inner placeholder:tracking-normal"
+                                    />
+                                    <Shield className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-blue-500 transition-colors" size={22} />
+                                </div>
+                            </div>
 
-                                    <button
-                                        type="submit"
-                                        disabled={isLoggingIn || !password}
-                                        className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 disabled:cursor-not-allowed text-white rounded-2xl font-black transition-all flex items-center justify-center gap-3"
-                                    >
-                                        {isLoggingIn ? (
-                                            <Loader2 className="animate-spin" size={20} />
-                                        ) : (
-                                            <>
-                                                로그인
-                                                <ChevronRight size={20} />
-                                            </>
-                                        )}
-                                    </button>
+                            {error && (
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.98 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="text-rose-600 text-[11px] font-black bg-rose-50/80 py-4 rounded-2xl text-center border border-rose-200 flex items-center justify-center gap-2"
+                                >
+                                    <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse" />
+                                    {error}
+                                </motion.div>
+                            )}
 
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedUser(null)}
-                                        className="w-full py-2 text-slate-500 hover:text-slate-300 font-bold text-sm transition-colors"
-                                    >
-                                        다른 사용자로 로그인
-                                    </button>
-                                </form>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
+                            <button
+                                type="submit"
+                                disabled={isLoggingIn || !username || !password}
+                                className="w-full h-16 bg-gradient-to-b from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 disabled:from-slate-300 disabled:to-slate-400 disabled:text-slate-100 disabled:cursor-not-allowed text-white rounded-[22px] font-black transition-all flex items-center justify-center gap-3 shadow-[0_10px_20px_rgba(59,130,246,0.2),inset_0_1px_1px_rgba(255,255,255,0.3)] active:scale-[0.98] mt-6 group/btn"
+                            >
+                                {isLoggingIn ? (
+                                    <Loader2 className="animate-spin" size={24} />
+                                ) : (
+                                    <>
+                                        <span className="tracking-tight">시스템 접속하기</span>
+                                        <ChevronRight size={20} className="group-hover/btn:translate-x-1 transition-transform" />
+                                    </>
+                                )}
+                            </button>
+                        </form>
+                    </div>
+                </motion.div>
 
-                <div className="mt-12 text-center">
-                    <p className="text-slate-500 text-sm font-bold uppercase tracking-widest leading-relaxed">
-                        Administrator System Tools<br />
-                        Equipment Maintenance & OS Control
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 1 }}
+                    className="mt-14 text-center"
+                >
+                    <div className="flex items-center justify-center gap-4 opacity-30 mb-4">
+                        <div className="h-[1px] w-12 bg-slate-400" />
+                        <div className="w-1.5 h-1.5 bg-slate-400 rounded-full" />
+                        <div className="h-[1px] w-12 bg-slate-400" />
+                    </div>
+                    <p className="text-slate-500 text-[9px] font-black uppercase tracking-[0.4em] leading-loose">
+                        Advanced Integration Security Control<br />
+                        Certified Industrial Production Gateway
                     </p>
-                </div>
+                </motion.div>
             </motion.div>
         </div>
     );
