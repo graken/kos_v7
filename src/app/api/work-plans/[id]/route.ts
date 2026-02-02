@@ -39,7 +39,7 @@ export async function PATCH(req: Request, { params }: { params: any }) {
 
         console.log('Updating work plan id:', id, 'with data:', data);
 
-        const plan = await (prisma as any).workPlan.update({
+        const plan = await prisma.workPlan.update({
             where: { id },
             data
         });
@@ -53,7 +53,7 @@ export async function PATCH(req: Request, { params }: { params: any }) {
 export async function DELETE(req: Request, { params }: { params: any }) {
     try {
         const { id } = await params;
-        await (prisma as any).workPlan.delete({ where: { id } });
+        await prisma.workPlan.delete({ where: { id } });
         return NextResponse.json({ success: true });
     } catch (error: any) {
         console.error('Delete work plan error:', error);

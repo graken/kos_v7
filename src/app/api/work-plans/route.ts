@@ -15,7 +15,7 @@ export async function GET(req: Request) {
             };
         }
 
-        const plans = await (prisma as any).workPlan.findMany({
+        const plans = await prisma.workPlan.findMany({
             where,
             orderBy: [
                 { planDate: 'asc' },
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
             machineName, processType, adhesive, mixingRatio, mesh, speed, note
         } = body;
 
-        const plan = await (prisma as any).workPlan.create({
+        const plan = await prisma.workPlan.create({
             data: {
                 planDate: new Date(planDate),
                 duration: parseInt(duration) || 60,

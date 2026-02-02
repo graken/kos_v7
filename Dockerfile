@@ -43,9 +43,18 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 # Prisma 관련 파일 복사 (SQLite 환경)
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 # 사진 업로드 폴더 생성 및 권한 설정
-RUN mkdir -p public/uploads/originals public/uploads/thumbnails && \
+RUN mkdir -p \
+    public/uploads/originals \
+    public/uploads/thumbnails \
+    public/shinsung/uploads/images \
+    public/shinsung/uploads/thumbnails \
+    public/coating/uploads/images \
+    public/coating/uploads/thumbnails \
+    public/notepad/uploads/images \
+    public/notepad/uploads/files \
+    public/notepad/uploads/thumbnails && \
     chown -R nextjs:nodejs /app && \
-    chmod -R 775 /app/public/uploads
+    chmod -R 775 /app/public
 
 USER nextjs
 

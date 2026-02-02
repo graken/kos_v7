@@ -104,34 +104,53 @@ async function _processAndSaveImage(
     const buffer = Buffer.from(base64Content, 'base64');
     const fileName = `${uuidv4()}.jpg`;
 
-    // 1. 원본 압축 저장
-    const imgRelativeDir = path.join(dirName, 'uploads', 'images');
-    const imgAbsoluteDir = path.join(process.cwd(), 'public', imgRelativeDir);
-    if (!fs.existsSync(imgAbsoluteDir)) fs.mkdirSync(imgAbsoluteDir, { recursive: true });
+    try {
+        // 1. 원본 압축 저장
+        const imgRelativeDir = path.join(dirName, 'uploads', 'images');
+        const imgAbsoluteDir = path.join(process.cwd(), 'public', imgRelativeDir);
+        if (!fs.existsSync(imgAbsoluteDir)) {
+            console.log(`[OCR] Creating directory: ${imgAbsoluteDir}`);
+            fs.mkdirSync(imgAbsoluteDir, { recursive: true });
+        }
 
-    const imgAbsolutePath = path.join(imgAbsoluteDir, fileName);
-    const imgRelativePath = `/${path.join(imgRelativeDir, fileName)}`;
+        const imgAbsolutePath = path.join(imgAbsoluteDir, fileName);
+        // URL은 항상 포직스 스타일(/)을 사용해야 하므로 직접 조합하거나 path.posix를 사용
+        const imgRelativePath = `/${dirName}/uploads/images/${fileName}`;
 
-    await sharp(buffer)
-        .resize(maxWidth, undefined, { withoutEnlargement: true, fit: 'inside' })
-        .jpeg({ quality })
-        .toFile(imgAbsolutePath);
+        console.log(`[OCR] Saving image to: ${imgAbsolutePath}`);
+        await sharp(buffer)
+            .resize(maxWidth, undefined, { withoutEnlargement: true, fit: 'inside' })
+            .jpeg({ quality })
+            .toFile(imgAbsolutePath);
 
-    // 2. 썸네일 생성
-    const thumbRelativeDir = path.join(dirName, 'uploads', 'thumbnails');
-    const thumbAbsoluteDir = path.join(process.cwd(), 'public', thumbRelativeDir);
-    if (!fs.existsSync(thumbAbsoluteDir)) fs.mkdirSync(thumbAbsoluteDir, { recursive: true });
+        // 2. 썸네일 생성
+        const thumbRelativeDir = path.join(dirName, 'uploads', 'thumbnails');
+        const thumbAbsoluteDir = path.join(process.cwd(), 'public', thumbRelativeDir);
+        if (!fs.existsSync(thumbAbsoluteDir)) {
+            console.log(`[OCR] Creating directory: ${thumbAbsoluteDir}`);
+            fs.mkdirSync(thumbAbsoluteDir, { recursive: true });
+        }
 
-    const thumbFileName = `thumb_${fileName}`;
-    const thumbAbsolutePath = path.join(thumbAbsoluteDir, thumbFileName);
-    const thumbRelativePath = `/${path.join(thumbRelativeDir, thumbFileName)}`;
+        const thumbFileName = `thumb_${fileName}`;
+        const thumbAbsolutePath = path.join(thumbAbsoluteDir, thumbFileName);
+        const thumbRelativePath = `/${dirName}/uploads/thumbnails/${thumbFileName}`;
 
-    await sharp(buffer)
-        .resize(thumbSize, thumbSize, { fit: 'cover' })
-        .jpeg({ quality: Math.max(quality - 10, 60) })
-        .toFile(thumbAbsolutePath);
+        console.log(`[OCR] Saving thumbnail to: ${thumbAbsolutePath}`);
+        await sharp(buffer)
+            .resize(thumbSize, thumbSize, { fit: 'cover' })
+            .jpeg({ quality: Math.max(quality - 10, 60) })
+            .toFile(thumbAbsolutePath);
 
-    return { url: imgRelativePath, thumbnailUrl: thumbRelativePath };
+        // 저장 확인
+        if (fs.existsSync(imgAbsolutePath)) {
+            console.log(`[OCR] Successfully saved: ${imgRelativePath} (${fs.statSync(imgAbsolutePath).size} bytes)`);
+        }
+
+        return { url: imgRelativePath, thumbnailUrl: thumbRelativePath };
+    } catch (error) {
+        console.error(`[OCR] Error saving image:`, error);
+        throw error;
+    }
 }
 
 /**
