@@ -24,8 +24,8 @@ echo "📡 [2/3] 나스(NAS)에 접속하여 업데이트 명령을 내립니다
 echo "💡 나스 계정의 비밀번호를 물어볼 수 있습니다."
 
 ssh -p ${NAS_PORT} -t ${NAS_USER}@${NAS_HOST} "cd ${NAS_PATH} && \
-    echo '📥 최신 코드 내려받기...' && \
-    git pull && \
+    echo '📥 최신 코드 내려받기 (main 브랜치)...' && \
+    git pull origin main && \
     echo '🐳 도커 컨테이너 재빌드 및 재시작...' && \
     sudo docker-compose up -d --build && \
     echo '✅ 배포가 성공적으로 완료되었습니다!'"
