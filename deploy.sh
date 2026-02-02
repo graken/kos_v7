@@ -27,14 +27,16 @@ ssh -p ${NAS_PORT} -t ${NAS_USER}@${NAS_HOST} "cd ${NAS_PATH} && \
     echo '📥 데이터베이스 파일 변경사항 임시 저장 및 업데이트...' && \
     git stash && \
     git pull origin main && \
-    echo '🐳 도커 컨테이너 재빌드 및 재시작...' && \
+    echo '🐳 도커 컨테이너 강제 재시작 (kos-v7)...' && \
+    sudo docker stop kos-v7 || true && \
+    sudo docker rm kos-v7 || true && \
     if sudo docker compose version > /dev/null 2>&1; then \
         sudo docker compose up -d --build; \
     else \
         sudo docker-compose up -d --build; \
     fi && \
-    echo '🔐 권한 설정 변경 중...' && \
-    sudo chmod -R 777 prisma public/uploads && \
+    echo '🔐 권한 설정 및 데이터베이스 보호 중...' && \
+    sudo chmod -R 777 prisma public/uploads src/store && \
     echo '✅ 배포가 성공적으로 완료되었습니다!'"
 
 echo ""

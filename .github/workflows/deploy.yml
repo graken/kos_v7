@@ -20,12 +20,16 @@ jobs:
             echo "📥 Updating code..."
             git stash
             git pull origin main
-            echo "🐳 Restarting Docker containers..."
+            echo "🐳 Force restarting Docker containers..."
+            # 기존에 수동으로 생성된 컨테이너가 있다면 강제 종료 및 삭제
+            echo "${{ secrets.NAS_PASSWORD }}" | sudo -S docker stop kos-v7 || true
+            echo "${{ secrets.NAS_PASSWORD }}" | sudo -S docker rm kos-v7 || true
+            # 다시 빌드 및 실행
             if sudo docker compose version > /dev/null 2>&1; then
               echo "${{ secrets.NAS_PASSWORD }}" | sudo -S docker compose up -d --build
             else
               echo "${{ secrets.NAS_PASSWORD }}" | sudo -S docker-compose up -d --build
             fi
-            echo "🔐 Fixing database permissions..."
-            echo "${{ secrets.NAS_PASSWORD }}" | sudo -S chmod -R 777 prisma public/uploads
+            echo "🔐 Fixing database and file permissions..."
+            echo "${{ secrets.NAS_PASSWORD }}" | sudo -S chmod -R 777 prisma public/uploads src/store
             echo "✅ Deployment successful!"
