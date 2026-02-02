@@ -63,5 +63,6 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# 실행 시 데이터베이스 동기화 및 서버 시작 (파일 권한 문제를 피하기 위해 인라인 명령 사용)
-ENTRYPOINT ["sh", "-c", "npx prisma db push --accept-data-loss && node server.js"]
+# 실행 시 데이터베이스 동기화 및 서버 시작
+# DATABASE_URL이 없을 경우에 대비한 기본값 설정 및 절대 경로 보장
+ENTRYPOINT ["sh", "-c", "export DATABASE_URL=${DATABASE_URL:-file:/app/prisma/dev.db} && npx prisma db push --accept-data-loss && node server.js"]

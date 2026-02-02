@@ -8,6 +8,6 @@ services:
       - ./prisma:/app/prisma
       - ./public:/app/public
     environment:
-      - DATABASE_URL=file:./prisma/dev.db
+      - DATABASE_URL=file:/app/prisma/dev.db
       - GEMINI_API_KEY=${GEMINI_API_KEY}
     restart: always
