@@ -11,6 +11,6 @@ services:
       - ./public/coating/uploads:/app/public/coating/uploads
       - ./public/notepad/uploads:/app/public/notepad/uploads
     environment:
-      - DATABASE_URL=file:./dev.db
+      - DATABASE_URL=file:./prisma/dev.db
       - GEMINI_API_KEY=${GEMINI_API_KEY}
     restart: always
