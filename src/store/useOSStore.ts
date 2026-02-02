@@ -161,7 +161,10 @@ const INITIAL_APPS: AppData[] = [
   { id: 'work-plan', name: '작업계획서', iconName: 'Calendar' },
 ];
 
-export const INSTALLED_APP_IDS = ['browser', 'files', 'photos', 'messages', 'mail', 'settings', 'calculator', 'coating-control', 'gravure-coating', 'roll-calculator', 'equipment-maintenance', 'user-manager', 'notepad', 'shinsung-data', 'work-plan', 'system-logs'];
+export const INSTALLED_APP_IDS = Array.from(new Set([
+  ...INITIAL_APPS.map(a => a.id),
+  ...Object.keys(APP_REGISTRY)
+]));
 
 const ADMIN_USER: User = {
   id: 'admin-1',
@@ -516,6 +519,12 @@ export const useOSStore = create<OSState>()(
         const { currentUser } = get();
         if (!currentUser) return false;
         if (currentUser.role === 'admin') return true;
+
+        // 1. 해당 앱에 대한 권한 객체가 존재하는지 확인 (관리자가 부여한 앱인지의 척도)
+        const hasAppPermission = !!currentUser.permissions?.[appId];
+        if (!hasAppPermission) return false;
+
+        // 2. 관리자가 설정한 상세 하위 권한 확인
         return !!currentUser.permissions?.[appId]?.[permissionId];
       },
 

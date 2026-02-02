@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import AppIcon from './AppIcon';
 import { useOSStore } from '@/store/useOSStore';
+import { APP_REGISTRY } from '@/apps/registry';
 import { useDevice } from '@/hooks/useDevice';
 import { useShallow } from 'zustand/react/shallow';
 import {
@@ -129,21 +130,23 @@ export default function HomeGrid() {
                     gridTemplateColumns: `repeat(auto-fill, ${gridSettings.iconSize + 8}px)`
                 }}
             >
-                {apps.map((app, index) => (
-                    <AppIcon
-                        key={app.id}
-                        id={app.id}
-                        index={index}
-                        name={app.name}
-                        icon={ICON_MAP[app.iconName]}
-                        isDragging={draggedIndex === index}
-                        isActive={openAppIds.includes(app.id)}
-                        onDragStart={handleDragStart}
-                        onDragEnter={handleDragEnter}
-                        onDragEnd={handleDragEnd}
-                        onClick={() => openApp(app.id)}
-                    />
-                ))}
+                {apps
+                    .filter(app => !APP_REGISTRY[app.id]?.isHidden)
+                    .map((app, index) => (
+                        <AppIcon
+                            key={app.id}
+                            id={app.id}
+                            index={index}
+                            name={app.name}
+                            icon={ICON_MAP[app.iconName]}
+                            isDragging={draggedIndex === index}
+                            isActive={openAppIds.includes(app.id)}
+                            onDragStart={handleDragStart}
+                            onDragEnter={handleDragEnter}
+                            onDragEnd={handleDragEnd}
+                            onClick={() => openApp(app.id)}
+                        />
+                    ))}
             </div>
         </div>
     );

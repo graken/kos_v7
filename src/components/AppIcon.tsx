@@ -39,6 +39,7 @@ export default function AppIcon({
         updateApp,
         setEditingAppId,
         apps,
+        currentUser,
         desktopTextColor,
         iconBgColor,
         iconGlyphColor
@@ -57,12 +58,21 @@ export default function AppIcon({
             openApp('app-editor');
         };
 
-        showContextMenu(e.clientX, e.clientY, [
+        // App Editor 권한이 있는지 확인 (상세 권한 대신 앱 할당 여부객체 존재 확인)
+        const canEdit = currentUser?.role === 'admin' || !!currentUser?.permissions?.['app-editor'];
+
+        const menuItems: any[] = [
             { label: '앱 열기', iconName: 'Play', onClick: () => openApp(id) },
             { label: '앱 정보', iconName: 'Info', onClick: () => console.log(`${name} 정보`) },
-            { label: '편집', iconName: 'Edit', onClick: handleEdit },
-            { label: '메인 화면에서 제거', iconName: 'Trash2', isDanger: true, onClick: () => removeApp(id) },
-        ]);
+        ];
+
+        if (canEdit) {
+            menuItems.push({ label: '편집', iconName: 'Edit', onClick: handleEdit });
+        }
+
+        menuItems.push({ label: '메인 화면에서 제거', iconName: 'Trash2', isDanger: true, onClick: () => removeApp(id) });
+
+        showContextMenu(e.clientX, e.clientY, menuItems);
     };
 
     const handleDragOver = (e: React.DragEvent) => {

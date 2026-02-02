@@ -28,8 +28,28 @@ const Window = memo(function Window({ id }: WindowProps) {
         return APP_REGISTRY[id]?.component;
     }, [id]);
 
+    const currentUser = useOSStore(state => state.currentUser);
+
     const renderedContent = useMemo(() => {
         if (!windowData) return null;
+
+        // 관리자가 아니고, 해당 앱에 대한 권한 데이터가 없는 경우 (보안 입구 컷)
+        const isAppAllowed = currentUser?.role === 'admin' || !!currentUser?.permissions?.[id];
+        if (!isAppAllowed) {
+            return (
+                <div className="h-full flex flex-col items-center justify-center p-8 text-center bg-slate-50">
+                    <div className="w-16 h-16 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
+                        <X size={32} strokeWidth={3} />
+                    </div>
+                    <h3 className="text-lg font-black text-slate-900 mb-1">접근 권한 없음</h3>
+                    <p className="text-xs font-bold text-slate-400 leading-relaxed">
+                        이 기능은 관리자에 의해 배정되지 않았습니다.<br />
+                        사용이 필요한 경우 관리자에게 문의하세요.
+                    </p>
+                </div>
+            );
+        }
+
         if (AppComponent) return <AppComponent key={id} />;
         return (
             <div className="h-full flex flex-col items-center justify-center text-black/20">
@@ -37,7 +57,7 @@ const Window = memo(function Window({ id }: WindowProps) {
                 <p className="text-sm italic">{windowData.title}</p>
             </div>
         );
-    }, [id, AppComponent, windowData]);
+    }, [id, AppComponent, windowData, currentUser]);
 
     const [isDragging, setIsDragging] = useState(false);
     const [resizeDir, setResizeDir] = useState<ResizeDirection | null>(null);

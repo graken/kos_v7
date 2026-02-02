@@ -6,6 +6,7 @@ interface AppDefinition {
     config: WindowConfig;
     name: string;
     permissions?: { id: string; name: string; description?: string }[];
+    isHidden?: boolean;
 }
 
 export const APP_REGISTRY: Record<string, AppDefinition> = {
@@ -42,7 +43,11 @@ export const APP_REGISTRY: Record<string, AppDefinition> = {
             resizable: false,
             maximizable: false
         },
-        name: 'App Editor'
+        name: '아이콘 편집기',
+        isHidden: true,
+        permissions: [
+            { id: 'use', name: '아이콘 편집 권한', description: '바탕화면 아이콘을 우클릭하여 이름, 아이콘, 연결 앱을 수정할 수 있는 권한입니다.' }
+        ]
     },
     'coating-control': {
         component: dynamic(() => import('@/apps/CoatingControl/CoatingControl')),
