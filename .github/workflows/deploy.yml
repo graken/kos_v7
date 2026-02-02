@@ -26,4 +26,6 @@ jobs:
             else
               echo "${{ secrets.NAS_PASSWORD }}" | sudo -S docker-compose up -d --build
             fi
+            echo "🔐 Fixing database permissions..."
+            echo "${{ secrets.NAS_PASSWORD }}" | sudo -S chmod -R 777 prisma public/uploads
             echo "✅ Deployment successful!"
