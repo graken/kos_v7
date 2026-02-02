@@ -966,7 +966,15 @@ export default function CoatingControl() {
                                                                                 setSelectedImage(record.imageUrl!);
                                                                             }}
                                                                         >
-                                                                            <img src={record.thumbnailUrl || record.imageUrl} className="w-full h-full object-cover" />
+                                                                            <img
+                                                                                src={record.thumbnailUrl || record.imageUrl}
+                                                                                className="w-full h-full object-cover"
+                                                                                onError={(e) => {
+                                                                                    if (record.thumbnailUrl && e.currentTarget.src.includes('thumbnail')) {
+                                                                                        e.currentTarget.src = record.imageUrl!;
+                                                                                    }
+                                                                                }}
+                                                                            />
                                                                         </div>
                                                                     ) : <div className="w-10 h-10 rounded-lg bg-black/5" />}
                                                                 </td>
@@ -1062,7 +1070,16 @@ export default function CoatingControl() {
                                                                     if (record.imageUrl) setSelectedImage(record.imageUrl);
                                                                 }}
                                                             >
-                                                                <img src={record.thumbnailUrl || record.imageUrl} alt="Record" className="w-full h-full object-cover" />
+                                                                <img
+                                                                    src={record.thumbnailUrl || record.imageUrl}
+                                                                    alt="Record"
+                                                                    className="w-full h-full object-cover"
+                                                                    onError={(e) => {
+                                                                        if (record.thumbnailUrl && e.currentTarget.src.includes('thumbnail')) {
+                                                                            e.currentTarget.src = record.imageUrl!;
+                                                                        }
+                                                                    }}
+                                                                />
                                                             </div>
                                                         )}
 

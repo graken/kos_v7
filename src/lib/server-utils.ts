@@ -135,18 +135,18 @@ async function _processAndSaveImage(
         const thumbAbsolutePath = path.join(thumbAbsoluteDir, thumbFileName);
         const thumbRelativePath = `/${dirName}/uploads/thumbnails/${thumbFileName}`;
 
-        console.log(`[OCR] Saving thumbnail to: ${thumbAbsolutePath}`);
-        await sharp(buffer)
-            .resize(thumbSize, thumbSize, { fit: 'cover' })
-            .jpeg({ quality: Math.max(quality - 10, 60) })
-            .toFile(thumbAbsolutePath);
+        try {
+            console.log(`[OCR] Saving thumbnail to: ${thumbAbsolutePath}`);
+            await sharp(buffer)
+                .resize(thumbSize, thumbSize, { fit: 'cover' })
+                .jpeg({ quality: Math.max(quality - 10, 60) })
+                .toFile(thumbAbsolutePath);
 
-        // 저장 확인
-        if (fs.existsSync(imgAbsolutePath)) {
-            console.log(`[OCR] Successfully saved: ${imgRelativePath} (${fs.statSync(imgAbsolutePath).size} bytes)`);
+            return { url: imgRelativePath, thumbnailUrl: thumbRelativePath };
+        } catch (thumbError) {
+            console.error(`[OCR] Thumbnail generation failed, but original was saved:`, thumbError);
+            return { url: imgRelativePath, thumbnailUrl: null as any };
         }
-
-        return { url: imgRelativePath, thumbnailUrl: thumbRelativePath };
     } catch (error) {
         console.error(`[OCR] Error saving image:`, error);
         throw error;
