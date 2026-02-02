@@ -614,7 +614,18 @@ export default function ShinsungData() {
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                                 <div className="space-y-6">
                                     <div className="rounded-[32px] overflow-hidden border border-slate-100 shadow-xl bg-slate-50 cursor-zoom-in" onClick={() => setSelectedImage(record.imageUrl || null)}>
-                                        <img src={record.imageUrl || record.thumbnailUrl} alt="Record Detail" className="w-full h-auto object-contain" />
+                                        <img
+                                            src={record.imageUrl || record.thumbnailUrl}
+                                            alt="Record Detail"
+                                            className="w-full h-auto object-contain"
+                                            onError={(e) => {
+                                                if (record.imageUrl && e.currentTarget.src.includes('/images/')) {
+                                                    e.currentTarget.src = record.thumbnailUrl!;
+                                                } else if (record.thumbnailUrl && e.currentTarget.src.includes('/thumbnails/')) {
+                                                    e.currentTarget.src = record.imageUrl!;
+                                                }
+                                            }}
+                                        />
                                     </div>
                                     {record.note && (
                                         <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
@@ -1065,7 +1076,16 @@ export default function ShinsungData() {
                                     <div className="w-full xl:w-48 h-48 bg-slate-50 rounded-2xl overflow-hidden shrink-0 border border-slate-100 cursor-pointer group relative" onClick={() => setSelectedImage(record.imageUrl || null)}>
                                         {record.thumbnailUrl || record.imageUrl ? (
                                             <>
-                                                <img src={record.thumbnailUrl || record.imageUrl} alt="Record" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                <img
+                                                    src={record.thumbnailUrl || record.imageUrl}
+                                                    alt="Record"
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                    onError={(e) => {
+                                                        if (record.thumbnailUrl && e.currentTarget.src.includes('/thumbnails/')) {
+                                                            e.currentTarget.src = record.imageUrl!;
+                                                        }
+                                                    }}
+                                                />
                                                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
                                                     <Maximize2 className="text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md" size={24} />
                                                 </div>

@@ -1603,7 +1603,18 @@ export default function CoatingControl() {
                                                         className={`rounded-[24px] overflow-hidden border border-black/5 bg-black/5 aspect-auto max-h-80 flex items-start justify-center relative group ${isEditingRecord ? 'cursor-pointer hover:bg-black/10' : ''}`}
                                                         onClick={() => isEditingRecord && fileInputRef.current?.click()}
                                                     >
-                                                        <img src={image || record.imageUrl} alt="Raw Receipt" className="w-full object-contain" />
+                                                        <img
+                                                            src={record.imageUrl || record.thumbnailUrl}
+                                                            alt="Record Detail"
+                                                            className="w-full h-auto object-contain"
+                                                            onError={(e) => {
+                                                                if (record.imageUrl && e.currentTarget.src.includes('/images/')) {
+                                                                    e.currentTarget.src = record.thumbnailUrl!;
+                                                                } else if (record.thumbnailUrl && e.currentTarget.src.includes('/thumbnails/')) {
+                                                                    e.currentTarget.src = record.imageUrl!;
+                                                                }
+                                                            }}
+                                                        />
                                                         {isEditingRecord && (
                                                             <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                                                 <p className="text-white font-bold flex items-center gap-2">
