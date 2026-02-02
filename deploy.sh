@@ -27,11 +27,13 @@ ssh -p ${NAS_PORT} -t ${NAS_USER}@${NAS_HOST} "cd ${NAS_PATH} && \
     echo '📥 데이터베이스 파일 변경사항 임시 저장 및 업데이트...' && \
     git stash && \
     git pull origin main && \
+    export PATH=\$PATH:/usr/local/bin:/usr/bin:/bin && \
+    DOCKER_CMD=\$(which docker) && \
     echo '🐳 도커 컨테이너 강제 재시작 (kos-v7)...' && \
-    sudo docker stop kos-v7 || true && \
-    sudo docker rm kos-v7 || true && \
-    if sudo docker compose version > /dev/null 2>&1; then \
-        sudo docker compose up -d --build; \
+    sudo \$DOCKER_CMD stop kos-v7 || true && \
+    sudo \$DOCKER_CMD rm kos-v7 || true && \
+    if \$DOCKER_CMD compose version > /dev/null 2>&1; then \
+        sudo \$DOCKER_CMD compose up -d --build; \
     else \
         sudo docker-compose up -d --build; \
     fi && \

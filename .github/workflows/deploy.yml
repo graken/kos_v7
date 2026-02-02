@@ -21,15 +21,25 @@ jobs:
             git stash
             git pull origin main
             echo "🐳 Force restarting Docker containers..."
-            # 기존에 수동으로 생성된 컨테이너가 있다면 강제 종료 및 삭제
-            echo "${{ secrets.NAS_PASSWORD }}" | sudo -S docker stop kos-v7 || true
-            echo "${{ secrets.NAS_PASSWORD }}" | sudo -S docker rm kos-v7 || true
-            # 다시 빌드 및 실행
-            if sudo docker compose version > /dev/null 2>&1; then
-              echo "${{ secrets.NAS_PASSWORD }}" | sudo -S docker compose up -d --build
+            # 시놀로지 환경에서 sudo 경로 문제 해결을 위해 PATH 명시 및 명령어 위치 확인
+            export PATH=$PATH:/usr/local/bin:/usr/bin:/bin
+            DOCKER_CMD=$(which docker)
+            
+            if [ -z "$DOCKER_CMD" ]; then
+              echo "❌ Error: docker command not found on NAS"
+              exit 1
+            fi
+
+            echo "${{ secrets.NAS_PASSWORD }}" | sudo -S $DOCKER_CMD stop kos-v7 || true
+            echo "${{ secrets.NAS_PASSWORD }}" | sudo -S $DOCKER_CMD rm kos-v7 || true
+            
+            # Docker Compose 실행 (v2 우선, v1 차선)
+            if $DOCKER_CMD compose version > /dev/null 2>&1; then
+              echo "${{ secrets.NAS_PASSWORD }}" | sudo -S $DOCKER_CMD compose up -d --build
             else
               echo "${{ secrets.NAS_PASSWORD }}" | sudo -S docker-compose up -d --build
             fi
+            
             echo "🔐 Fixing database and file permissions..."
             echo "${{ secrets.NAS_PASSWORD }}" | sudo -S chmod -R 777 prisma public/uploads src/store
             echo "✅ Deployment successful!"
