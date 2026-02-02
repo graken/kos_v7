@@ -108,8 +108,12 @@ async function _processAndSaveImage(
         // 1. 원본 압축 저장
         const imgRelativeDir = path.join(dirName, 'uploads', 'images');
         const imgAbsoluteDir = path.join(process.cwd(), 'public', imgRelativeDir);
+
+        console.log(`[IMAGE_SAVE] Request for ${dirName}. CWD: ${process.cwd()}`);
+        console.log(`[IMAGE_SAVE] Absolute Directory: ${imgAbsoluteDir}`);
+
         if (!fs.existsSync(imgAbsoluteDir)) {
-            console.log(`[OCR] Creating directory: ${imgAbsoluteDir}`);
+            console.log(`[IMAGE_SAVE] Creating directory: ${imgAbsoluteDir}`);
             fs.mkdirSync(imgAbsoluteDir, { recursive: true });
         }
 
@@ -117,11 +121,13 @@ async function _processAndSaveImage(
         // URL은 항상 포직스 스타일(/)을 사용해야 하므로 직접 조합하거나 path.posix를 사용
         const imgRelativePath = `/${dirName}/uploads/images/${fileName}`;
 
-        console.log(`[OCR] Saving image to: ${imgAbsolutePath}`);
+        console.log(`[IMAGE_SAVE] Attempting to save file to: ${imgAbsolutePath}`);
         await sharp(buffer)
             .resize(maxWidth, undefined, { withoutEnlargement: true, fit: 'inside' })
             .jpeg({ quality })
             .toFile(imgAbsolutePath);
+
+        console.log(`[IMAGE_SAVE] Save success! File exists: ${fs.existsSync(imgAbsolutePath)}`);
 
         // 2. 썸네일 생성
         const thumbRelativeDir = path.join(dirName, 'uploads', 'thumbnails');
