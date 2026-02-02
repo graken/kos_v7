@@ -1607,13 +1607,6 @@ export default function CoatingControl() {
                                                             src={record.imageUrl || record.thumbnailUrl}
                                                             alt="Record Detail"
                                                             className="w-full h-auto object-contain"
-                                                            onError={(e) => {
-                                                                if (record.imageUrl && e.currentTarget.src.includes('/images/')) {
-                                                                    e.currentTarget.src = record.thumbnailUrl!;
-                                                                } else if (record.thumbnailUrl && e.currentTarget.src.includes('/thumbnails/')) {
-                                                                    e.currentTarget.src = record.imageUrl!;
-                                                                }
-                                                            }}
                                                         />
                                                         {isEditingRecord && (
                                                             <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
