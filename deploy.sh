@@ -38,7 +38,7 @@ ssh -p ${NAS_PORT} -t ${NAS_USER}@${NAS_HOST} "cd ${NAS_PATH} && \
         sudo docker-compose up -d --build; \
     fi && \
     echo '🔐 권한 설정 및 데이터베이스 보호 중...' && \
-    sudo chmod -R 777 prisma public/uploads src/store && \
+    sudo chmod -R 777 prisma public && \
     echo '✅ 배포가 성공적으로 완료되었습니다!'"
 
 echo ""
