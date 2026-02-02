@@ -28,7 +28,11 @@ ssh -p ${NAS_PORT} -t ${NAS_USER}@${NAS_HOST} "cd ${NAS_PATH} && \
     git stash && \
     git pull origin main && \
     echo '🐳 도커 컨테이너 재빌드 및 재시작...' && \
-    sudo docker-compose up -d --build && \
+    if sudo docker compose version > /dev/null 2>&1; then \
+        sudo docker compose up -d --build; \
+    else \
+        sudo docker-compose up -d --build; \
+    fi && \
     echo '✅ 배포가 성공적으로 완료되었습니다!'"
 
 echo ""
